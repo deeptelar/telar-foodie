@@ -7,42 +7,71 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.submitForm
 import io.ktor.http.parameters
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 /**
  * The Overpass API, which answers questions about the data of OpenStreetMap. It needs no key.
  *
- * The public servers are run by volunteers and one of them is busy or down now and then, so a
- * question goes to each of [servers] in turn until one answers.
+ * The public servers are run by volunteers, and one of them is busy or down now and then. So a
+ * question goes to each of [servers] in turn, starting with the one that answered last, and a
+ * server gets [patience] to answer. When none did, the map is left alone for [rest]: a search in
+ * that time fails at once, so an agent that searches five times does not wait five times.
  */
 class Overpass(
     private val client: HttpClient,
     private val servers: List<String> = PUBLIC_SERVERS,
+    private val patience: Duration = 12.seconds,
+    private val rest: Duration = 1.minutes,
 ) : StreetMap {
+    /** The index of the server that answered last. */
+    private var preferred = 0
+
+    /** When no server answered, the moment that was found out. */
+    private var silentSince: TimeMark? = null
+
     override suspend fun restaurants(stop: String, near: Location, search: MapSearch, radius: Int): List<Restaurant> {
-        val query = query(near, search, radius)
-        var failure: Exception? = null
-        for (server in servers) {
-            try {
-                val answer = client.submitForm(server, parameters { append("data", query) }).jsonFrom("The street map")
-                return restaurants(stop, answer)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                failure = e
-            }
+        silentSince?.let { since ->
+            if (since.elapsedNow() < rest) throw SourceException("The street map does not answer at the moment. Go on without it.")
         }
-        throw SourceException("No server of the street map answered: ${failure?.message}", failure)
+        val query = query(near, search, radius)
+        var failure = ""
+        for (offset in servers.indices) {
+            val index = (preferred + offset) % servers.size
+            val answer =
+                try {
+                    withTimeoutOrNull(patience) { client.submitForm(servers[index], parameters { append("data", query) }).jsonFrom("The street map") }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    failure = e.message.orEmpty()
+                    continue
+                }
+            if (answer == null) {
+                failure = "no answer within $patience"
+                continue
+            }
+            preferred = index
+            silentSince = null
+            return restaurants(stop, answer)
+        }
+        silentSince = TimeSource.Monotonic.markNow()
+        throw SourceException("No server of the street map answered: $failure")
     }
 
     companion object {
         val PUBLIC_SERVERS: List<String> =
             listOf(
                 "https://overpass-api.de/api/interpreter",
-                "https://overpass.private.coffee/api/interpreter",
                 "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+                "https://overpass.private.coffee/api/interpreter",
             )
 
         /** The most restaurants one question returns. */

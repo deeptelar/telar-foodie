@@ -14,6 +14,9 @@ import io.ktor.client.engine.mock.toByteArray
 import io.ktor.client.request.HttpRequestData
 import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
@@ -24,11 +27,23 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 class SourcesTest {
     private val lisbon = Location(38.7078, -9.1366)
 
-    private fun client(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData) = HttpClient(MockEngine { handler(it) })
+    /**
+     * A client whose requests are answered by [handler]. Its engine runs on the scheduler of the
+     * test, so that the time limit a source puts around a request counts the time of the test.
+     */
+    private fun TestScope.client(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData) =
+        HttpClient(MockEngine) {
+            engine {
+                dispatcher = StandardTestDispatcher(testScheduler)
+                addHandler { handler(it) }
+            }
+        }
 
     // Nominatim
 
@@ -222,6 +237,42 @@ class SourcesTest {
             val failure = assertFailsWith<SourceException> { map.restaurants("Lisbon", lisbon, MapSearch.Name("tasca"), 3000) }
 
             assertEquals("No server of the street map answered: The street map answered with 429: Too busy", failure.message)
+        }
+
+    @Test
+    fun `a server of the map that takes too long is given up, and the one that answered is asked first the next time`() =
+        runTest {
+            val asked = mutableListOf<String>()
+            val client =
+                client { request ->
+                    asked += request.url.host
+                    if (request.url.host == "slow.example") delay(1.minutes)
+                    respond(mapAnswer)
+                }
+            val map = Overpass(client, servers = listOf("https://slow.example/api", "https://fast.example/api"), patience = 10.seconds)
+
+            map.restaurants("Lisbon", lisbon, MapSearch.Cuisine(listOf("regional")), 3000)
+            map.restaurants("Lisbon", lisbon, MapSearch.Name("tasca"), 3000)
+
+            assertEquals(listOf("slow.example", "fast.example", "fast.example"), asked)
+        }
+
+    @Test
+    fun `after no server answered, the map is not asked again for a while`() =
+        runTest {
+            var asked = 0
+            val client =
+                client {
+                    asked++
+                    respond("Too busy", HttpStatusCode.TooManyRequests)
+                }
+            val map = Overpass(client, servers = listOf("https://first.example/api", "https://second.example/api"))
+
+            assertFailsWith<SourceException> { map.restaurants("Lisbon", lisbon, MapSearch.Name("tasca"), 3000) }
+            val second = assertFailsWith<SourceException> { map.restaurants("Lisbon", lisbon, MapSearch.Name("tasca"), 3000) }
+
+            assertEquals(2, asked)
+            assertEquals("The street map does not answer at the moment. Go on without it.", second.message)
         }
 
     // Google Places

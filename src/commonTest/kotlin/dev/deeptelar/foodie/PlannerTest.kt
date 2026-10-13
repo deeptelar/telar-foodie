@@ -1,6 +1,7 @@
 package dev.deeptelar.foodie
 
 import dev.deeptelar.foodie.sources.GuidePage
+import dev.deeptelar.foodie.sources.MapSearch
 import dev.deeptelar.foodie.sources.PlaceReviews
 import dev.deeptelar.foodie.sources.SourceException
 import dev.deeptelar.foodie.sources.Sources
@@ -12,12 +13,15 @@ import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.TokenUsage
 import dev.deeptelar.telar.test.ScriptedChatModel
 import dev.deeptelar.telar.test.record
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 
 class PlannerTest {
     private val lisbon = "Lisbon, Portugal"
@@ -185,6 +189,57 @@ class PlannerTest {
             assertEquals(listOf("The street map gave no answer for $lisbon: No server of the street map answered."), trip.notes)
             assertEquals(listOf("Restaurante Santa Rita"), trip.restaurants.map { it.name })
             assertTrue("What could not be read:" in model.requests[2].messages.first().text)
+        }
+
+    @Test
+    fun `a source that takes too long is left out`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    says("Planned with the guide only.")
+                }
+            val slow =
+                StreetMap { _, _, _, _ ->
+                    delay(10.minutes)
+                    listOf(zeDaMouraria)
+                }
+
+            val trip = planner(model, sources(map = slow)).invoke(Trip("One day in Lisbon"), config()).state
+
+            assertEquals(listOf("The street map took too long for $lisbon."), trip.notes)
+            assertEquals(listOf("Restaurante Santa Rita"), trip.restaurants.map { it.name })
+        }
+
+    @Test
+    fun `the sample plans two days from the candidates and a search of the map`() =
+        runTest {
+            val searches = mutableListOf<MapSearch>()
+            val bakery = Restaurant(stop = lisbon, name = "Manteigaria", lat = 38.7107, lon = -9.1437, cuisine = "pastry", sources = setOf(Source.MAP))
+            val map =
+                StreetMap { stop, _, search, _ ->
+                    searches += search
+                    if (search == MapSearch.Cuisine(listOf("pastry"))) {
+                        listOf(bakery)
+                    } else {
+                        (1..5).map { Restaurant(stop = stop, name = "Tasca $it", lat = 38.71 + it / 1000.0, lon = -9.13, cuisine = "portuguese", sources = setOf(Source.MAP)) }
+                    }
+                }
+
+            val result = planner(SampleModel(pause = Duration.ZERO), sources(map = map)).invoke(Trip("Anything"), config())
+
+            assertIs<GraphResult.Interrupted<Trip>>(result)
+            val trip = result.state
+            assertEquals<List<MapSearch>>(listOf(MapSearch.Cuisine(listOf("portuguese", "regional", "seafood")), MapSearch.Cuisine(listOf("pastry"))), searches)
+            assertEquals(
+                listOf("1 LUNCH", "1 SNACK", "1 DINNER", "2 LUNCH", "2 DINNER"),
+                trip.route.map { "${it.day} ${it.time}" },
+            )
+            assertEquals("Manteigaria", trip.restaurant(trip.route[1].restaurantId)?.name)
+            assertEquals(5, trip.route.map { it.restaurantId }.distinct().size)
+            assertTrue(trip.summary.startsWith("This is the sample trip."))
+            assertEquals(7, trip.dishes.size)
         }
 
     @Test

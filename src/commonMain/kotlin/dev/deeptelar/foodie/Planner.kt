@@ -15,6 +15,7 @@ import dev.deeptelar.telar.agent.toolLoop
 import dev.deeptelar.telar.interrupt
 import dev.deeptelar.telar.reportProgress
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.seconds
 
 /** The names of the nodes of the [planner], for the code that shows a run. */
@@ -94,7 +95,6 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                         Found(page.restaurants, guideNotes = if (page.text.isBlank()) emptyMap() else mapOf(stop.name to page.text))
                     }
                 },
-                timeout = SOURCE_TIMEOUT,
             ) { trip, found -> trip.with(found) }
 
         val map =
@@ -106,7 +106,6 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                         Found(sources.map.restaurants(stop.name, stop.location, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS))
                     }
                 },
-                timeout = SOURCE_TIMEOUT,
             ) { trip, found -> trip.with(found) }
 
         val reviews =
@@ -119,7 +118,6 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                             Found(reviews.search(stop.name, reviewQuery(stop), stop.location))
                         }
                     },
-                    timeout = SOURCE_TIMEOUT,
                 ) { trip, found -> trip.with(found) }
             }
 
@@ -187,15 +185,16 @@ internal data class Found(
 )
 
 /**
- * Asks a source for every stop of [trip]. A source that fails for a stop does not fail the run:
- * the trip is planned with what the other sources found, and a note says what is missing.
+ * Asks a source for every stop of [trip]. A source that fails for a stop, or takes too long, does
+ * not fail the run: the trip is planned with what the other sources found, and a note says what
+ * is missing.
  */
 private suspend fun gather(trip: Trip, source: String, ask: suspend (Stop) -> Found): Found {
     var all = Found()
     for (stop in trip.stops) {
         val found =
             try {
-                ask(stop)
+                withTimeoutOrNull(SOURCE_PATIENCE) { ask(stop) } ?: Found(notes = listOf("$source took too long for ${stop.name}."))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -232,4 +231,5 @@ internal val LOCAL_CUISINES = listOf("regional", "local")
 /** A trip is planned for at most this many days at one stop. */
 private const val MAX_DAYS = 10
 
-private val SOURCE_TIMEOUT = 90.seconds
+/** How long a source may take for one stop. */
+private val SOURCE_PATIENCE = 60.seconds

@@ -1,0 +1,460 @@
+:root {
+    --paper: #fbf7f1;
+    --card: #ffffff;
+    --ink: #2a211b;
+    --soft: #6f6258;
+    --line: #e8dfd3;
+    --accent: #c2410c;
+    --accent-dark: #9a3412;
+    --ok: #0f766e;
+    --bad: #b91c1c;
+    --day1: #c2410c;
+    --day2: #0f766e;
+    --day3: #7c3aed;
+    --day4: #b45309;
+    --day5: #be123c;
+    --day6: #1d4ed8;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 16px 16px 48px;
+}
+
+h1, h2, h3, h4, p {
+    margin: 0;
+}
+
+h1 {
+    font: 700 28px/1.1 Georgia, "Times New Roman", serif;
+    color: var(--accent-dark);
+}
+
+h2 {
+    font: 700 21px/1.25 Georgia, "Times New Roman", serif;
+}
+
+a {
+    color: var(--accent-dark);
+}
+
+.top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0 16px;
+}
+
+.tagline, .hint {
+    color: var(--soft);
+    font-size: 14px;
+}
+
+.hint.small {
+    font-size: 13px;
+    margin-top: 16px;
+}
+
+.card, .how {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.how {
+    background: transparent;
+}
+
+.how ol {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--soft);
+    font-size: 15px;
+}
+
+.how li + li {
+    margin-top: 6px;
+}
+
+textarea, input, select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+}
+
+textarea {
+    resize: vertical;
+}
+
+textarea:focus, input:focus, select:focus, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--soft);
+}
+
+button {
+    font: inherit;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    padding: 11px 16px;
+    min-height: 44px;
+    cursor: pointer;
+}
+
+button.primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+button.primary:hover {
+    background: var(--accent-dark);
+}
+
+button.ghost {
+    background: transparent;
+    border-color: var(--line);
+    color: var(--ink);
+}
+
+button.ghost:hover {
+    border-color: var(--soft);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+button.chip {
+    min-height: 0;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border-color: var(--line);
+    background: var(--paper);
+    color: var(--soft);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+}
+
+/* A run */
+
+.steps, .feed {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.step {
+    display: flex;
+    gap: 12px;
+    padding: 9px 0;
+    border-top: 1px solid var(--line);
+}
+
+.step:first-child {
+    border-top: none;
+}
+
+.dot {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    margin-top: 6px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+}
+
+.step.running .dot {
+    border-color: var(--accent);
+    border-top-color: transparent;
+    animation: spin 0.8s linear infinite;
+}
+
+.step.done .dot {
+    background: var(--ok);
+    border-color: var(--ok);
+}
+
+.step.skipped .dot {
+    border-style: dashed;
+}
+
+.step.waiting .step-title, .step.skipped .step-title {
+    color: var(--soft);
+}
+
+.step-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.step-title {
+    font-weight: 600;
+}
+
+.step-detail {
+    color: var(--soft);
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.feed {
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--soft);
+}
+
+.feed li::before {
+    content: "· ";
+}
+
+.writing {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: var(--paper);
+    border-radius: 10px;
+    font-size: 14px;
+    white-space: pre-wrap;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.question {
+    font-size: 18px;
+}
+
+.failure {
+    color: var(--bad);
+    overflow-wrap: anywhere;
+}
+
+/* The route */
+
+.route {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.summary {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 14px;
+    white-space: pre-wrap;
+}
+
+.map {
+    height: 320px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    z-index: 0;
+}
+
+h3.day {
+    font: 700 17px/1.3 Georgia, "Times New Roman", serif;
+    margin-top: 10px;
+    padding-left: 10px;
+    border-left: 4px solid var(--soft);
+}
+
+.meal {
+    display: flex;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+}
+
+.meal-text {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.meal-time {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--soft);
+}
+
+.meal h4 {
+    font-size: 18px;
+    line-height: 1.25;
+}
+
+.rating {
+    font-size: 14px;
+    color: var(--day4);
+    font-weight: 600;
+}
+
+.what, .facts {
+    color: var(--soft);
+}
+
+.why {
+    font-style: italic;
+}
+
+.facts {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #ecfdf5;
+    color: var(--ok);
+}
+
+.links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    font-size: 14px;
+}
+
+.walk {
+    color: var(--soft);
+    font-size: 13px;
+    padding-left: 22px;
+}
+
+.pin {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--soft);
+    color: #fff;
+    font: 700 13px/28px system-ui, sans-serif;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.pin.day1, .chip.day1 { --day: var(--day1); }
+.pin.day2, .chip.day2 { --day: var(--day2); }
+.pin.day3, .chip.day3 { --day: var(--day3); }
+.pin.day4, .chip.day4 { --day: var(--day4); }
+.pin.day5, .chip.day5 { --day: var(--day5); }
+.pin.day6, .chip.day6 { --day: var(--day6); }
+
+.pin[class*="day"] {
+    background: var(--day);
+}
+
+button.chip[class*="day"] {
+    color: var(--day);
+    border-color: var(--day);
+}
+
+h3.day1 { border-color: var(--day1); }
+h3.day2 { border-color: var(--day2); }
+h3.day3 { border-color: var(--day3); }
+h3.day4 { border-color: var(--day4); }
+h3.day5 { border-color: var(--day5); }
+h3.day6 { border-color: var(--day6); }
+
+.known {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+.known summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.known ul {
+    margin: 8px 0 0;
+    padding-left: 20px;
+    font-size: 15px;
+}
+
+.credits {
+    color: var(--soft);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 8px;
+}
+
+@media print {
+    .top button, .card, .chips, .credits, .how {
+        display: none;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    .meal {
+        break-inside: avoid;
+    }
+}
