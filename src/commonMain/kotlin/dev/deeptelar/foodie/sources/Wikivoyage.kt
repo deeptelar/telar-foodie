@@ -4,10 +4,8 @@ import dev.deeptelar.foodie.Restaurant
 import dev.deeptelar.foodie.Source
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.parameter
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 
@@ -25,10 +23,8 @@ class Wikivoyage(
     override suspend fun read(place: String): GuidePage {
         val title = title(place) ?: return GuidePage()
         val page = wikitext(title) ?: return GuidePage()
-        val districts =
-            coroutineScope {
-                districts(title).map { district -> async { district(district) } }.awaitAll()
-            }
+        // One page after the other, as the rules of the Wikimedia APIs ask: a burst is answered with 429.
+        val districts = districts(title).map { district(it) }
         return GuidePage(
             text = eatText(page).take(TEXT_LENGTH),
             restaurants = (eatListings(place, page) + districts.flatMap { eatListings(place, it) }).distinctBy { it.name },
@@ -71,10 +67,14 @@ class Wikivoyage(
                 parameter("format", "json")
                 // Without this, the API does not let a page of another site read the answer.
                 parameter("origin", "*")
+                // Wikimedia asks every client to say who it is. A browser does not let a page set User-Agent, so this header is it.
+                header("Api-User-Agent", USER_AGENT)
                 parameters()
             }.jsonFrom("The travel guide") as? JsonObject ?: throw SourceException("The travel guide sent no object.")
 
     companion object {
+        private const val USER_AGENT = "FoodieRoute/0.1 (an example app of Telar; https://github.com/deeptelar/telar)"
+
         /** The most district pages that are read for one place. */
         private const val DISTRICTS = 8
 
