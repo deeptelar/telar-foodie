@@ -32,6 +32,8 @@ data class Trip(
     val messages: List<ChatMessage> = emptyList(),
     /** The tokens the models used for this trip. */
     val tokens: TokenUsage = TokenUsage(),
+    /** [tokens] when the agent began its current turn: the first plan, or a change the traveller asked for. */
+    val turnStart: Int = 0,
     /** Written by the traveller at the review: `true` ends the run. */
     val approved: Boolean = false,
     /** What did not work but did not stop the run, such as a source that gave no answer. */

@@ -406,4 +406,25 @@ class PlannerTest {
             assertTrue(results.last().text.endsWith("You have searched 8 times. Stop searching and write the route now with set_meal, from the candidates you have. Still open: day 1 lunch, day 1 dinner."), results.last().text)
         }
 
+    @Test
+    fun `a change has a token budget of its own`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau", "Fine."), usage = TokenUsage(900, 100))
+                    calls("set_meal", MealChoice(1, "dinner", "r2", "caldo verde", "Fine."), usage = TokenUsage(900, 100))
+                    says("Changed.")
+                }
+            val planner = planner(model, sources(), tokenBudget = 1000)
+            val config = config()
+
+            planner.invoke(Trip("One day in Lisbon"), config)
+            val changed = planner.resume(config) { it.copy(messages = it.messages + ChatMessage.User("Add a dinner.")) }
+
+            // The first turn used its budget; the change was still asked of the model, and stopped at its own.
+            assertEquals(listOf("r1", "r2"), changed.state.route.map { it.restaurantId })
+            assertEquals(1, model.remaining)
+        }
 }

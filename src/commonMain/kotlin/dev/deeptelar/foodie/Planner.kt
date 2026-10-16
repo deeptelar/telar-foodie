@@ -59,7 +59,8 @@ data class Activity(
  *   `GraphConfig.interruptBefore`. With `approved` the run ends; with a new message from the
  *   traveller in `messages` the agent goes over the route again.
  *
- * @param tokenBudget the agent stops asking the model once the trip has used this many tokens.
+ * @param tokenBudget the agent stops asking the model once it has used this many tokens for the
+ *   route, or for one change of it.
  */
 fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): CompiledGraph<Trip> =
     StateGraph<Trip> {
@@ -136,8 +137,9 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
 
         val order = node(Nodes.ORDER) { trip -> trip.copy(route = ordered(trip)) }
 
-        // Does nothing: it is the place where the run waits for the traveller.
-        val review = node(Nodes.REVIEW) { it }
+        // The place where the run waits for the traveller. It runs when the traveller answered, and a
+        // change starts a new turn of the agent, with a budget of its own.
+        val review = node(Nodes.REVIEW) { trip -> trip.copy(turnStart = trip.tokens.total) }
 
         val plan =
             toolLoop(
@@ -151,7 +153,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                 modelNode = Nodes.PLAN,
                 toolsNode = Nodes.TOOLS,
                 countTokens = { trip, used -> trip.copy(tokens = trip.tokens + used) },
-                stopWhen = { it.tokens.total >= tokenBudget },
+                stopWhen = { it.tokens.total - it.turnStart >= tokenBudget },
                 retry = again,
             )
 
