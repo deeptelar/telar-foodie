@@ -2,6 +2,7 @@ package dev.deeptelar.foodie
 
 import dev.deeptelar.foodie.sources.MapSearch
 import dev.deeptelar.foodie.sources.Sources
+import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.Description
 import dev.deeptelar.telar.agent.StateTool
 import dev.deeptelar.telar.agent.ToolOutcome
@@ -76,10 +77,15 @@ data class MealSlot(
 private const val SHOWN = 15
 
 internal fun routeTools(sources: Sources): List<StateTool<Trip>> =
+    searchTools(sources).map { it.nudging() } + routeEditors
+
+/** The tools that look for candidates. */
+private fun searchTools(sources: Sources): List<StateTool<Trip>> =
     listOfNotNull(
         StateTool<Trip, CandidateSearch>("candidates", "Lists candidates of a stop that are already known, the ones with the most evidence first.") { trip, search ->
             val stop = trip.knownStop(search.stop)
             val words = search.words.lowercase().split(' ', ',').filter { it.isNotBlank() }
+            if (words.any { it.length < 3 }) throw IllegalArgumentException("Search for a word of at least three letters, such as a dish or a cuisine.")
             val matching = trip.restaurants.filter { it.stop == stop.name && it.matches(words) }.sortedByDescending { it.evidence() }
             ToolOutcome(trip, matching.listed("No candidate in ${stop.name} matches \"${search.words}\". Search the map or the guide."))
         },
@@ -110,6 +116,11 @@ internal fun routeTools(sources: Sources): List<StateTool<Trip>> =
                 trip.found(reviews.search(stop.name, search.query, stop.location), "Google found nothing for \"${search.query}\".")
             }
         },
+    )
+
+/** The tools that write the route. */
+private val routeEditors: List<StateTool<Trip>> =
+    listOf(
         StateTool<Trip, MealChoice>("set_meal", "Puts a restaurant on the route for one meal of one day. A meal that is already there is replaced.") { trip, choice ->
             val time = mealTime(choice.meal)
             val stop = trip.stopOn(choice.day) ?: throw IllegalArgumentException("The trip has ${trip.days} days. There is no day ${choice.day}.")
@@ -133,6 +144,32 @@ internal fun routeTools(sources: Sources): List<StateTool<Trip>> =
             ToolOutcome(after, "Removed. " + after.openMeals())
         },
     )
+
+/**
+ * This search tool, with a reminder in its result once the agent has searched [SEARCHES] times in
+ * this turn: a model that keeps searching never writes the route, and its token budget runs out.
+ */
+private fun StateTool<Trip>.nudging(): StateTool<Trip> =
+    StateTool(spec) { trip, input ->
+        val outcome = execute(trip, input)
+        val searches = trip.searchesThisTurn()
+        if (searches < SEARCHES) {
+            outcome
+        } else {
+            outcome.copy(text = outcome.text + "\n\nYou have searched $searches times. Stop searching and write the route now with set_meal, from the candidates you have. ${outcome.state.openMeals()}")
+        }
+    }
+
+/** How many searches the agent asked for since the last message of the traveller, the calls of the answer that runs now included. */
+private fun Trip.searchesThisTurn(): Int {
+    val turn = messages.drop(messages.indexOfLast { it is ChatMessage.User } + 1)
+    return turn.filterIsInstance<ChatMessage.Assistant>().sumOf { answer -> answer.toolCalls.count { it.name !in EDITORS } }
+}
+
+private val EDITORS = setOf("set_meal", "remove_meal")
+
+/** After this many searches in one turn, every search result asks the agent to write the route. */
+private const val SEARCHES = 8
 
 private fun Trip.knownStop(name: String): Stop =
     stop(name) ?: stops.singleOrNull() ?: throw IllegalArgumentException("There is no stop named \"$name\". The stops are: ${stops.joinToString { it.name }}.")

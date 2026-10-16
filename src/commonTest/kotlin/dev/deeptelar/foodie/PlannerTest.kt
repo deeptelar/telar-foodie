@@ -385,4 +385,25 @@ class PlannerTest {
             assertEquals(2, mapSearches)
             assertEquals(listOf("Restaurante Santa Rita", "Zé da Mouraria"), reopened.state.restaurants.map { it.name })
         }
+
+    @Test
+    fun `an agent that keeps searching is told to write the route`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("candidates", CandidateSearch(lisbon, "a"))
+                    repeat(7) { calls("candidates", CandidateSearch(lisbon, "portuguese")) }
+                    says("Planned.")
+                }
+
+            planner(model, sources()).invoke(Trip("One day in Lisbon"), config())
+
+            val results = model.requests.last().messages.filterIsInstance<ChatMessage.ToolResult>()
+            assertEquals("Search for a word of at least three letters, such as a dish or a cuisine.", results.first().text)
+            assertTrue(results.dropLast(1).none { "Stop searching" in it.text })
+            assertTrue(results.last().text.endsWith("You have searched 8 times. Stop searching and write the route now with set_meal, from the candidates you have. Still open: day 1 lunch, day 1 dinner."), results.last().text)
+        }
+
 }
