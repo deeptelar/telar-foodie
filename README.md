@@ -72,15 +72,7 @@ What to know about them:
 
 ## Run it
 
-Telar is used from its main branch until the release after `0.1.0-alpha09` is on Maven Central. Put
-it into your local Maven repository first:
-
-```bash
-git clone https://github.com/deeptelar/telar && cd telar
-./gradlew publishToMavenLocal
-```
-
-Then, in this repository:
+Telar comes from Maven Central. You need JDK 17 or later; the Gradle wrapper fetches the rest.
 
 ```bash
 ./gradlew jsBrowserDevelopmentRun --continuous   # the page, at http://localhost:8080
