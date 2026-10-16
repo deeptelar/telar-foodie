@@ -14,6 +14,7 @@ import dev.deeptelar.telar.agent.ask
 import dev.deeptelar.telar.agent.toolLoop
 import dev.deeptelar.telar.interrupt
 import dev.deeptelar.telar.reportProgress
+import dev.deeptelar.telar.serialization.effect
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.seconds
@@ -85,13 +86,16 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
 
         // The three sources. Each is a node with a `work`, the slow part that runs for all of them at
         // the same time, and an update that adds what it found to the state, one node after the other.
+        // What a source answers for a stop is saved as an effect: when the step runs again, after a
+        // reload of the page or a failure, it is not asked again. The street map is slow, and Google
+        // bills each search.
         val guide =
             node(
                 Nodes.GUIDE,
                 work = { trip ->
                     gather(trip, "The travel guide") { stop ->
                         reportProgress(Activity("Reading the travel guide of ${stop.name}"))
-                        val page = sources.guide.read(stop.name)
+                        val page = effect("guide ${stop.name}") { sources.guide.read(stop.name) }
                         Found(page.restaurants, guideNotes = if (page.text.isBlank()) emptyMap() else mapOf(stop.name to page.text))
                     }
                 },
@@ -103,7 +107,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                 work = { trip ->
                     gather(trip, "The street map") { stop ->
                         reportProgress(Activity("Looking for ${stop.cuisines.firstOrNull() ?: "local"} restaurants on the map of ${stop.name}"))
-                        Found(sources.map.restaurants(stop.name, stop.location, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS))
+                        Found(effect("map ${stop.name}") { sources.map.restaurants(stop.name, stop.location, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) })
                     }
                 },
             ) { trip, found -> trip.with(found) }
@@ -115,7 +119,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                     work = { trip ->
                         gather(trip, "Google reviews") { stop ->
                             reportProgress(Activity("Reading reviews in ${stop.name}"))
-                            Found(reviews.search(stop.name, reviewQuery(stop), stop.location))
+                            Found(effect("reviews ${stop.name}") { reviews.search(stop.name, reviewQuery(stop), stop.location) })
                         }
                     },
                 ) { trip, found -> trip.with(found) }

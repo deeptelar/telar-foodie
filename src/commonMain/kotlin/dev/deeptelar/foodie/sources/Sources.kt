@@ -6,6 +6,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -30,6 +31,7 @@ fun interface TravelGuide {
  * @property text what the guide says about the food of the place, as plain text.
  * @property restaurants the places to eat it lists, with the guide's words about each in `note`.
  */
+@Serializable
 data class GuidePage(
     val text: String = "",
     val restaurants: List<Restaurant> = emptyList(),

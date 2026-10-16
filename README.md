@@ -33,7 +33,7 @@ flowchart LR
 | Node | What it does | What of Telar it shows |
 |---|---|---|
 | `brief` | A model reads the request into a `Brief`, and the stops are found on the map. When the request names no place, or the map does not know one, the run pauses with a question. | A typed answer with `ask<Brief>`, `interrupt` from inside a node, `Retry` |
-| `guide`, `map`, `reviews` | The three sources are asked at the same time. `reviews` is only in the graph when there is a Google key. | Parallel nodes with a `work` and an update, and no reducer |
+| `guide`, `map`, `reviews` | The three sources are asked at the same time. `reviews` is only in the graph when there is a Google key. What a source answered is kept when the step runs again. | Parallel nodes with a `work` and an update, and no reducer; `effect` |
 | `dishes` | A model names what each stop is known for, with what the guide says in front of it. | `ask<Menu>` |
 | `plan` ⇄ `tools` | An agent chooses a restaurant for each meal. Its tools search the sources again and write the route into the state. | `toolLoop` in a graph of your own, `StateTool`, a token budget |
 | `order` | Sorts the meals and measures the walks between them. | A plain node |
@@ -42,7 +42,9 @@ flowchart LR
 Around the graph:
 
 - **The plan survives a reload.** Every step is saved with `LocalStorageCheckpointer`. Close the
-  page while the planner works, and it continues where it stopped.
+  page while the planner works, and it continues where it stopped. A source that had answered
+  before the page was closed is not asked again: the street map is slow, and Google bills each
+  search.
 - **The page shows the run live.** [`App.kt`](src/jsMain/kotlin/dev/deeptelar/foodie/App.kt)
   collects `stream()`: a node that starts, what it reports with `reportProgress`, the text of the
   model as it is written, and the tool calls of the agent.

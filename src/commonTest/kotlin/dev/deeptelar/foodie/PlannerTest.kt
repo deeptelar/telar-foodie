@@ -6,6 +6,7 @@ import dev.deeptelar.foodie.sources.PlaceReviews
 import dev.deeptelar.foodie.sources.SourceException
 import dev.deeptelar.foodie.sources.Sources
 import dev.deeptelar.foodie.sources.StreetMap
+import dev.deeptelar.foodie.sources.TravelGuide
 import dev.deeptelar.telar.GraphConfig
 import dev.deeptelar.telar.GraphResult
 import dev.deeptelar.telar.MemoryCheckpointer
@@ -14,6 +15,8 @@ import dev.deeptelar.telar.agent.TokenUsage
 import dev.deeptelar.telar.test.ScriptedChatModel
 import dev.deeptelar.telar.test.record
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,6 +25,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 class PlannerTest {
     private val lisbon = "Lisbon, Portugal"
@@ -34,9 +38,10 @@ class PlannerTest {
     private fun sources(
         map: StreetMap = StreetMap { _, _, _, _ -> listOf(santaRitaOnMap, zeDaMouraria) },
         reviews: PlaceReviews? = null,
+        guide: TravelGuide = TravelGuide { GuidePage("Most restaurants are small and family-run.", listOf(santaRitaInGuide)) },
     ) = Sources(
         geocoder = { place -> if (place.startsWith("Lisbon")) Location(38.7078, -9.1366) else null },
-        guide = { GuidePage("Most restaurants are small and family-run.", listOf(santaRitaInGuide)) },
+        guide = guide,
         map = map,
         reviews = reviews,
     )
@@ -315,5 +320,43 @@ class PlannerTest {
             assertEquals(1400, result.state.tokens.total)
             assertEquals(listOf("r1"), result.state.route.map { it.restaurantId })
             assertEquals(1, model.remaining)
+        }
+
+    @Test
+    fun `a source that already answered is not asked again when its step runs again`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    says("Planned.")
+                }
+            var guideReads = 0
+            var mapSearches = 0
+            val guide =
+                TravelGuide {
+                    guideReads++
+                    GuidePage(restaurants = listOf(santaRitaInGuide))
+                }
+            // The first search of the map is still going when the page is closed.
+            val map =
+                StreetMap { _, _, _, _ ->
+                    if (++mapSearches == 1) delay(30.seconds)
+                    listOf(zeDaMouraria)
+                }
+            val planner = planner(model, sources(map = map, guide = guide))
+            val config = config()
+
+            val closed = launch { planner.stream(Trip("One day in Lisbon"), config).collect {} }
+            advanceTimeBy(1.seconds)
+            closed.cancel()
+            val reopened = planner.resume(config)
+
+            assertIs<GraphResult.Interrupted<Trip>>(reopened)
+            assertEquals(listOf(Nodes.REVIEW), reopened.nextNodes)
+            // The guide had answered and its answer was saved; the map is asked again.
+            assertEquals(1, guideReads)
+            assertEquals(2, mapSearches)
+            assertEquals(listOf("Restaurante Santa Rita", "Zé da Mouraria"), reopened.state.restaurants.map { it.name })
         }
 }
