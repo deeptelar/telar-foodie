@@ -5,7 +5,6 @@ import dev.deeptelar.foodie.Source
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -61,9 +60,8 @@ class Wikivoyage(
     private suspend fun district(title: String): String =
         try {
             wikitext(title).orEmpty()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
+        } catch (e: Throwable) {
+            if (!e.isFailure()) throw e
             ""
         }
 

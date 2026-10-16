@@ -230,6 +230,24 @@ class SourcesTest {
         }
 
     @Test
+    fun `a server of the map that a browser cannot reach is skipped too`() =
+        runTest {
+            val asked = mutableListOf<String>()
+            val client =
+                client { request ->
+                    asked += request.url.host
+                    // What Ktor throws in a browser for a request that got no response.
+                    if (request.url.host == "first.example") throw Error("Fail to fetch") else respond(mapAnswer)
+                }
+            val map = Overpass(client, servers = listOf("https://first.example/api", "https://second.example/api"))
+
+            val found = map.restaurants("Lisbon", lisbon, MapSearch.Cuisine(listOf("regional")), 3000)
+
+            assertEquals(listOf("first.example", "second.example"), asked)
+            assertEquals(2, found.size)
+        }
+
+    @Test
     fun `when no server of the map answers, the search fails with what the last one said`() =
         runTest {
             val map = Overpass(client { respond("Too busy", HttpStatusCode.TooManyRequests) }, servers = listOf("https://first.example/api"))

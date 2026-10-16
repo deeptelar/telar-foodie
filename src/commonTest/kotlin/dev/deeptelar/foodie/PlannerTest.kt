@@ -206,6 +206,23 @@ class PlannerTest {
         }
 
     @Test
+    fun `a source that a browser cannot reach leaves a note too`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    says("Planned with the guide only.")
+                }
+            // What Ktor throws in a browser for a request that got no response.
+            val unreachable = StreetMap { _, _, _, _ -> throw Error("Fail to fetch") }
+
+            val trip = planner(model, sources(map = unreachable)).invoke(Trip("One day in Lisbon"), config()).state
+
+            assertEquals(listOf("The street map gave no answer for $lisbon: Fail to fetch"), trip.notes)
+        }
+
+    @Test
     fun `a source that takes too long is left out`() =
         runTest {
             val model =

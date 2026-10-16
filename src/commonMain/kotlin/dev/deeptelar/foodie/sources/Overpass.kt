@@ -6,7 +6,6 @@ import dev.deeptelar.foodie.Source
 import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.submitForm
 import io.ktor.http.parameters
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -48,9 +47,8 @@ class Overpass(
             val answer =
                 try {
                     withTimeoutOrNull(patience) { client.submitForm(servers[index], parameters { append("data", query) }).jsonFrom("The street map") }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
+                    if (!e.isFailure()) throw e
                     failure = e.message.orEmpty()
                     continue
                 }

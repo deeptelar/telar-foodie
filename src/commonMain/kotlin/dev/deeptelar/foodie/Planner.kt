@@ -2,6 +2,7 @@ package dev.deeptelar.foodie
 
 import dev.deeptelar.foodie.sources.MapSearch
 import dev.deeptelar.foodie.sources.Sources
+import dev.deeptelar.foodie.sources.isFailure
 import dev.deeptelar.telar.CompiledGraph
 import dev.deeptelar.telar.NodeRef
 import dev.deeptelar.telar.Retry
@@ -15,7 +16,6 @@ import dev.deeptelar.telar.agent.toolLoop
 import dev.deeptelar.telar.interrupt
 import dev.deeptelar.telar.reportProgress
 import dev.deeptelar.telar.serialization.effect
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.seconds
 
@@ -199,9 +199,8 @@ private suspend fun gather(trip: Trip, source: String, ask: suspend (Stop) -> Fo
         val found =
             try {
                 withTimeoutOrNull(SOURCE_PATIENCE) { ask(stop) } ?: Found(notes = listOf("$source took too long for ${stop.name}."))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
+                if (!e.isFailure()) throw e
                 Found(notes = listOf("$source gave no answer for ${stop.name}: ${e.message}"))
             }
         all = Found(all.restaurants + found.restaurants, all.guideNotes + found.guideNotes, all.notes + found.notes)

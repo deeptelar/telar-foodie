@@ -6,6 +6,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -90,6 +91,13 @@ class SourceException(
     message: String,
     cause: Throwable? = null,
 ) : Exception(message, cause)
+
+/**
+ * Whether a source can go on after this was thrown: an exception, or a plain `Error`, which is what
+ * Ktor throws in a browser for a request that got no response ("Fail to fetch"). Cancellation and
+ * the subclasses of `Error`, such as the `AssertionError` of a test, are not.
+ */
+internal fun Throwable.isFailure(): Boolean = this !is CancellationException && (this !is Error || this::class == Error::class)
 
 internal val json: Json = Json { ignoreUnknownKeys = true }
 
