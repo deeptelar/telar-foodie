@@ -52,6 +52,8 @@ Around the graph:
   then. The trip is then planned with what the other sources found, and says what is missing.
 - **The tests need no key and no network.** [`PlannerTest`](src/commonTest/kotlin/dev/deeptelar/foodie/PlannerTest.kt)
   runs the whole graph with `ScriptedChatModel` of `telar-test`, on the JVM and in a browser.
+  `graph.test { ... }` checks the path of a run step by step, the loop back from the review
+  included.
 
 ## The sources
 

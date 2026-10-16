@@ -14,6 +14,7 @@ import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.TokenUsage
 import dev.deeptelar.telar.test.ScriptedChatModel
 import dev.deeptelar.telar.test.record
+import dev.deeptelar.telar.test.test
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
@@ -124,21 +125,29 @@ class PlannerTest {
                     calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "No pork here."))
                     says("Changed the lunch.")
                 }
-            val planner = planner(model, sources())
-            val config = config()
 
-            planner.invoke(Trip("One day in Lisbon"), config)
-            val changed = planner.resume(config) { it.copy(messages = it.messages + ChatMessage.User("I do not eat pork.")) }
+            planner(model, sources()).test(Trip("One day in Lisbon"), config()) {
+                // A step, not a node: in Telar 0.1.0-alpha10, expectStep after expectNode stops at the end of the node's step.
+                expectStep(Nodes.BRIEF)
+                expectStep(Nodes.GUIDE, Nodes.MAP)
+                expectNodes(Nodes.DISHES, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
+                expectInterruptBefore(Nodes.REVIEW) { trip -> assertEquals(listOf("r2"), trip.route.map { it.restaurantId }) }
 
-            assertIs<GraphResult.Interrupted<Trip>>(changed)
-            assertEquals(listOf("r1"), changed.state.route.map { it.restaurantId })
-            assertEquals("Changed the lunch.", changed.state.summary)
+                resumeWith { it.copy(messages = it.messages + ChatMessage.User("I do not eat pork.")) }
+                // The graph loops back to the agent, which goes over the route again.
+                expectNodes(Nodes.REVIEW, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
+                expectInterruptBefore(Nodes.REVIEW) { trip ->
+                    assertEquals(listOf("r1"), trip.route.map { it.restaurantId })
+                    assertEquals("Changed the lunch.", trip.summary)
+                }
+
+                resumeWith { it.copy(approved = true) }
+                expectNode(Nodes.REVIEW)
+                expectFinished()
+            }
+
             // The agent got the traveller's words after its own summary.
             assertEquals("I do not eat pork.", model.requests[4].messages.last { it is ChatMessage.User }.text)
-
-            val done = planner.resume(config) { it.copy(approved = true) }
-
-            assertIs<GraphResult.Completed<Trip>>(done)
             assertEquals(0, model.remaining)
         }
 
