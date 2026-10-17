@@ -103,7 +103,7 @@ object English : Texts {
     override val oneMoreThing = "One more thing before I plan."
     override val lastQuestions = "The last ones. Tap all that fit, write what does not, or skip a question."
     override val continueAnswers = "Continue"
-    override val planNow = "That's enough, plan it"
+    override val planNow = "No more questions"
     override val sampleAsks = "This is the sample: a script asks the questions, and it does not read the answers."
     override val allergyNote = "The planner leaves out what you name and says what to tell the staff. It cannot know what a kitchen puts in a dish: always tell the waiter."
     override val pregnancyNote = "With a pregnancy the planner follows the usual advice: no raw fish, meat or eggs, no unpasteurised cheese, cured meats or alcohol. Your doctor's advice comes first."
@@ -147,7 +147,7 @@ object English : Texts {
         }
 
     override val hereIsWhatIHave = "Here is what I have"
-    override val profileHint = "This is what the route will be planned for. Tell me if something is wrong."
+    override val profileHint = "This is what the route will be planned for. Change or erase anything, or tell me below in your words."
     override val correctionPlaceholder = "Anything to correct? For example: we are three, not two."
     override val correctIt = "Correct it"
     override val sampleDidNotRead = "This is the sample: the script did not read your answers."
@@ -167,6 +167,17 @@ object English : Texts {
     override val wishes = "Wishes"
 
     override fun evenTraces(food: String) = "$food, even traces"
+
+    override val notSaid = "Not said"
+    override val erase = "Erase"
+    override val addAllergy = "Add an allergy"
+    override val allergyPlaceholder = "For example, peanuts"
+    override val evenTracesOption = "Even traces"
+    override val oneSpecialMeal = "One special meal"
+    override val mealsIfNone = "With none picked: lunch and dinner."
+    override val eraseEverything = "Erase everything"
+    override val keptInThisBrowser = "Kept only in this browser, with this trip. Start over erases it all."
+    override val updateForTheseDetails = "Update the route for these details"
 
     override fun budget(word: String) = word
 

@@ -103,7 +103,7 @@ object Catalan : Texts {
     override val oneMoreThing = "Una cosa més abans de planificar."
     override val lastQuestions = "Són les últimes. Toca tot el que encaixi, escriu el que no o salta una pregunta."
     override val continueAnswers = "Continua"
-    override val planNow = "Ja n'hi ha prou, planifica-ho"
+    override val planNow = "Prou preguntes"
     override val sampleAsks = "Això és l'exemple: un guió fa les preguntes i no llegeix les respostes."
     override val allergyNote =
         "El planificador deixa fora el que diguis i t'indica què has de dir al personal. No pot saber què posa una cuina en un plat: digues-ho sempre al cambrer."
@@ -148,7 +148,7 @@ object Catalan : Texts {
         }
 
     override val hereIsWhatIHave = "Això és el que tinc"
-    override val profileHint = "Per a això es planificarà la ruta. Digues-me si hi ha alguna cosa que no està bé."
+    override val profileHint = "Per a això es planificarà la ruta. Canvia o esborra el que vulguis, o explica-m'ho a sota amb les teves paraules."
     override val correctionPlaceholder = "Alguna cosa a corregir? Per exemple: som tres, no dos."
     override val correctIt = "Corregeix"
     override val sampleDidNotRead = "Això és l'exemple: el guió no ha llegit les teves respostes."
@@ -168,6 +168,17 @@ object Catalan : Texts {
     override val wishes = "Desitjos"
 
     override fun evenTraces(food: String) = "$food, fins i tot traces"
+
+    override val notSaid = "No ho has dit"
+    override val erase = "Esborra"
+    override val addAllergy = "Afegeix una al·lèrgia"
+    override val allergyPlaceholder = "Per exemple, cacauets"
+    override val evenTracesOption = "Fins i tot traces"
+    override val oneSpecialMeal = "Un àpat especial"
+    override val mealsIfNone = "Si no en tries cap: dinar i sopar."
+    override val eraseEverything = "Esborra-ho tot"
+    override val keptInThisBrowser = "Només es desa en aquest navegador, amb aquest viatge. «Torna a començar» ho esborra tot."
+    override val updateForTheseDetails = "Actualitza la ruta amb aquestes dades"
 
     override fun budget(word: String) =
         when (word.trim().lowercase()) {

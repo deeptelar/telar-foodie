@@ -1,5 +1,6 @@
 package dev.deeptelar.foodie
 
+import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.Description
 import kotlinx.serialization.Serializable
 
@@ -117,6 +118,8 @@ data class Interview(
     val rounds: Int = 0,
     /** How many of the trip's answers the profile was read from. -1 before the first reading. */
     val read: Int = -1,
+    /** Whether the traveller wanted no more questions. */
+    val enough: Boolean = false,
     val stage: InterviewStage = InterviewStage.ASKING,
 )
 
@@ -174,7 +177,7 @@ internal fun Trip.read(reading: Reading): Trip {
     val covered = interview.covered + reading.answered.filter { it !in ALWAYS_ASKED }
     val read = copy(profile = reading.profile, interview = interview.copy(covered = covered, read = answers.size))
     if (interview.stage == InterviewStage.DONE) return read
-    val next = if (interview.rounds < MAX_ROUNDS) nextQuestions(covered, reading.questions, language.texts) else emptyList()
+    val next = if (interview.rounds < MAX_ROUNDS && !interview.enough) nextQuestions(covered, reading.questions, language.texts) else emptyList()
     return if (next.isEmpty()) {
         read.copy(interview = read.interview.copy(stage = InterviewStage.CHECKING))
     } else {
@@ -185,8 +188,8 @@ internal fun Trip.read(reading: Reading): Trip {
 /** The trip with the traveller's [answers] to the open questions. The planner reads them next. */
 fun Trip.answered(answers: List<Answer>): Trip = copy(questions = emptyList(), answers = this.answers + answers)
 
-/** The trip with the [answers] the traveller gave so far, and no more questions: the planner reads them and plans. */
-fun Trip.planNow(answers: List<Answer>): Trip = answered(answers).copy(interview = interview.copy(stage = InterviewStage.DONE))
+/** The trip with the [answers] the traveller gave so far, and no more questions: the planner reads them and shows the profile to check. */
+fun Trip.planNow(answers: List<Answer>): Trip = answered(answers).copy(interview = interview.copy(enough = true))
 
 /** The profile as the traveller confirmed it. */
 fun Trip.confirmed(): Trip = copy(interview = interview.copy(stage = InterviewStage.DONE))
@@ -194,3 +197,53 @@ fun Trip.confirmed(): Trip = copy(interview = interview.copy(stage = InterviewSt
 /** The trip with a [correction] of the profile in the traveller's words. The planner reads it and shows the profile again. */
 fun Trip.corrected(correction: String): Trip =
     copy(answers = answers + Answer(null, "Is there anything to correct?", correction), interview = interview.copy(stage = InterviewStage.ASKING))
+
+/**
+ * The trip with the [profile] the traveller edited themselves, after erasing everything first when
+ * [erase]. The edit is kept as an answer too, in the words a model reads, so that a correction in
+ * words later starts from it. The profile needs no reading: it is what the traveller wrote.
+ */
+fun Trip.edited(profile: Profile, erase: Boolean = false): Trip {
+    val start = if (erase) erased() else this
+    val profile = profile.tidied()
+    if (profile == start.profile) return start
+    val answers = start.answers + Answer(null, EDITED, profileWords(profile))
+    return start.copy(profile = profile, answers = answers, interview = start.interview.copy(read = answers.size))
+}
+
+/**
+ * The trip without what the traveller told about themselves: the profile is empty, and the answers
+ * are gone. One answer says so, because the request stays: the places and days are in it.
+ */
+fun Trip.erased(): Trip {
+    val answers = listOf(Answer(null, ERASED, "Take nothing about the traveller from the words above, only the places and the days."))
+    return copy(profile = Profile(), answers = answers, interview = interview.copy(read = answers.size))
+}
+
+/**
+ * The trip with a [profile] the traveller changed when the route was already planned. The agent is
+ * told as the traveller's next message, and the graph loops back to it to change the route. After
+ * [erase], the agent plans the route again from the start: its conversation and the route hold
+ * what was erased.
+ */
+fun Trip.replannedFor(profile: Profile, erase: Boolean = false): Trip {
+    val changed = edited(profile, erase)
+    if (erase) return changed.copy(messages = emptyList(), route = emptyList())
+    return changed.copy(messages = messages + ChatMessage.User(profileChangePrompt(changed)))
+}
+
+/** The profile without the empty lines of an editor: an allergy with no food, and spaces around words. */
+private fun Profile.tidied(): Profile =
+    copy(
+        allergies = allergies.map { it.copy(food = it.food.trim()) }.filter { it.food.isNotEmpty() },
+        diet = diet.trim(),
+        season = season.trim(),
+        party = party.trim(),
+        meals = meals.distinct().sorted(),
+        taste = taste.trim(),
+        drinks = drinks.trim(),
+        wishes = wishes.trim(),
+    )
+
+private const val EDITED = "The traveller corrected the profile by hand. It is now:"
+private const val ERASED = "The traveller erased what the planner knew about them."

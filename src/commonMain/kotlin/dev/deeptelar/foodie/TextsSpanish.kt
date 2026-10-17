@@ -103,7 +103,7 @@ object Spanish : Texts {
     override val oneMoreThing = "Una cosa más antes de planificar."
     override val lastQuestions = "Son las últimas. Toca todo lo que encaje, escribe lo que no o salta una pregunta."
     override val continueAnswers = "Continuar"
-    override val planNow = "Ya basta, planifícalo"
+    override val planNow = "Basta de preguntas"
     override val sampleAsks = "Esto es el ejemplo: un guion hace las preguntas y no lee las respuestas."
     override val allergyNote =
         "El planificador deja fuera lo que nombres y te dice qué avisar al personal. No puede saber qué pone una cocina en un plato: avisa siempre al camarero."
@@ -148,7 +148,7 @@ object Spanish : Texts {
         }
 
     override val hereIsWhatIHave = "Esto es lo que tengo"
-    override val profileHint = "Para esto se planificará la ruta. Dime si algo no está bien."
+    override val profileHint = "Para esto se planificará la ruta. Cambia o borra lo que quieras, o cuéntamelo abajo con tus palabras."
     override val correctionPlaceholder = "¿Algo que corregir? Por ejemplo: somos tres, no dos."
     override val correctIt = "Corregir"
     override val sampleDidNotRead = "Esto es el ejemplo: el guion no ha leído tus respuestas."
@@ -168,6 +168,17 @@ object Spanish : Texts {
     override val wishes = "Deseos"
 
     override fun evenTraces(food: String) = "$food, incluso trazas"
+
+    override val notSaid = "No lo has dicho"
+    override val erase = "Borrar"
+    override val addAllergy = "Añadir una alergia"
+    override val allergyPlaceholder = "Por ejemplo, cacahuetes"
+    override val evenTracesOption = "Incluso trazas"
+    override val oneSpecialMeal = "Una comida especial"
+    override val mealsIfNone = "Si no eliges ninguna: comida y cena."
+    override val eraseEverything = "Borrarlo todo"
+    override val keptInThisBrowser = "Solo se guarda en este navegador, con este viaje. «Empezar de nuevo» lo borra todo."
+    override val updateForTheseDetails = "Actualizar la ruta con estos datos"
 
     override fun budget(word: String) =
         when (word.trim().lowercase()) {

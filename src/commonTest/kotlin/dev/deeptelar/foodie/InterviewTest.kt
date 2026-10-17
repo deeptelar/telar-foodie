@@ -69,14 +69,14 @@ class InterviewTest {
     }
 
     @Test
-    fun `a traveller who wants to plan now gets no more questions, and the answers are still read`() {
+    fun `a traveller who wants to plan now gets no more questions, and checks what was read`() {
         val asked = Trip("Naples").read(Reading(Profile()))
         val now = asked.planNow(listOf(Answer(Topic.WHERE, "Where?", "Naples, four days")))
 
         val read = now.read(Reading(Profile(), questions = listOf(naples)))
 
         assertEquals(emptyList(), read.questions)
-        assertEquals(InterviewStage.DONE, read.interview.stage)
+        assertEquals(InterviewStage.CHECKING, read.interview.stage)
         assertTrue(read.profileIsCurrent)
     }
 
@@ -90,6 +90,37 @@ class InterviewTest {
         assertEquals(InterviewStage.ASKING, corrected.interview.stage)
         assertEquals(InterviewStage.CHECKING, corrected.read(Reading(Profile(party = "three adults"))).interview.stage)
         assertEquals(InterviewStage.DONE, checking.confirmed().interview.stage)
+    }
+
+    @Test
+    fun `a profile the traveller edits needs no reading, and a model that reads later sees the edit`() {
+        val checking = Trip("Naples", interview = Interview(covered = Topic.entries.toSet(), read = 1, stage = InterviewStage.CHECKING), profile = Profile(diet = "no pork"))
+            .copy(answers = listOf(Answer(Topic.DIET, "Anything you do not eat?", "No pork")))
+
+        val edited = checking.edited(Profile(allergies = listOf(Allergy("peanuts", severe = true)), meals = listOf(MealTime.DINNER)))
+
+        assertEquals(listOf(Allergy("peanuts", severe = true)), edited.profile.allergies)
+        assertEquals("", edited.profile.diet)
+        assertTrue(edited.profileIsCurrent)
+        assertEquals("Allergies: peanuts, even traces; Diet: none said; Budget: medium; Meals: dinner", edited.answers.last().text)
+        // Nothing changed, nothing to keep.
+        assertEquals(checking, checking.edited(checking.profile))
+    }
+
+    @Test
+    fun `erasing leaves the request and nothing the traveller said about themselves`() {
+        val told = Trip("Naples", profile = Profile(pregnant = true, diet = "vegetarian"), interview = Interview(read = 2, stage = InterviewStage.CHECKING))
+            .copy(answers = listOf(Answer(Topic.PREGNANCY, "Is anyone pregnant?", "Yes"), Answer(Topic.DIET, "Anything you do not eat?", "Meat")))
+
+        val erased = told.erased()
+
+        assertEquals(Profile(), erased.profile)
+        assertEquals("Naples", erased.request)
+        assertEquals(listOf(null), erased.answers.map { it.topic })
+        assertTrue(erased.profileIsCurrent)
+        // An edit after erasing starts from nothing.
+        assertEquals(Profile(drinks = "wine"), told.edited(Profile(drinks = "wine"), erase = true).profile)
+        assertEquals(2, told.edited(Profile(drinks = "wine"), erase = true).answers.size)
     }
 
     @Test

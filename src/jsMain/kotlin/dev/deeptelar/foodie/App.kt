@@ -115,6 +115,9 @@ class App(
 
     /** What the traveller tapped and wrote for each open question, by its text, so that drawing the page again keeps it. */
     private var drafts = emptyMap<String, Draft>()
+
+    /** The profile as the traveller is changing it, before it is sent. `null` until the profile is shown. */
+    private var editing: ProfileDraft? = null
     private var job: Job? = null
     private var map: RouteMap? = null
     private var runPanel: HTMLElement? = null
@@ -160,6 +163,7 @@ class App(
     private fun run(events: () -> Flow<GraphEvent<Trip>>) {
         phase = Phase.RUNNING
         drafts = emptyMap()
+        editing = null
         failure = ""
         writing = ""
         feed = emptyList()
@@ -263,6 +267,7 @@ class App(
                 // The browser blocks its storage: then nothing was saved either.
             }
             trip = null
+            editing = null
             request = ""
             sample = false
             phase = Phase.START
@@ -685,12 +690,7 @@ class App(
         add("section", "card") {
             add("h2", text = texts.hereIsWhatIHave)
             add("p", "hint", texts.profileHint)
-            add("dl", "profile") {
-                profileRows(trip.profile).forEach { (label, value) ->
-                    add("dt", text = label)
-                    add("dd", text = value)
-                }
-            }
+            profileEditor(trip)
             val correction =
                 (add("textarea") as HTMLTextAreaElement).apply {
                     rows = 2
@@ -698,14 +698,144 @@ class App(
                 }
             speakRow(read = { correction.value }) { correction.value = it }
             add("div", "actions") {
-                button(texts.planMyRoute, "primary") { resume { it.confirmed() } }
+                // The edits are taken now: a run starts with no draft.
+                button(texts.planMyRoute, "primary") {
+                    val draft = editing
+                    resume { it.withEdits(draft).confirmed() }
+                }
                 button(texts.correctIt, "ghost") {
                     val text = correction.value.trim()
-                    if (text.isEmpty()) correction.focus() else resume { it.corrected(text) }
+                    val draft = editing
+                    if (text.isEmpty()) correction.focus() else resume { it.withEdits(draft).corrected(text) }
                 }
                 button(texts.startOver, "ghost") { startOver() }
             }
             if (sample) add("p", "hint small", texts.sampleDidNotRead)
+        }
+    }
+
+    /** The trip with the profile the traveller edited in [draft], if they did. */
+    private fun Trip.withEdits(draft: ProfileDraft?): Trip = draft?.let { edited(it.profile, it.erase) } ?: this
+
+    /**
+     * The profile as fields the traveller can change or empty. A change goes into [editing], and
+     * nothing is sent until a button under the fields is tapped.
+     */
+    private fun HTMLElement.profileEditor(trip: Trip) {
+        if (editing == null) editing = ProfileDraft(trip.profile)
+        val box = add("div", "editor")
+        fun draw() {
+            // Only the fields are drawn again, after a tap: what the traveller typed is in [editing] already.
+            box.clear()
+            box.fillEditor(::draw)
+        }
+        draw()
+    }
+
+    private fun HTMLElement.fillEditor(redraw: () -> Unit) {
+        val profile = editing?.profile ?: return
+        fun edit(change: (Profile) -> Profile) {
+            editing = editing?.let { it.copy(profile = change(it.profile)) }
+        }
+        fun changed(change: (Profile) -> Profile) {
+            edit(change)
+            redraw()
+        }
+        fun List<Allergy>.at(index: Int, change: (Allergy) -> Allergy) = mapIndexed { i, allergy -> if (i == index) change(allergy) else allergy }
+
+        editRow(texts.allergies) {
+            profile.allergies.forEachIndexed { index, allergy ->
+                add("div", "allergy") {
+                    add("div", "edit-line") {
+                        textInput(allergy.food, texts.allergyPlaceholder, texts.allergies, "food") { food -> edit { it.copy(allergies = it.allergies.at(index) { a -> a.copy(food = food) }) } }
+                        eraseButton { changed { it.copy(allergies = it.allergies.filterIndexed { i, _ -> i != index }) } }
+                    }
+                    check(texts.evenTracesOption, allergy.severe) { on -> edit { it.copy(allergies = it.allergies.at(index) { a -> a.copy(severe = on) }) } }
+                }
+            }
+            if (profile.allergies.isEmpty()) add("p", "hint small", texts.noAllergies)
+            button("+ " + texts.addAllergy, "chip") {
+                changed { it.copy(allergies = it.allergies + Allergy("")) }
+                this@fillEditor.querySelectorAll("input.food").let { (it.item(it.length - 1) as? HTMLInputElement)?.focus() }
+            }
+        }
+        editRow(texts.pregnancy) { check(texts.someoneIsPregnant, profile.pregnant) { on -> edit { it.copy(pregnant = on) } } }
+        textRow(texts.diet, profile.diet, texts.eatsEverything, ::changed) { p, text -> p.copy(diet = text) }
+        textRow(texts.whenLabel, profile.season, texts.notSaid, ::changed) { p, text -> p.copy(season = text) }
+        textRow(texts.who, profile.party, texts.notSaid, ::changed) { p, text -> p.copy(party = text) }
+        editRow(texts.meals) {
+            add("div", "chips") {
+                MealTime.entries.forEach { time ->
+                    button(texts.meal(time), "chip answer" + if (time in profile.meals) " picked" else "") {
+                        changed { it.copy(meals = if (time in it.meals) it.meals - time else (it.meals + time).sorted()) }
+                    }
+                }
+            }
+            if (profile.meals.isEmpty()) add("p", "hint small", texts.mealsIfNone)
+        }
+        editRow(texts.budget) {
+            add("div", "chips") {
+                BUDGETS.forEach { word ->
+                    button(texts.budget(word).replaceFirstChar { it.uppercase() }, "chip answer" + if (profile.budget == word) " picked" else "") { changed { it.copy(budget = word) } }
+                }
+            }
+            check(texts.oneSpecialMeal, profile.splurge) { on -> edit { it.copy(splurge = on) } }
+        }
+        textRow(texts.taste, profile.taste, texts.notSaid, ::changed) { p, text -> p.copy(taste = text) }
+        textRow(texts.drinks, profile.drinks, texts.notSaid, ::changed) { p, text -> p.copy(drinks = text) }
+        textRow(texts.wishes, profile.wishes, texts.notSaid, ::changed) { p, text -> p.copy(wishes = text) }
+        add("div", "actions") {
+            button(texts.eraseEverything, "ghost danger") {
+                editing = ProfileDraft(Profile(), erase = true)
+                redraw()
+            }
+        }
+        add("p", "hint small", texts.keptInThisBrowser)
+    }
+
+    /** A thing of the profile: its name, and what changes it. */
+    private fun Element.editRow(label: String, build: HTMLElement.() -> Unit) {
+        add("div", "edit-row") {
+            add("span", "field-label", label)
+            build()
+        }
+    }
+
+    /** A thing of the profile in words, with a button that empties it. */
+    private fun Element.textRow(label: String, value: String, placeholder: String, changed: ((Profile) -> Profile) -> Unit, set: (Profile, String) -> Profile) {
+        editRow(label) {
+            add("div", "edit-line") {
+                textInput(value, placeholder, label) { text -> editing = editing?.let { it.copy(profile = set(it.profile, text)) } }
+                eraseButton { changed { set(it, "") } }
+            }
+        }
+    }
+
+    private fun Element.textInput(value: String, placeholder: String, label: String, classes: String = "", onChange: (String) -> Unit): HTMLInputElement =
+        (add("input", classes) as HTMLInputElement).apply {
+            type = "text"
+            this.value = value
+            this.placeholder = placeholder
+            autocomplete = "off"
+            setAttribute("aria-label", label)
+            oninput = { onChange(this.value) }
+        }
+
+    private fun Element.check(label: String, on: Boolean, onChange: (Boolean) -> Unit) {
+        add("label", "check") {
+            (add("input") as HTMLInputElement).apply {
+                type = "checkbox"
+                checked = on
+                onchange = { onChange(checked) }
+            }
+            add("span", text = label)
+        }
+    }
+
+    private fun Element.eraseButton(onClick: () -> Unit) {
+        button("×", "erase", onClick).apply {
+            setAttribute("aria-label", texts.erase)
+            title = texts.erase
         }
     }
 
@@ -767,10 +897,21 @@ class App(
             }
             add("details", "known") {
                 add("summary", text = texts.plannedForYou)
-                add("dl", "profile") {
-                    profileRows(trip.profile).forEach { (label, value) ->
-                        add("dt", text = label)
-                        add("dd", text = value)
+                // While the route waits for the traveller, the profile can still change, and the agent changes the route for it.
+                if (phase == Phase.REVIEW) {
+                    profileEditor(trip)
+                    add("div", "actions") {
+                        button(texts.updateForTheseDetails, "primary") {
+                            val draft = editing ?: return@button
+                            if (trip.edited(draft.profile, draft.erase) != trip) resume { it.replannedFor(draft.profile, draft.erase) }
+                        }
+                    }
+                } else {
+                    add("dl", "profile") {
+                        profileRows(trip.profile).forEach { (label, value) ->
+                            add("dt", text = label)
+                            add("dd", text = value)
+                        }
                     }
                 }
             }
@@ -850,6 +991,9 @@ class App(
 
         /** How long a step may say nothing before the page explains why. */
         const val QUIET_MILLIS = 12_000.0
+
+        /** The budgets a profile can have, as a model writes them. */
+        val BUDGETS = listOf("low", "medium", "high")
     }
 }
 
@@ -861,3 +1005,9 @@ private data class Draft(
     /** The answer: the tapped answers, then the traveller's own words. Empty for a skipped question. */
     val text: String get() = (picked + listOf(own.trim()).filter { it.isNotEmpty() }).joinToString(", ")
 }
+
+/** The profile as the traveller is changing it: what the fields hold, and whether they erased everything first. */
+private data class ProfileDraft(
+    val profile: Profile,
+    val erase: Boolean = false,
+)

@@ -508,6 +508,72 @@ button.chip.answer.picked {
     overflow-wrap: anywhere;
 }
 
+/* Editing the profile */
+
+.editor {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 8px;
+}
+
+.edit-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.edit-row > .hint {
+    margin: 0;
+}
+
+.edit-row > button.chip {
+    align-self: flex-start;
+}
+
+.edit-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.edit-line input[type="text"] {
+    flex: 1;
+    min-width: 0;
+}
+
+
+label.check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+label.check input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--accent);
+}
+
+button.erase {
+    min-width: 44px;
+    padding: 0;
+    background: transparent;
+    border-color: var(--line);
+    color: var(--soft);
+    font-size: 20px;
+    line-height: 1;
+}
+
+button.danger {
+    color: var(--bad);
+}
+
 .caution {
     margin: 0;
     padding: 8px 10px;

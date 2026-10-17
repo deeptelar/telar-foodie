@@ -143,6 +143,20 @@ internal fun planPrompt(trip: Trip): String =
         appendLine(languageRule(trip) + " The ids and the tools stay as they are.")
     }
 
+/** The profile on one line, with the meals, as an answer of the traveller says it. */
+internal fun profileWords(profile: Profile): String =
+    (profileLines(profile) + listOfNotNull(profile.meals.takeIf { it.isNotEmpty() }?.let { meals -> "Meals: " + meals.sorted().joinToString { it.label.lowercase() } })).joinToString("; ")
+
+/** What the agent is told when the traveller changes the profile of a route it planned. */
+internal fun profileChangePrompt(trip: Trip): String =
+    buildString {
+        appendLine("I changed what you know about me. It is now:")
+        profileLines(trip.profile).forEach { appendLine("- $it") }
+        appendLine("- Meals of every day: ${trip.dailyMeals.joinToString { it.label.lowercase() }}")
+        appendLine()
+        append("Change the meals that no longer fit, add or remove meals so that every day has these meals, and keep the rest of the route.")
+    }
+
 /** The profile for a model, one line for each thing the traveller said. */
 private fun profileLines(profile: Profile): List<String> =
     listOfNotNull(

@@ -509,7 +509,11 @@ class PlannerTest {
             val config = config()
 
             planner.invoke(Trip("One day in Lisbon"), config)
-            val planned = planner.resume(config) { it.planNow(listOf(Answer(Topic.DIET, "Anything you do not eat?", "Vegetarian"))) }
+            val checking = planner.resume(config) { it.planNow(listOf(Answer(Topic.DIET, "Anything you do not eat?", "Vegetarian"))) }
+            // No more questions, but the traveller still sees what the planner understood.
+            assertEquals(emptyList(), checking.state.questions)
+            assertEquals(InterviewStage.CHECKING, checking.state.interview.stage)
+            val planned = planner.resume(config) { it.confirmed() }
 
             assertEquals(listOf(Nodes.REVIEW), (planned as GraphResult.Interrupted).nextNodes)
             assertEquals("vegetarian", planned.state.profile.diet)
@@ -538,6 +542,82 @@ class PlannerTest {
             assertEquals(InterviewStage.CHECKING, again.state.interview.stage)
             assertEquals("three adults", again.state.profile.party)
             assertTrue("- Is there anything to correct? We are three." in model.requests[2].messages.first().text)
+        }
+
+    @Test
+    fun `a profile the traveller edited is planned for without asking the model to read it`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(Reading(Profile(diet = "no pork"), answered = Topic.entries))
+                    answers(Reading(Profile(diet = "no pork"), answered = Topic.entries))
+                    answers(brief)
+                    answers(menu)
+                    says("Planned.")
+                }
+            val planner = planner(model, sources())
+            val config = config()
+
+            planner.invoke(Trip("One day in Lisbon"), config)
+            planner.resume(config) { it.answered(listOf(Answer(Topic.ALLERGIES, "Any allergy?", "None"))) }
+            val planned = planner.resume(config) { it.edited(Profile(allergies = listOf(Allergy("shellfish")))).confirmed() }
+
+            assertEquals(listOf(Allergy("shellfish")), planned.state.profile.allergies)
+            assertEquals("", planned.state.profile.diet)
+            assertTrue("Allergies: shellfish" in model.requests[4].messages.first().text)
+            assertEquals(0, model.remaining)
+        }
+
+    @Test
+    fun `a profile changed on a planned route goes to the agent as the traveller's message`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "dinner", "r2", "caldo verde", "The map lists it as Portuguese."))
+                    says("Planned.")
+                    calls("set_meal", MealChoice(1, "breakfast", "r1", "pastel de nata", "The guide calls it authentic."))
+                    says("Added a breakfast.")
+                }
+            val planner = planner(model, sources())
+            val config = config()
+
+            planner.invoke(interviewed("One day in Lisbon", Profile(pregnant = true)), config)
+            val changed = planner.resume(config) { it.replannedFor(Profile(pregnant = true, meals = listOf(MealTime.BREAKFAST, MealTime.DINNER))) }
+
+            // The route is changed, not planned again.
+            assertEquals(listOf("r1", "r2"), changed.state.route.map { it.restaurantId })
+            val told = model.requests[4].messages.last { it is ChatMessage.User }.text
+            assertTrue("I changed what you know about me" in told)
+            assertTrue("Meals of every day: breakfast, dinner" in told)
+        }
+
+    @Test
+    fun `an erased profile leaves nothing in the agent's conversation`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "dinner", "r2", "caldo verde", "The map lists it as Portuguese.", caution = "Ask for it without the chouriço: it is cured."))
+                    says("Planned.")
+                    calls("set_meal", MealChoice(1, "dinner", "r1", "bacalhau à brás", "The guide calls it authentic."))
+                    says("Planned again.")
+                }
+            val planner = planner(model, sources())
+            val config = config()
+
+            planner.invoke(interviewed("One day in Lisbon", Profile(pregnant = true)), config)
+            val erased = planner.resume(config) { it.replannedFor(Profile(), erase = true) }
+
+            assertEquals(Profile(), erased.state.profile)
+            assertEquals(listOf("r1"), erased.state.route.map { it.restaurantId })
+            // The agent starts again from a first message that is written for the empty profile.
+            val again = model.requests[4].messages
+            assertEquals(1, again.size)
+            assertTrue("Pregnancy" !in again.single().text)
+            assertTrue(erased.state.messages.none { "chouriço" in it.toString() || "Pregnancy" in it.toString() })
         }
 
     @Test

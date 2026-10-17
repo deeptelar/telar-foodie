@@ -148,6 +148,28 @@ interface Texts {
 
     fun evenTraces(food: String): String
 
+    // Editing the profile
+
+    /** In an empty field of the profile. */
+    val notSaid: String
+
+    /** The label of the button that empties a field. */
+    val erase: String
+    val addAllergy: String
+    val allergyPlaceholder: String
+    val evenTracesOption: String
+    val oneSpecialMeal: String
+
+    /** Under the meals, when none is picked. */
+    val mealsIfNone: String
+    val eraseEverything: String
+
+    /** Under the profile: where it is kept, and how it goes away. */
+    val keptInThisBrowser: String
+
+    /** On a planned route, after the profile was changed. */
+    val updateForTheseDetails: String
+
     /** A budget as the model writes it: `low`, `medium` or `high`. Another word is shown as it is. */
     fun budget(word: String): String
 
