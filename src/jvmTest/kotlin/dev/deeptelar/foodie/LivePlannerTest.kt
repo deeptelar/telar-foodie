@@ -25,6 +25,7 @@ import kotlin.test.assertTrue
  * FOODIE_MODEL=gemini-flash-latest FOODIE_MODEL_KEY=... ./gradlew jvmTest --tests '*LivePlannerTest*'
  * ```
  *
+ * `FOODIE_REQUEST` sets the trip, and `FOODIE_LANGUAGE` its language (`ENGLISH`, `SPANISH` or `CATALAN`).
  * What the run does is written to `build/live-planner.txt`.
  */
 class LivePlannerTest {
@@ -45,7 +46,8 @@ class LivePlannerTest {
                     val request = System.getenv("FOODIE_REQUEST") ?: "Two days in Lisbon and one in Porto. I love seafood and pastries, and I do not eat pork."
 
                     say("Request: $request")
-                    var trip = follow(planner.stream(Trip(request), config), ::say)
+                    val language = System.getenv("FOODIE_LANGUAGE")?.let { Language.valueOf(it) } ?: Language.ENGLISH
+                    var trip = follow(planner.stream(Trip(request, language = language), config), ::say)
                     // The interview: every question gets its first answer, and the profile is taken as it is.
                     while (trip.route.isEmpty() && (trip.questions.isNotEmpty() || trip.interview.stage == InterviewStage.CHECKING)) {
                         trip =
@@ -105,12 +107,12 @@ class LivePlannerTest {
     }
 
     private fun describe(trip: Trip, say: (String) -> Unit) {
-        say("Stops: ${trip.stops.joinToString { "${it.name} (${it.days} days, ${it.cuisines})" }}")
+        say("Stops: ${trip.stops.joinToString { "${it.name} / ${it.title} (${it.days} days, ${it.cuisines}, stay ${it.stay})" }}")
         say("Candidates: ${trip.restaurants.size}, ${Source.entries.joinToString { s -> "${s.label} ${trip.restaurants.count { s in it.sources }}" }}")
         say("Dishes: ${trip.dishes.joinToString { "${it.name} (${it.stop})" }}")
         trip.route.forEach { meal ->
             val place = trip.restaurant(meal.restaurantId)
-            say("  day ${meal.day} ${meal.time.label}: ${place?.name} · ${meal.dish} · ${meal.why}")
+            say("  day ${meal.day} ${meal.time.label}: ${place?.name} · ${meal.dish} · ${meal.why}" + if (meal.caution.isBlank()) "" else " · caution: ${meal.caution}")
         }
         say("Summary: ${trip.summary}")
         say("Notes: ${trip.notes}")
