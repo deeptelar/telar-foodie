@@ -502,3 +502,12 @@ button.chip.answer.picked {
     margin: 0;
     overflow-wrap: anywhere;
 }
+
+.caution {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #fef2f2;
+    color: var(--bad);
+    font-size: 14px;
+}

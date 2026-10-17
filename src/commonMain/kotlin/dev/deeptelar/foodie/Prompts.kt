@@ -49,8 +49,17 @@ internal fun dishesPrompt(trip: Trip): String =
     buildString {
         appendLine("The stops of the trip:")
         trip.stops.forEach { appendLine("- ${it.name}") }
-        trip.brief?.diet?.takeIf { it.isNotBlank() }?.let { appendLine("\nThe traveller's diet: $it. Leave out what does not fit it.") }
-        trip.brief?.wishes?.takeIf { it.isNotBlank() }?.let { appendLine("The traveller's wishes: $it.") }
+        val profile = trip.profile
+        if (profile.allergies.isNotEmpty() || profile.diet.isNotBlank()) {
+            appendLine()
+            appendLine("Leave out what the traveller cannot eat:")
+            if (profile.diet.isNotBlank()) appendLine("- Diet: ${profile.diet}")
+            profile.allergies.forEach { appendLine("- " + it.line()) }
+        }
+        profile.taste.takeIf { it.isNotBlank() }?.let { appendLine("\nHow adventurous the traveller is: $it.") }
+        profile.season.takeIf { it.isNotBlank() }?.let { appendLine("The trip is in $it: name what is in season then.") }
+        profile.drinks.takeIf { it.isNotBlank() }?.let { appendLine("What the traveller drinks: $it.") }
+        profile.wishes.takeIf { it.isNotBlank() }?.let { appendLine("The traveller's wishes: $it.") }
         trip.guideNotes.forEach { (stop, text) ->
             appendLine("\nWhat the travel guide says about eating in $stop:")
             appendLine(text)
@@ -62,10 +71,11 @@ internal const val PLAN_SYSTEM = """You plan where a traveller eats: a route of 
 You choose from the candidates, restaurants found in three sources: a travel guide written by travellers, the street map, and, on some trips, reviews with ratings. You know only what these sources say about a restaurant.
 
 How to choose:
-- Every day gets a lunch and a dinner. Add a breakfast or a snack on a day when the stop has a pastry, a street food or a market worth a detour.
+- Every day gets the meals the traveller asked for. If the traveller did not say, every day gets a lunch and a dinner; add a breakfast or a snack on a day when the stop has a pastry, a street food or a market worth a detour.
 - Each meal is at one candidate, named by its id, with one typical dish to order there. Use a restaurant once.
 - Prefer a place that cooks the local cuisine, that more than one source knows, and that the guide describes in words that fit: small, old, simple, full of locals. A high rating from many people counts. A place whose description speaks of tourists, views or an international menu is a weaker choice.
-- Follow the traveller's diet, budget and wishes.
+- Follow what you know about the traveller: diet, budget, who comes along, how adventurous they are, what they drink and what they wish for. With one special meal, make one dinner of the trip a place to remember.
+- Never put a dish on the route that the traveller's allergies or diet rule out. With an allergy, say in `caution` what in the dish or the kitchen may contain it and what to tell the staff.
 - Keep the meals of a day close to each other where you can.
 - When the candidates have no good place for a dish, search for one with the tools before you settle for less.
 
@@ -85,11 +95,10 @@ internal fun planPrompt(trip: Trip): String =
         appendLine("Plan the meals of this trip.")
         appendLine()
         appendLine("The traveller wrote: \"${trip.request.trim()}\"")
-        trip.brief?.let { brief ->
-            if (brief.diet.isNotBlank()) appendLine("Diet: ${brief.diet}")
-            appendLine("Budget: ${brief.budget}")
-            if (brief.wishes.isNotBlank()) appendLine("Wishes: ${brief.wishes}")
-        }
+        appendLine()
+        appendLine("What you know about the traveller:")
+        profileLines(trip.profile).forEach { appendLine("- $it") }
+        appendLine("- Meals of every day: ${trip.dailyMeals.joinToString { it.label.lowercase() }}" + if (trip.profile.meals.isEmpty()) " (not said)" else "")
         appendLine()
         appendLine("The days:")
         trip.stops.forEach { stop ->
@@ -113,3 +122,18 @@ internal fun planPrompt(trip: Trip): String =
             trip.notes.forEach { appendLine("- $it") }
         }
     }
+
+/** The profile for a model, one line for each thing the traveller said. */
+private fun profileLines(profile: Profile): List<String> =
+    listOfNotNull(
+        if (profile.allergies.isEmpty()) "Allergies: none said" else "Allergies: " + profile.allergies.joinToString { it.line() },
+        "Diet: " + profile.diet.ifBlank { "none said" },
+        "Budget: ${profile.budget}" + if (profile.splurge) ", with one special meal" else "",
+        profile.party.takeIf { it.isNotBlank() }?.let { "Who eats: $it" },
+        profile.season.takeIf { it.isNotBlank() }?.let { "When: $it" },
+        profile.taste.takeIf { it.isNotBlank() }?.let { "Taste: $it" },
+        profile.drinks.takeIf { it.isNotBlank() }?.let { "Drinks: $it" },
+        profile.wishes.takeIf { it.isNotBlank() }?.let { "Wishes: $it" },
+    )
+
+private fun Allergy.line(): String = if (severe) "$food, even traces" else food

@@ -102,7 +102,6 @@ class SampleModel(
         private val BRIEF =
             Brief(
                 stops = listOf(BriefStop(STOP, days = 2, cuisines = listOf("portuguese", "regional", "seafood"))),
-                wishes = "seafood and pastries",
             )
 
         private val DISHES =

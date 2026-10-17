@@ -59,17 +59,11 @@ data class Trip(
     val summary: String get() = (messages.lastOrNull() as? ChatMessage.Assistant)?.text.orEmpty()
 }
 
-/** What the model reads out of the traveller's request. The descriptions are what the model sees. */
+/** The places of the trip, as the model reads them out of the traveller's words. What the traveller likes is in the [Profile]. The descriptions are what the model sees. */
 @Serializable
 data class Brief(
     @Description("The places the traveller stays at, in the order of the trip. Empty if the request names none.")
     val stops: List<BriefStop> = emptyList(),
-    @Description("What the traveller does not eat or must avoid, for example \"vegetarian\" or \"no pork\". Empty if nothing was said.")
-    val diet: String = "",
-    @Description("What the traveller wants to spend: \"low\", \"medium\" or \"high\". \"medium\" if nothing was said.")
-    val budget: String = "medium",
-    @Description("Anything else the traveller wishes for, for example \"markets\", \"no long walks\" or \"seafood\". Empty if nothing was said.")
-    val wishes: String = "",
     @Description("One short question to the traveller, only if the request names no place to go to. Empty otherwise.")
     val question: String = "",
 )
@@ -85,6 +79,8 @@ data class BriefStop(
             "the most specific first. For example [\"portuguese\", \"regional\", \"seafood\"] for Lisbon.",
     )
     val cuisines: List<String> = emptyList(),
+    @Description("Where the traveller sleeps in this place: a neighbourhood, a street or the name of a hotel, as the traveller wrote it. Empty if not said.")
+    val stay: String = "",
 )
 
 /** A place of the itinerary that was found on the map. */
@@ -98,6 +94,8 @@ data class Stop(
     val lon: Double,
     /** The cuisine words of this place, as OpenStreetMap writes them. */
     val cuisines: List<String> = emptyList(),
+    /** Where the traveller sleeps here, when the map found it. The first walk of each day starts there. */
+    val stay: Location? = null,
 ) {
     val location: Location get() = Location(lat, lon)
 }
@@ -189,6 +187,11 @@ data class Meal(
     val dish: String,
     /** Why this place, in the agent's words. */
     val why: String,
-    /** How far it is on foot from the meal before it on the same day, in metres. Filled by the `order` node. */
+    /** What to watch out for with the traveller's allergies, and what to tell the staff. Empty when there is nothing to say. */
+    val caution: String = "",
+    /**
+     * How far it is on foot, in metres, from the meal before it on the same day, or for the first meal
+     * of a day from where the traveller sleeps. Filled by the `order` node.
+     */
     val walk: Int? = null,
 )

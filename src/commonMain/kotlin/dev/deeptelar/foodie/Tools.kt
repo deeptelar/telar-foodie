@@ -63,6 +63,11 @@ data class MealChoice(
     val dish: String,
     @Description("One sentence on what speaks for this place, from what the sources say.")
     val why: String,
+    @Description(
+        "Only if the traveller has a food allergy: what in this dish or at this place may contain it, and what to tell the staff, in one sentence. " +
+            "Empty otherwise.",
+    )
+    val caution: String = "",
 )
 
 @Serializable
@@ -126,7 +131,7 @@ private val routeEditors: List<StateTool<Trip>> =
             val stop = trip.stopOn(choice.day) ?: throw IllegalArgumentException("The trip has ${trip.days} days. There is no day ${choice.day}.")
             val restaurant = trip.restaurant(choice.restaurant) ?: throw IllegalArgumentException("There is no candidate with the id \"${choice.restaurant}\". Use an id from the list.")
             if (restaurant.stop != stop.name) throw IllegalArgumentException("${restaurant.name} is in ${restaurant.stop}, but day ${choice.day} is in ${stop.name}.")
-            val meal = Meal(choice.day, time, restaurant.id, choice.dish.trim(), choice.why.trim())
+            val meal = Meal(choice.day, time, restaurant.id, choice.dish.trim(), choice.why.trim(), choice.caution.trim())
             val route = trip.route.filterNot { it.day == meal.day && it.time == meal.time } + meal
             val twice = route.filter { it.restaurantId == restaurant.id }.size > 1
             val after = trip.copy(route = route)
@@ -197,13 +202,16 @@ private fun List<Restaurant>.listed(nothing: String): String =
         take(SHOWN).joinToString("\n") { it.line() } + if (size > SHOWN) "\n(${size - SHOWN} more. Search with other words to see them.)" else ""
     }
 
-/** The lunches and dinners the route still lacks, in words for the model. */
+/** The meals of every day: the ones the traveller asked for, or a lunch and a dinner. */
+internal val Trip.dailyMeals: List<MealTime> get() = profile.meals.distinct().sorted().ifEmpty { listOf(MealTime.LUNCH, MealTime.DINNER) }
+
+/** The meals of [dailyMeals] the route still lacks, in words for the model. */
 internal fun Trip.openMeals(): String {
     val open =
         (1..days).flatMap { day ->
-            listOf(MealTime.LUNCH, MealTime.DINNER).filter { time -> route.none { it.day == day && it.time == time } }.map { "day $day ${it.label.lowercase()}" }
+            dailyMeals.filter { time -> route.none { it.day == day && it.time == time } }.map { "day $day ${it.label.lowercase()}" }
         }
-    return if (open.isEmpty()) "Every day has a lunch and a dinner." else "Still open: ${open.joinToString()}."
+    return if (open.isEmpty()) "Every day has its ${dailyMeals.joinToString(" and ") { it.label.lowercase() }}." else "Still open: ${open.joinToString()}."
 }
 
 /** A restaurant of another page of the guide is a candidate of a stop when it is within this distance of it, in metres. */

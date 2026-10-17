@@ -198,7 +198,13 @@ private suspend fun located(brief: Brief, sources: Sources): Pair<List<Stop>, Li
             unknown += stop.place
         } else {
             val days = stop.days.coerceIn(1, MAX_DAYS)
-            stops += Stop(stop.place, days, firstDay = day, lat = location.lat, lon = location.lon, cuisines = stop.cuisines)
+            // Where the traveller sleeps is a help, not a need: a place the map does not know is left out.
+            val stay =
+                stop.stay.trim().takeIf { it.isNotEmpty() }?.let { stay ->
+                    reportProgress(Activity("Finding $stay on the map"))
+                    sources.geocoder.locate("$stay, ${stop.place}")?.takeIf { metresBetween(it, location) <= STAY_REACH }
+                }
+            stops += Stop(stop.place, days, firstDay = day, lat = location.lat, lon = location.lon, cuisines = stop.cuisines, stay = stay)
             day += days
         }
     }
@@ -235,14 +241,14 @@ private suspend fun gather(trip: Trip, source: String, ask: suspend (Stop) -> Fo
 private fun Trip.with(found: Found): Trip =
     copy(restaurants = restaurants.merged(found.restaurants), guideNotes = guideNotes + found.guideNotes, notes = notes + found.notes)
 
-/** The meals in the order they are eaten, each with the walk from the meal before it on the same day. */
+/** The meals in the order they are eaten, each with the walk from the meal before it on the same day, or from where the traveller sleeps. */
 internal fun ordered(trip: Trip): List<Meal> {
     val sorted = trip.route.sortedWith(compareBy({ it.day }, { it.time }))
     return sorted.mapIndexed { index, meal ->
         val before = sorted.getOrNull(index - 1)?.takeIf { it.day == meal.day }
-        val from = before?.let { trip.restaurant(it.restaurantId) }
+        val from = if (before == null) trip.stopOn(meal.day)?.stay else trip.restaurant(before.restaurantId)?.location
         val to = trip.restaurant(meal.restaurantId)
-        meal.copy(walk = if (from != null && to != null) metresBetween(from.location, to.location) else null)
+        meal.copy(walk = if (from != null && to != null) metresBetween(from, to.location) else null)
     }
 }
 
@@ -254,6 +260,9 @@ internal const val MAP_RADIUS = 3000
 
 /** The cuisine words that mark local food on the map of any country. */
 internal val LOCAL_CUISINES = listOf("regional", "local")
+
+/** Where the traveller sleeps counts only this close to the stop, in metres: a hotel of the same name in another town does not. */
+private const val STAY_REACH = 30_000
 
 /** A trip is planned for at most this many days at one stop. */
 private const val MAX_DAYS = 10

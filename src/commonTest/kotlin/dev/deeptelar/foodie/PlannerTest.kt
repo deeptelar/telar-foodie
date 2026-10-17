@@ -41,17 +41,25 @@ class PlannerTest {
         reviews: PlaceReviews? = null,
         guide: TravelGuide = TravelGuide { GuidePage("Most restaurants are small and family-run.", listOf(santaRitaInGuide)) },
     ) = Sources(
-        geocoder = { place -> if (place.startsWith("Lisbon")) Location(38.7078, -9.1366) else null },
+        geocoder = { place ->
+            when {
+                place.startsWith("Lisbon") -> Location(38.7078, -9.1366)
+                place.startsWith("Alfama") -> Location(38.7118, -9.1300)
+                // A hotel of that name, but in another town.
+                place.startsWith("Hotel Avenida") -> Location(41.1496, -8.6110)
+                else -> null
+            }
+        },
         guide = guide,
         map = map,
         reviews = reviews,
     )
 
-    private val brief = Brief(stops = listOf(BriefStop(lisbon, days = 1, cuisines = listOf("portuguese"))), diet = "no pork")
+    private val brief = Brief(stops = listOf(BriefStop(lisbon, days = 1, cuisines = listOf("portuguese"))))
     private val menu = Menu(listOf(Dish(lisbon, "bacalhau à brás", "Salt cod with eggs and fried potato.", "dinner")))
 
     /** A trip whose interview is over, for the tests of what comes after it. */
-    private fun interviewed(request: String) = Trip(request, interview = Interview(read = 0, stage = InterviewStage.DONE))
+    private fun interviewed(request: String, profile: Profile = Profile()) = Trip(request, interview = Interview(read = 0, stage = InterviewStage.DONE), profile = profile)
 
     private fun config() = GraphConfig(threadId = "trip", checkpointer = MemoryCheckpointer<Trip>(), interruptBefore = setOf(Nodes.REVIEW))
 
@@ -104,10 +112,10 @@ class PlannerTest {
                     says("Nothing to plan.")
                 }
 
-            planner(model, sources()).invoke(interviewed("One day in Lisbon, no pork"), config())
+            planner(model, sources()).invoke(interviewed("One day in Lisbon, no pork", Profile(diet = "no pork")), config())
 
             val first = model.requests[2].messages.first().text
-            assertTrue("Diet: no pork" in first, first)
+            assertTrue("- Diet: no pork" in first, first)
             assertTrue("- Day 1: $lisbon" in first, first)
             assertTrue("- bacalhau à brás (dinner): Salt cod with eggs and fried potato." in first, first)
             assertTrue("[r1] Restaurante Santa Rita · portuguese · found in: Travel guide, Street map" in first, first)
@@ -531,5 +539,74 @@ class PlannerTest {
             assertEquals(InterviewStage.CHECKING, again.state.interview.stage)
             assertEquals("three adults", again.state.profile.party)
             assertTrue("- Is there anything to correct? We are three." in model.requests[2].messages.first().text)
+        }
+
+    @Test
+    fun `the dishes and the route are planned for the traveller's profile`() =
+        runTest {
+            val profile =
+                Profile(
+                    allergies = listOf(Allergy("shellfish", severe = true)),
+                    meals = listOf(MealTime.LUNCH, MealTime.BREAKFAST),
+                    budget = "high",
+                    splurge = true,
+                    taste = "anything the locals eat",
+                    season = "June",
+                )
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it.", caution = "Ask if the oil was used for prawns."))
+                    says("Planned.")
+                }
+
+            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon", profile), config()).state
+
+            val dishes = model.requests[1].messages.first().text
+            assertTrue("Leave out what the traveller cannot eat:\n- shellfish, even traces" in dishes, dishes)
+            assertTrue("The trip is in June" in dishes, dishes)
+            val plan = model.requests[2].messages.first().text
+            assertTrue("- Allergies: shellfish, even traces" in plan, plan)
+            assertTrue("- Budget: high, with one special meal" in plan, plan)
+            assertTrue("- Meals of every day: breakfast, lunch\n" in plan, plan)
+            // The meals the traveller asked for are the ones the agent is told are open.
+            val result = model.requests[3].messages.last() as ChatMessage.ToolResult
+            assertEquals("Day 1, lunch: Restaurante Santa Rita. Still open: day 1 breakfast.", result.text)
+            assertEquals("Ask if the oil was used for prawns.", trip.route.single().caution)
+        }
+
+    @Test
+    fun `the first walk of a day starts where the traveller sleeps`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(Brief(stops = listOf(BriefStop(lisbon, days = 1, cuisines = listOf("portuguese"), stay = "Alfama"))))
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it."))
+                    says("Planned.")
+                }
+
+            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon, staying in Alfama"), config()).state
+
+            assertEquals(Location(38.7118, -9.1300), trip.stops.single().stay)
+            assertTrue(trip.route.single().walk in 400..700, "walk was ${trip.route.single().walk}")
+        }
+
+    @Test
+    fun `a place to sleep that the map finds in another town is left out`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(Brief(stops = listOf(BriefStop(lisbon, days = 1, stay = "Hotel Avenida"))))
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it."))
+                    says("Planned.")
+                }
+
+            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon"), config()).state
+
+            assertEquals(null, trip.stops.single().stay)
+            assertEquals(null, trip.route.single().walk)
         }
 }

@@ -668,9 +668,9 @@ class App(
                 val meals = trip.route.filter { it.day == day }
                 add("h3", "day ${RouteMap.dayClass(day)}", "Day $day · ${trip.stopOn(day)?.name.orEmpty()}")
                 if (meals.isEmpty()) add("p", "hint", "Nothing planned for this day.")
-                meals.forEach { meal ->
+                meals.forEachIndexed { index, meal ->
                     number++
-                    meal.walk?.let { add("p", "walk", "↓ about ${distance(it)} from there") }
+                    meal.walk?.let { add("p", "walk", "↓ about ${distance(it)} from " + if (index == 0) "where you stay" else "there") }
                     meal(trip, meal, number)
                 }
             }
@@ -681,6 +681,15 @@ class App(
                     add("details", "known") {
                         add("summary", text = "What ${stop.name} is known for")
                         add("ul") { dishes.forEach { dish -> add("li") { add("strong", text = dish.name); add("span", text = ": ${dish.what}") } } }
+                    }
+                }
+            }
+            add("details", "known") {
+                add("summary", text = "Planned for you")
+                add("dl", "profile") {
+                    profileRows(trip.profile).forEach { (label, value) ->
+                        add("dt", text = label)
+                        add("dd", text = value)
                     }
                 }
             }
@@ -735,6 +744,7 @@ class App(
                     trip.dishes.firstOrNull { it.name.equals(meal.dish, ignoreCase = true) }?.let { add("span", "what", " · ${it.what}") }
                 }
                 add("p", "why", meal.why)
+                if (meal.caution.isNotBlank()) add("p", "caution", "⚠ ${meal.caution}")
                 add("div", "badges") { restaurant.sources.forEach { add("span", "badge", it.label) } }
                 val facts = listOf(restaurant.cuisine, restaurant.address, restaurant.price, restaurant.hours).filter { it.isNotBlank() }
                 if (facts.isNotEmpty()) add("p", "facts", facts.joinToString(" · "))
