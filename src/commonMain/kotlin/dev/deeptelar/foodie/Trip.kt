@@ -83,7 +83,10 @@ data class BriefStop(
             "the most specific first. For example [\"portuguese\", \"regional\", \"seafood\"] for Lisbon.",
     )
     val cuisines: List<String> = emptyList(),
-    @Description("Where the traveller sleeps in this place: a neighbourhood, a street or the name of a hotel, as the traveller wrote it. Empty if not said.")
+    @Description(
+        "Where the traveller sleeps in this place, as a map names it: a neighbourhood, a street, a square or a hotel, without words such as \"near\", " +
+            "for example \"Piazza Garibaldi\". Empty if not said.",
+    )
     val stay: String = "",
 )
 

@@ -147,8 +147,14 @@ internal const val MAX_ROUNDS = 4
  */
 internal fun nextQuestions(covered: Set<Topic>, wrote: List<Question>, texts: Texts): List<Question> =
     Topic.entries.filter { it !in covered }.take(PER_ROUND).map { topic ->
-        wrote.firstOrNull { it.topic == topic && it.text.isNotBlank() }?.tidied() ?: texts.question(topic)
+        val plain = texts.question(topic)
+        val written = wrote.firstOrNull { it.topic == topic && it.text.isNotBlank() }?.tidied() ?: return@map plain
+        // A model writes the answers of these as the values of the profile, such as LUNCH or low: they keep the plain ones.
+        if (topic in PLAIN_ANSWERS) written.copy(options = plain.options, alone = plain.alone) else written
     }
+
+/** The topics whose answers are always the plain ones of [Texts], in the model's question. */
+private val PLAIN_ANSWERS = setOf(Topic.PREGNANCY, Topic.MEALS, Topic.BUDGET)
 
 private fun Question.tidied(): Question {
     val options = options.map { it.trim() }.filter { it.isNotEmpty() }.distinct().take(6)

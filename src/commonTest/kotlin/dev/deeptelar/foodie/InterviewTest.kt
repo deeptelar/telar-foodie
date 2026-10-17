@@ -100,4 +100,14 @@ class InterviewTest {
 
         assertEquals(listOf("I eat everything"), next.first().alone)
     }
+
+    @Test
+    fun `the meals and the budget are answered in plain words, whatever the model wrote`() {
+        val wrote = Question(Topic.MEALS, "Which meals? In Naples breakfast is a coffee and a sfogliatella.", listOf("BREAKFAST", "LUNCH", "SNACK", "DINNER"))
+
+        val next = nextQuestions(covered = Topic.entries.toSet() - Topic.MEALS, wrote = listOf(wrote), texts = Catalan)
+
+        assertEquals("Which meals? In Naples breakfast is a coffee and a sfogliatella.", next.single().text)
+        assertEquals(listOf("Esmorzar", "Dinar", "Berenar", "Sopar"), next.single().options)
+    }
 }
