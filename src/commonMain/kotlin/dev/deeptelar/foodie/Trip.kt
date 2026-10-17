@@ -16,6 +16,14 @@ data class Trip(
     val request: String,
     /** A question the planner needs answered before it can go on. Empty when it has none. */
     val question: String = "",
+    /** The questions of the interview the traveller has not answered yet. */
+    val questions: List<Question> = emptyList(),
+    /** The traveller's answers to the planner's questions, in the order they were given. */
+    val answers: List<Answer> = emptyList(),
+    /** Where the interview before the planning is. */
+    val interview: Interview = Interview(),
+    /** What the planner knows about the traveller, read from the request and the answers. */
+    val profile: Profile = Profile(),
     /** The request as the model understood it. */
     val brief: Brief? = null,
     /** The places of the itinerary in the order they are visited, with where they are. */
