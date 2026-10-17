@@ -58,12 +58,13 @@ class LivePlannerTest {
                     say("Request: $request")
                     val language = System.getenv("FOODIE_LANGUAGE")?.let { Language.valueOf(it) } ?: Language.ENGLISH
                     var trip = follow(planner.stream(Trip(request, language = language), config), ::say)
-                    // The interview: every question gets its first answer, and the profile is taken as it is.
+                    // The interview: a question with an answer that rules out the others gets that one, such as "None"; any other
+                    // gets all its answers, so that the route plans every meal. The profile is taken as it is.
                     while (trip.route.isEmpty() && (trip.questions.isNotEmpty() || trip.interview.stage == InterviewStage.CHECKING)) {
                         trip =
                             if (trip.questions.isNotEmpty()) {
                                 trip.questions.forEach { say("  asks (${it.topic}): ${it.text} ${it.options}") }
-                                follow(planner.streamResume(config) { it.answered(it.questions.map { q -> Answer(q.topic, q.text, q.options.firstOrNull().orEmpty()) }) }, ::say)
+                                follow(planner.streamResume(config) { it.answered(it.questions.map { q -> Answer(q.topic, q.text, q.alone.firstOrNull() ?: q.options.joinToString(", ")) }) }, ::say)
                             } else {
                                 say("  profile: ${trip.profile}")
                                 follow(planner.streamResume(config) { it.confirmed() }, ::say)
