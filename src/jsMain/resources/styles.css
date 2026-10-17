@@ -458,3 +458,47 @@ h3.day6 { border-color: var(--day6); }
         break-inside: avoid;
     }
 }
+
+/* The interview */
+
+.ask {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 4px;
+}
+
+.ask .question {
+    font-size: 17px;
+    margin: 0;
+}
+
+button.chip.answer {
+    min-height: 40px;
+    padding: 8px 14px;
+    font-size: 15px;
+    color: var(--ink);
+}
+
+button.chip.answer.picked {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+.profile {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 14px;
+    margin: 0;
+}
+
+.profile dt {
+    color: var(--soft);
+    font-weight: 600;
+}
+
+.profile dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}

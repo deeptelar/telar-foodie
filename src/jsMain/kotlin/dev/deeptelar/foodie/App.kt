@@ -20,7 +20,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.HTMLTextAreaElement
 
@@ -97,6 +99,9 @@ class App(
     private var steps = emptyList<Step>()
     private var feed = emptyList<String>()
     private var writing = ""
+
+    /** What the traveller tapped and wrote for each open question, by its text, so that drawing the page again keeps it. */
+    private var drafts = emptyMap<String, Draft>()
     private var job: Job? = null
     private var map: RouteMap? = null
     private var runPanel: HTMLElement? = null
@@ -141,6 +146,7 @@ class App(
 
     private fun run(events: () -> Flow<GraphEvent<Trip>>) {
         phase = Phase.RUNNING
+        drafts = emptyMap()
         failure = ""
         writing = ""
         feed = emptyList()
@@ -287,7 +293,7 @@ class App(
         if (trip == null || step.status == Status.WAITING || (!step.settled && step.node != Nodes.PLAN)) return ""
         fun from(source: Source) = trip.restaurants.count { source in it.sources }.let { "$it ${if (it == 1) "place" else "places"}" }
         return when (step.node) {
-            Nodes.INTERVIEW -> profileLines(trip.profile).joinToString(" · ")
+            Nodes.INTERVIEW -> profileRows(trip.profile).joinToString(" · ") { it.second }
             Nodes.BRIEF -> trip.stops.joinToString(" · ") { "${it.days} ${if (it.days == 1) "day" else "days"} in ${it.name}" }
             Nodes.GUIDE -> from(Source.GUIDE)
             Nodes.MAP -> from(Source.MAP)
@@ -383,7 +389,7 @@ class App(
     private fun HTMLElement.startForm() {
         add("section", "card") {
             add("h2", text = "Where are you going?")
-            add("p", "hint", "Say where, for how many days, and what you like or do not eat.")
+            add("p", "hint", "Say where, for how many days, and what you like. The planner asks about the rest.")
             val text =
                 (add("textarea") as HTMLTextAreaElement).apply {
                     rows = 3
@@ -523,34 +529,89 @@ class App(
     }
 
     private fun HTMLElement.questionCard(trip: Trip) {
+        val interviewing = trip.interview.stage != InterviewStage.DONE
         add("section", "card") {
             add("h2", text = if (trip.questions.size == 1) "One question" else "A few questions")
-            val fields =
-                trip.questions.map { question ->
-                    add("p", "question", question.text)
-                    question to
-                        (add("textarea") as HTMLTextAreaElement).apply {
-                            rows = 2
-                            placeholder = "Your answer"
-                        }
-                }
-            fun answers() = fields.map { (question, field) -> Answer(question.topic, question.text, field.value.trim()) }
+            val left = Topic.entries.count { it !in trip.interview.covered }
+            add(
+                "p",
+                "hint",
+                when {
+                    !interviewing -> "One more thing before I plan."
+                    left == 0 -> "The last ones. Tap what fits, write what does not, or skip a question."
+                    else -> "About $left more after these. Tap what fits, write what does not, or skip a question."
+                },
+            )
+            trip.questions.forEach { question(it) }
+            fun answers() = trip.questions.map { Answer(it.topic, it.text, (drafts[it.text] ?: Draft()).text) }
             add("div", "actions") {
                 // The answers join the trip, and the node that asked reads them.
                 button("Continue", "primary") { resume { it.answered(answers()) } }
                 // The questions of the brief come after the interview, and it cannot go on without them.
-                if (trip.interview.stage != InterviewStage.DONE) {
-                    button("That's enough, plan it", "ghost") { resume { it.planNow(answers()) } }
-                }
+                if (interviewing) button("That's enough, plan it", "ghost") { resume { it.planNow(answers()) } }
                 button("Start over", "ghost") { startOver() }
             }
+            if (sample) add("p", "hint small", "This is the sample: a script asks the questions, and it does not read the answers.")
+        }
+    }
+
+    /** One question: its answers to tap, and a line for the traveller's own words. */
+    private fun HTMLElement.question(question: Question) {
+        add("div", "ask") {
+            add("p", "question", question.text)
+            if (question.options.isNotEmpty()) add("div", "chips") { question.options.forEach { chip(question, it) } }
+            if (question.topic == Topic.ALLERGIES) {
+                add("p", "hint small", "The planner leaves out what you name and says what to tell the staff. It cannot know what a kitchen puts in a dish: always tell the waiter.")
+            }
+            val own = drafts[question.text]?.own.orEmpty()
+            fun write(text: String) {
+                drafts = drafts + (question.text to (drafts[question.text] ?: Draft()).copy(own = text))
+            }
+            if (question.options.isEmpty()) {
+                (add("textarea") as HTMLTextAreaElement).apply {
+                    rows = 2
+                    placeholder = "Your answer"
+                    value = own
+                    oninput = { write(value) }
+                }
+            } else {
+                (add("input") as HTMLInputElement).apply {
+                    placeholder = "Something else, or more about it"
+                    value = own
+                    oninput = { write(value) }
+                }
+            }
+        }
+    }
+
+    /** An answer to tap. A question with one answer keeps the last one tapped; tapping it again takes it back. */
+    private fun Element.chip(question: Question, option: String) {
+        val draft = drafts[question.text] ?: Draft()
+        button(option, "chip answer" + if (option in draft.picked) " picked" else "") {
+            val now = drafts[question.text] ?: Draft()
+            val picked =
+                when {
+                    option in now.picked -> now.picked - option
+                    question.several -> now.picked + option
+                    else -> listOf(option)
+                }
+            drafts = drafts + (question.text to now.copy(picked = picked))
+            // Only the chips of this question are drawn again: what the traveller is typing stays.
+            clear()
+            question.options.forEach { chip(question, it) }
         }
     }
 
     private fun HTMLElement.profileCard(trip: Trip) {
         add("section", "card") {
             add("h2", text = "Here is what I have")
-            add("ul") { profileLines(trip.profile).forEach { add("li", text = it) } }
+            add("p", "hint", "This is what the route will be planned for. Tell me if something is wrong.")
+            add("dl", "profile") {
+                profileRows(trip.profile).forEach { (label, value) ->
+                    add("dt", text = label)
+                    add("dd", text = value)
+                }
+            }
             val correction =
                 (add("textarea") as HTMLTextAreaElement).apply {
                     rows = 2
@@ -564,21 +625,22 @@ class App(
                 }
                 button("Start over", "ghost") { startOver() }
             }
+            if (sample) add("p", "hint small", "This is the sample: the script did not read your answers.")
         }
     }
 
-    /** The profile in words for the traveller, one line for each thing that is known. */
-    private fun profileLines(profile: Profile): List<String> =
+    /** The profile in words for the traveller: a label and a value for each thing that is known. */
+    private fun profileRows(profile: Profile): List<Pair<String, String>> =
         listOfNotNull(
-            if (profile.allergies.isEmpty()) "No food allergies" else "Allergic to " + profile.allergies.joinToString { if (it.severe) "${it.food} (even traces)" else it.food },
-            profile.diet.ifBlank { "Eats everything" },
-            profile.season.takeIf { it.isNotBlank() }?.let { "Travelling: $it" },
-            profile.party.takeIf { it.isNotBlank() }?.let { "Eating together: $it" },
-            profile.meals.takeIf { it.isNotEmpty() }?.let { meals -> "Meals: " + meals.joinToString { it.label.lowercase() } },
-            "Budget: ${profile.budget}" + if (profile.splurge) ", with one special meal" else "",
-            profile.taste.takeIf { it.isNotBlank() }?.let { "Taste: $it" },
-            profile.drinks.takeIf { it.isNotBlank() }?.let { "Drinks: $it" },
-            profile.wishes.takeIf { it.isNotBlank() }?.let { "Wishes: $it" },
+            "Allergies" to if (profile.allergies.isEmpty()) "None" else profile.allergies.joinToString { if (it.severe) "${it.food}, even traces" else it.food },
+            "Diet" to profile.diet.ifBlank { "Eats everything" },
+            profile.season.takeIf { it.isNotBlank() }?.let { "When" to it },
+            profile.party.takeIf { it.isNotBlank() }?.let { "Who" to it },
+            profile.meals.takeIf { it.isNotEmpty() }?.let { meals -> "Meals" to meals.sorted().joinToString { it.label.lowercase() } },
+            "Budget" to profile.budget + if (profile.splurge) ", with one special meal" else "",
+            profile.taste.takeIf { it.isNotBlank() }?.let { "Taste" to it },
+            profile.drinks.takeIf { it.isNotBlank() }?.let { "Drinks" to it },
+            profile.wishes.takeIf { it.isNotBlank() }?.let { "Wishes" to it },
         )
 
     private fun HTMLElement.route(trip: Trip) {
@@ -701,4 +763,13 @@ class App(
                 "Two days in Bologna and one in Modena. I want the classics.",
             )
     }
+}
+
+/** What the traveller tapped and wrote for one question, before the answers are sent. */
+private data class Draft(
+    val picked: List<String> = emptyList(),
+    val own: String = "",
+) {
+    /** The answer: the tapped answers, then the traveller's own words. Empty for a skipped question. */
+    val text: String get() = (picked + listOf(own.trim()).filter { it.isNotEmpty() }).joinToString(", ")
 }
