@@ -14,6 +14,8 @@ import kotlinx.serialization.Serializable
 data class Trip(
     /** What the traveller wrote. */
     val request: String,
+    /** The language the traveller reads: what the model writes for the traveller is in it. */
+    val language: Language = Language.ENGLISH,
     /** The planner's questions the traveller has not answered yet. */
     val questions: List<Question> = emptyList(),
     /** The traveller's answers to the planner's questions, in the order they were given. */

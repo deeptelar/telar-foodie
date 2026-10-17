@@ -12,6 +12,7 @@ import dev.deeptelar.telar.agent.pendingToolCalls
 import dev.deeptelar.telar.checkpoint.browser.LocalStorageCheckpointer
 import dev.deeptelar.telar.serialization.KotlinxStateSerializer
 import io.ktor.client.HttpClient
+import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -90,6 +91,9 @@ class App(
         )
 
     private var settings = Settings.load()
+
+    /** The language of the page, and of the next trip. */
+    private val language: Language get() = settings.language ?: Language.of(window.navigator.language)
     private var settingsOpen = false
     private var phase = Phase.START
     private var trip: Trip? = null
@@ -136,7 +140,7 @@ class App(
         this.sample = sample
         this.request = request
         trip = null
-        run { planner().stream(Trip(request), config) }
+        run { planner().stream(Trip(request, language = language), config) }
     }
 
     /** Continues the saved run, with [update] applied to its state first. */
@@ -322,6 +326,7 @@ class App(
 
     private fun render() {
         stopSpeaking()
+        document.documentElement?.setAttribute("lang", language.code)
         map?.remove()
         map = null
         runPanel = null
@@ -332,9 +337,24 @@ class App(
                 add("h1", text = "Foodie Route")
                 add("p", "tagline", "Eat where the locals eat. Planned by an agent that runs in your browser.")
             }
-            button(if (settingsOpen) "Close" else "Settings", "ghost") {
-                settingsOpen = !settingsOpen
-                render()
+            add("div", "top-actions") {
+                (add("select", "language") as HTMLSelectElement).apply {
+                    setAttribute("aria-label", "Language")
+                    Language.entries.forEach { option ->
+                        add("option", text = option.own) {
+                            setAttribute("value", option.name)
+                            if (option == language) setAttribute("selected", "selected")
+                        }
+                    }
+                    onchange = {
+                        change(settings.copy(language = Language.valueOf(value)))
+                        render()
+                    }
+                }
+                button(if (settingsOpen) "Close" else "Settings", "ghost") {
+                    settingsOpen = !settingsOpen
+                    render()
+                }
             }
         }
         if (settingsOpen) root.settingsPanel()
@@ -610,7 +630,8 @@ class App(
 
     /** A microphone button under a text field, where the browser can turn speech into text. */
     private fun HTMLElement.speakRow(read: () -> String, write: (String) -> Unit) {
-        if (speechSupported) add("div", "speak-row") { speakButton(read, write) }
+        // A trip that is under way keeps the language it was started in.
+        if (speechSupported) add("div", "speak-row") { speakButton(trip?.language ?: language, read, write) }
     }
 
     /** An answer to tap. A question with one answer keeps the last one tapped; tapping it again takes it back. */

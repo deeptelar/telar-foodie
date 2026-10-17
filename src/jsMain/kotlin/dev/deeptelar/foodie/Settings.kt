@@ -21,6 +21,8 @@ data class Settings(
     val openAiModel: String = "gpt-5",
     val openAiUrl: String = OpenAiChatModel.OPENAI_BASE_URL,
     val googleKey: String = "",
+    /** The language the traveller chose, or `null` for the browser's. */
+    val language: Language? = null,
 ) {
     /** Whether a model can be asked with these settings. A local server such as Ollama needs no key, but then it has another address. */
     val hasModel: Boolean

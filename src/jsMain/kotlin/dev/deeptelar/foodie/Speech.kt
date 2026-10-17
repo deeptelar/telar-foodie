@@ -16,6 +16,7 @@ import org.w3c.dom.HTMLElement
 private class Dictation(
     /** The button that started it. */
     val owner: Any,
+    private val language: Language,
     private val onText: (settled: String, guess: String) -> Unit,
     private val onEnd: (problem: String?) -> Unit,
 ) {
@@ -23,7 +24,7 @@ private class Dictation(
     private var problem: String? = null
 
     fun start() {
-        recognition.lang = window.navigator.language
+        recognition.lang = language.speechTag(window.navigator.language)
         recognition.interimResults = true
         // Chrome on Android repeats what it heard when it listens on through pauses: there it stops at the first pause.
         recognition.continuous = "Android" !in window.navigator.userAgent
@@ -76,10 +77,11 @@ val speechSupported: Boolean get() = Dictation.supported
 fun stopSpeaking() = Dictation.stopAll()
 
 /**
- * A microphone button for a text field. What the traveller says is added to what [read] gives, and
- * [write] gets the text while it is heard. Nothing is added when the browser cannot hear.
+ * A microphone button for a text field, that listens for [language]. What the traveller says is
+ * added to what [read] gives, and [write] gets the text while it is heard. Nothing is added when
+ * the browser cannot hear.
  */
-fun Element.speakButton(read: () -> String, write: (String) -> Unit) {
+fun Element.speakButton(language: Language, read: () -> String, write: (String) -> Unit) {
     if (!speechSupported) return
     val row = this
     var note: HTMLElement? = null
@@ -98,6 +100,7 @@ fun Element.speakButton(read: () -> String, write: (String) -> Unit) {
             val dictation =
                 Dictation(
                     owner = button,
+                    language = language,
                     onText = { heard, guess ->
                         settled = heard
                         write(joined("$heard $guess"))
