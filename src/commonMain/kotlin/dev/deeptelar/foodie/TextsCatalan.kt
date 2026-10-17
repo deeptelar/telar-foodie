@@ -133,7 +133,7 @@ object Catalan : Texts {
             Topic.ALLERGIES ->
                 Question(topic, "Tens alguna al·lèrgia alimentària? Si en tens, has d'evitar fins i tot les traces?", listOf("Cap", "Fruits secs", "Marisc", "Gluten", "Lactis"), alone = listOf("Cap"))
             Topic.PREGNANCY -> Question(topic, "Hi ha algú embarassada en aquest viatge?", listOf("No", "Sí"), alone = listOf("No", "Sí"))
-            Topic.DIET -> Question(topic, "Hi ha res que no mengis?", listOf("Menjo de tot", "Vegetarià", "Pescetarià", "Halal", "Sense porc"), alone = listOf("Menjo de tot"))
+            Topic.DIET -> Question(topic, "Hi ha res que no mengis?", listOf("Menjo de tot", "Vegetarià", "Piscivegetarià", "Halal", "Sense porc"), alone = listOf("Menjo de tot"))
             Topic.DATES -> Question(topic, "Quan hi vas?", listOf("Primavera", "Estiu", "Tardor", "Hivern"))
             Topic.PARTY -> Question(topic, "Amb qui menges?", listOf("Només jo", "Dues persones", "Família amb nens", "Grup d'amics"), alone = listOf("Només jo"))
             Topic.STAY -> Question(topic, "On t'allotges a cada lloc? N'hi ha prou amb el barri o el nom de l'hotel.")
@@ -270,7 +270,7 @@ object Catalan : Texts {
                 listOf("Cap", "Marisc", "Fruits secs", "Gluten"),
                 alone = listOf("Cap"),
             ),
-            Question(Topic.DIET, "Lisboa estima el porc tant com el peix: la bifana és un entrepà de porc. Hi ha res que no mengis?", listOf("Menjo de tot", "Sense porc", "Pescetarià", "Vegetarià"), alone = listOf("Menjo de tot")),
+            Question(Topic.DIET, "Lisboa estima el porc tant com el peix: la bifana és un entrepà de porc. Hi ha res que no mengis?", listOf("Menjo de tot", "Sense porc", "Piscivegetarià", "Vegetarià"), alone = listOf("Menjo de tot")),
             Question(Topic.DATES, "Quan hi vas? Al juny tota la ciutat fa sardines a la brasa al carrer.", listOf("Al juny", "Un altre mes d'estiu", "Una altra època de l'any")),
         )
     override val sampleDishes =
