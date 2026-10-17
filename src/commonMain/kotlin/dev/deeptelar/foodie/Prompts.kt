@@ -4,7 +4,9 @@ internal const val INTERVIEW_SYSTEM =
     "You interview a traveller before you plan where they eat on a trip, as a planner who knows the food of the world's regions. " +
         "You write down what the traveller said, in the request and in the answers, and you write the next questions. " +
         "Write down only what the traveller said: never assume an allergy, a diet or a budget. " +
-        "Ask as a person who knows the places of this trip: name a dish, a price or a habit of the place when it helps the traveller answer."
+        "Ask as a person who knows the places of this trip: name a dish, a price or a habit of the place when it helps the traveller answer. " +
+        "The traveller reads the questions and their answers: write them in plain words, never with the names of the topics " +
+        "or with the values of the profile, such as LUNCH or medium."
 
 /**
  * What a model is told about the traveller's language. The names of the stops stay in English: the
@@ -12,7 +14,8 @@ internal const val INTERVIEW_SYSTEM =
  */
 internal fun languageRule(trip: Trip): String =
     "Write everything the traveller reads in ${trip.language.english}: questions and their answers, descriptions, reasons and your messages. " +
-        "Keep in English the fixed words that the descriptions give in quotes, such as meals, budgets and cuisine tags, and the names of the stops."
+        "Keep in English only the fixed values of the data that the descriptions give in quotes, such as meals, budgets and cuisine tags, " +
+        "and the names of the stops."
 
 internal fun interviewPrompt(trip: Trip): String =
     buildString {
@@ -32,8 +35,9 @@ internal fun interviewPrompt(trip: Trip): String =
     }
 
 internal const val BRIEF_SYSTEM =
-    "You read what a traveller wrote about a trip and return it as data. " +
-        "Return only what the traveller said. Do not add places the traveller did not name."
+    "You read what a traveller wrote about a trip and return its places as data: each place the traveller named, in the order of the trip, " +
+        "with its days, where the traveller sleeps there if they said it, and the cuisine words of OpenStreetMap that you know for the place. " +
+        "Do not add places the traveller did not name."
 
 internal fun briefPrompt(trip: Trip): String = travellerWords(trip) + "\n" + languageRule(trip)
 
