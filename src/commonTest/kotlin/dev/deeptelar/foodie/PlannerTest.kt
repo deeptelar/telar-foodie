@@ -609,4 +609,31 @@ class PlannerTest {
             assertEquals(null, trip.stops.single().stay)
             assertEquals(null, trip.route.single().walk)
         }
+
+    @Test
+    fun `every model is told to write in the traveller's language`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    // Allergies are asked even when the request answers everything: the interview reads twice.
+                    answers(Reading(Profile(), answered = Topic.entries))
+                    answers(Reading(Profile(), answered = Topic.entries))
+                    answers(brief)
+                    answers(menu)
+                    says("Planificat.")
+                }
+            val planner = planner(model, sources())
+            val config = config()
+
+            planner.invoke(Trip("Un dia a Lisboa", language = Language.CATALAN), config)
+            planner.resume(config) { it.answered(listOf(Answer(Topic.ALLERGIES, "Al·lèrgies?", "Cap"))) }
+            planner.resume(config) { it.confirmed() }
+
+            // The interview twice, the brief, the dishes and the agent.
+            assertEquals(5, model.requests.size)
+            model.requests.forEach { request ->
+                val text = request.messages.first().text
+                assertTrue("Write everything the traveller reads in Catalan" in text, text)
+            }
+        }
 }

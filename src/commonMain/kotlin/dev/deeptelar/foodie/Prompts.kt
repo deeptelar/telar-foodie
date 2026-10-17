@@ -6,6 +6,14 @@ internal const val INTERVIEW_SYSTEM =
         "Write down only what the traveller said: never assume an allergy, a diet or a budget. " +
         "Ask as a person who knows the places of this trip: name a dish, a price or a habit of the place when it helps the traveller answer."
 
+/**
+ * What a model is told about the traveller's language. The names of the stops stay in English: the
+ * travel guide is the English Wikivoyage, and its pages have English names.
+ */
+internal fun languageRule(trip: Trip): String =
+    "Write everything the traveller reads in ${trip.language.english}: questions and their answers, descriptions, reasons and your messages. " +
+        "Keep in English the fixed words that the descriptions give in quotes, such as meals, budgets and cuisine tags, and the names of the stops."
+
 internal fun interviewPrompt(trip: Trip): String =
     buildString {
         append(travellerWords(trip))
@@ -19,13 +27,15 @@ internal fun interviewPrompt(trip: Trip): String =
         } else {
             appendLine("Say which topics the traveller's words answer, and write a question for each of the first open topics they do not answer.")
         }
+        appendLine()
+        appendLine(languageRule(trip))
     }
 
 internal const val BRIEF_SYSTEM =
     "You read what a traveller wrote about a trip and return it as data. " +
         "Return only what the traveller said. Do not add places the traveller did not name."
 
-internal fun briefPrompt(trip: Trip): String = travellerWords(trip)
+internal fun briefPrompt(trip: Trip): String = travellerWords(trip) + "\n" + languageRule(trip)
 
 /** The traveller's request, and the answers to the planner's questions below it. */
 private fun travellerWords(trip: Trip): String =
@@ -64,6 +74,8 @@ internal fun dishesPrompt(trip: Trip): String =
             appendLine("\nWhat the travel guide says about eating in $stop:")
             appendLine(text)
         }
+        appendLine()
+        appendLine(languageRule(trip))
     }
 
 internal const val PLAN_SYSTEM = """You plan where a traveller eats: a route of meals at places where people who live there eat.
@@ -121,6 +133,8 @@ internal fun planPrompt(trip: Trip): String =
             appendLine("What could not be read:")
             trip.notes.forEach { appendLine("- $it") }
         }
+        appendLine()
+        appendLine(languageRule(trip) + " The ids and the tools stay as they are.")
     }
 
 /** The profile for a model, one line for each thing the traveller said. */

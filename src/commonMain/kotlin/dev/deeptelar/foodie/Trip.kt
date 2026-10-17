@@ -72,7 +72,7 @@ data class Brief(
 
 @Serializable
 data class BriefStop(
-    @Description("The city, town or island, with its country, for example \"Porto, Portugal\".")
+    @Description("The city, town or island, with its country, in English as the English Wikipedia names them, for example \"Porto, Portugal\".")
     val place: String,
     @Description("How many days the traveller eats there. 1 if the request does not say.")
     val days: Int = 1,
