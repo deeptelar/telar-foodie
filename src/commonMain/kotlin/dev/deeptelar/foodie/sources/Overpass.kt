@@ -22,13 +22,14 @@ import kotlin.time.TimeSource
  * The public servers are run by volunteers, and one of them is busy or down now and then. So a
  * question goes to each of [servers] in turn, starting with the one that answered last, and a
  * server gets [patience] to answer. When none did, the map is left alone for [rest]: a search in
- * that time fails at once, so an agent that searches five times does not wait five times.
+ * that time fails at once, so an agent that searches five times does not wait five times. The rest
+ * outlasts a plan: when the servers are down, they are seldom up again a minute later.
  */
 class Overpass(
     private val client: HttpClient,
     private val servers: List<String> = PUBLIC_SERVERS,
     private val patience: Duration = 12.seconds,
-    private val rest: Duration = 1.minutes,
+    private val rest: Duration = 10.minutes,
 ) : StreetMap {
     /** The index of the server that answered last. */
     private var preferred = 0

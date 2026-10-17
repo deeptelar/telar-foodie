@@ -21,6 +21,8 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import org.w3c.dom.Element
@@ -160,7 +162,8 @@ class App(
     /** The graph for the current settings. Without a key for a model, the sample script plans. */
     private fun planner(): CompiledGraph<Trip> {
         val model = if (sample) SampleModel() else settings.model(client) ?: SampleModel()
-        return planner(model, Sources.online(client, settings.googleKey))
+        val planModel = if (sample) model else settings.planModel(client) ?: model
+        return planner(model, Sources.online(client, settings.googleKey), planModel = planModel)
     }
 
     private fun start(request: String, sample: Boolean) {
@@ -247,7 +250,7 @@ class App(
                 when (event.node) {
                     Nodes.PLAN -> writing = ""
                     // The calls the model just asked for are the last message of the state the tools node starts with.
-                    Nodes.TOOLS -> feed = (feed + event.state.messages.pendingToolCalls().map { describe(it, event.state) }).takeLast(FEED_LINES)
+                    Nodes.TOOLS -> feed = (feed + event.state.messages.pendingToolCalls().flatMap { describe(it, event.state) }).takeLast(FEED_LINES)
                     Nodes.ORDER -> step(Nodes.PLAN)?.status = Status.DONE
                 }
                 renderRun()
@@ -386,12 +389,13 @@ class App(
         }
     }
 
-    /** A tool call of the agent, in words for the traveller. */
-    private fun describe(call: ToolCall, trip: Trip): String {
+    /** A tool call of the agent, in words for the traveller: a line, or one for each meal of a route. */
+    private fun describe(call: ToolCall, trip: Trip): List<String> {
+        if (call.name == "set_route") return (call.input["meals"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.let { meal -> describe(ToolCall(call.id, "set_meal", meal), trip) } }.flatten()
         fun input(key: String) = (call.input[key] as? JsonPrimitive)?.contentOrNull.orEmpty()
         // The model names a meal in English; the traveller reads it in the page's language.
         fun meal() = MealTime.of(input("meal"))?.let { texts.meal(it).lowercase() } ?: input("meal")
-        return when (call.name) {
+        val line = when (call.name) {
             "set_meal" -> texts.didSetMeal(input("day"), meal(), trip.restaurant(input("restaurant"))?.name ?: input("restaurant"))
             "remove_meal" -> texts.didRemoveMeal(input("day"), meal())
             "search_map" -> texts.didSearchMap(input("stop"), input("name").ifBlank { input("cuisine") })
@@ -400,6 +404,7 @@ class App(
             "candidates" -> texts.didLookThrough(input("stop"), input("words"))
             else -> call.name
         }
+        return listOf(line)
     }
 
     // The page

@@ -66,13 +66,14 @@ class SampleModel(
             // A second message of the traveller is a wish for a change, which a script cannot follow.
             asked > 1 -> ChatMessage.Assistant(texts.sampleNoChanges)
             results.isEmpty() -> ChatMessage.Assistant(texts.sampleFirstSearch, listOf(call(1, "search_map", MapLookup(STOP, cuisine = "pastry"))))
-            results.none { it.toolName == "set_meal" } -> ChatMessage.Assistant(toolCalls = meals(ids(messages.first().text), ids(results.first().text).firstOrNull(), texts))
+            // The whole route in one answer, with the message, as a model writes it: the agent needs no round after it.
+            results.none { it.toolName == "set_route" } -> ChatMessage.Assistant(toolCalls = listOf(call(2, "set_route", RoutePlan(meals(ids(messages.first().text), ids(results.first().text).firstOrNull(), texts), texts.sampleSummary))))
             else -> ChatMessage.Assistant(texts.sampleSummary)
         }
     }
 
     /** A lunch and a dinner for both days at the candidates listed first, and a snack at [pastry] when the map found one. */
-    private fun meals(candidates: List<String>, pastry: String?, texts: Texts): List<ToolCall> {
+    private fun meals(candidates: List<String>, pastry: String?, texts: Texts): List<MealChoice> {
         val places = candidates.filter { it != pastry }
         val slots = listOf(1 to "lunch", 1 to "dinner", 2 to "lunch", 2 to "dinner")
         val meals =
@@ -80,7 +81,7 @@ class SampleModel(
                 MealChoice(slot.first, slot.second, id, DISHES[index].first, texts.sampleWhy)
             }
         val snack = pastry?.let { MealChoice(1, "snack", it, "pastel de nata", texts.sampleWhyPastry) }
-        return (meals + listOfNotNull(snack)).mapIndexed { index, meal -> call(index + 2, "set_meal", meal) }
+        return meals + listOfNotNull(snack)
     }
 
     /** The ids in a list of candidates, in the order they are listed. */

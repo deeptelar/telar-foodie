@@ -103,6 +103,70 @@ class PlannerTest {
         }
 
     @Test
+    fun `a whole route in one answer needs no round of the model after it`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls(
+                        call(
+                            "set_route",
+                            RoutePlan(
+                                listOf(
+                                    MealChoice(1, "dinner", "r1", "bacalhau à brás", "The guide calls it authentic."),
+                                    MealChoice(1, "lunch", "r2", "caldo verde", "The map lists it as Portuguese."),
+                                ),
+                                message = "A day of salt cod.",
+                            ),
+                        ),
+                    )
+                }
+
+            val result = planner(model, sources()).invoke(interviewed("One day in Lisbon"), config())
+
+            assertEquals(listOf(Nodes.REVIEW), assertIs<GraphResult.Interrupted<Trip>>(result).nextNodes)
+            assertEquals(3, model.requests.size)
+            assertEquals(listOf("r2", "r1"), result.state.route.map { it.restaurantId })
+            assertEquals("A day of salt cod.", result.state.summary)
+            val done = result.state.messages.last() as ChatMessage.ToolResult
+            assertEquals("On the route: 2 of 2 meals. Every day has its lunch and dinner. The route is done, and the traveller reads your message.", done.text)
+        }
+
+    @Test
+    fun `a route with a mistake keeps its good meals and the model is asked again`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls(
+                        call(
+                            "set_route",
+                            RoutePlan(
+                                listOf(MealChoice(1, "lunch", "r99", "bifana", "Made up."), MealChoice(1, "dinner", "r1", "bacalhau", "Fine.")),
+                                message = "Too soon.",
+                            ),
+                        ),
+                    )
+                    calls("set_meal", MealChoice(1, "lunch", "r2", "caldo verde", "The map knows it."))
+                    says("Fixed: lunch at Zé da Mouraria.")
+                }
+
+            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon"), config()).state
+
+            val result = model.requests[3].messages.last() as ChatMessage.ToolResult
+            assertEquals(
+                "On the route: 1 of 2 meals.\nNot on the route:\n- Day 1 lunch: There is no candidate with the id \"r99\". Use an id from the list. " +
+                    "Still open: day 1 lunch. Your message is not shown yet: fix this, then send the message again.",
+                result.text,
+            )
+            assertEquals(listOf("r2", "r1"), trip.route.map { it.restaurantId })
+            assertEquals("Fixed: lunch at Zé da Mouraria.", trip.summary)
+            assertEquals(0, model.remaining)
+        }
+
+    @Test
     fun `the agent reads the request, the dishes and the candidates`() =
         runTest {
             val model =
@@ -119,7 +183,7 @@ class PlannerTest {
             assertTrue("- Day 1: $lisbon" in first, first)
             assertTrue("- bacalhau à brás (dinner): Salt cod with eggs and fried potato." in first, first)
             assertTrue("[r1] Restaurante Santa Rita · portuguese · found in: Travel guide, Street map" in first, first)
-            assertEquals(listOf("candidates", "search_map", "read_guide", "set_meal", "remove_meal"), model.requests[2].tools.map { it.name })
+            assertEquals(listOf("candidates", "search_map", "read_guide", "set_route", "set_meal", "remove_meal"), model.requests[2].tools.map { it.name })
             // What the guide says about the food goes to the model that names the dishes.
             assertTrue("small and family-run" in model.requests[1].messages.first().text)
         }
@@ -422,7 +486,7 @@ class PlannerTest {
             val results = model.requests.last().messages.filterIsInstance<ChatMessage.ToolResult>()
             assertEquals("Search for a word of at least three letters, such as a dish or a cuisine.", results.first().text)
             assertTrue(results.dropLast(1).none { "Stop searching" in it.text })
-            assertTrue(results.last().text.endsWith("You have searched 8 times. Stop searching and write the route now with set_meal, from the candidates you have. Still open: day 1 lunch, day 1 dinner."), results.last().text)
+            assertTrue(results.last().text.endsWith("You have searched 8 times. Stop searching and write the route now with set_route, from the candidates you have. Still open: day 1 lunch, day 1 dinner."), results.last().text)
         }
 
     @Test

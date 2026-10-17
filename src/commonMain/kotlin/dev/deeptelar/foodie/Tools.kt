@@ -8,6 +8,8 @@ import dev.deeptelar.telar.agent.StateTool
 import dev.deeptelar.telar.agent.ToolOutcome
 import dev.deeptelar.telar.reportProgress
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
 
 /*
  * The tools of the agent that chooses the route. All of them are state tools: they read the trip,
@@ -71,6 +73,17 @@ data class MealChoice(
 )
 
 @Serializable
+data class RoutePlan(
+    @Description("The meals to put on the route: when you plan the trip, every meal of every day. A meal that is already there is replaced.")
+    val meals: List<MealChoice>,
+    @Description(
+        "When these meals complete the route: your words to the traveller, three to five sentences on what the trip tastes like and what to look forward to. " +
+            "Do not list the restaurants; the traveller sees the route. Empty when the route is not complete yet.",
+    )
+    val message: String = "",
+)
+
+@Serializable
 data class MealSlot(
     @Description("The day of the trip, counted from 1.")
     val day: Int,
@@ -123,21 +136,50 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
         },
     )
 
-/** The tools that write the route. */
+/**
+ * The tools that write the route. The agent writes the whole route with `set_route` in one answer,
+ * with its message to the traveller: every round of the agent sends the whole conversation to the
+ * model again, so a route written meal by meal takes many slow rounds. `set_meal` and `remove_meal`
+ * are for the changes after it.
+ */
 private val routeEditors: List<StateTool<Trip>> =
     listOf(
+        StateTool<Trip, RoutePlan>(
+            "set_route",
+            "Puts several meals on the route at once, and when they complete it, gives the traveller your message. " +
+                "A meal that cannot be put on the route is named in the result, and the others are on it.",
+        ) { trip, plan ->
+            if (plan.meals.isEmpty()) throw IllegalArgumentException("Give the meals to put on the route.")
+            var after = trip
+            val problems =
+                plan.meals.mapNotNull { choice ->
+                    try {
+                        after = after.withMeal(choice)
+                        null
+                    } catch (e: IllegalArgumentException) {
+                        "- Day ${choice.day} ${choice.meal}: ${e.message}"
+                    }
+                }
+            val twice = after.route.groupBy { it.restaurantId }.filterValues { it.size > 1 }.keys.mapNotNull { after.restaurant(it)?.name }
+            val text =
+                buildString {
+                    append("On the route: ${plan.meals.size - problems.size} of ${plan.meals.size} meals.")
+                    if (problems.isNotEmpty()) append("\nNot on the route:\n" + problems.joinToString("\n"))
+                    if (twice.isNotEmpty()) append("\nMore than once on the route: ${twice.joinToString()}. Use a restaurant once.")
+                    append(" " + after.openMeals())
+                    if (plan.message.isNotBlank()) {
+                        append(if (after.finishedBy(plan)) " The route is done, and the traveller reads your message." else " Your message is not shown yet: fix this, then send the message again.")
+                    }
+                }
+            ToolOutcome(after, text)
+        },
         StateTool<Trip, MealChoice>("set_meal", "Puts a restaurant on the route for one meal of one day. A meal that is already there is replaced.") { trip, choice ->
-            val time = mealTime(choice.meal)
-            val stop = trip.stopOn(choice.day) ?: throw IllegalArgumentException("The trip has ${trip.days} days. There is no day ${choice.day}.")
-            val restaurant = trip.restaurant(choice.restaurant) ?: throw IllegalArgumentException("There is no candidate with the id \"${choice.restaurant}\". Use an id from the list.")
-            if (restaurant.stop != stop.name) throw IllegalArgumentException("${restaurant.name} is in ${restaurant.stop}, but day ${choice.day} is in ${stop.name}.")
-            val meal = Meal(choice.day, time, restaurant.id, choice.dish.trim(), choice.why.trim(), choice.caution.trim())
-            val route = trip.route.filterNot { it.day == meal.day && it.time == meal.time } + meal
-            val twice = route.filter { it.restaurantId == restaurant.id }.size > 1
-            val after = trip.copy(route = route)
+            val after = trip.withMeal(choice)
+            val restaurant = trip.restaurant(choice.restaurant)!!
+            val twice = after.route.count { it.restaurantId == restaurant.id } > 1
             ToolOutcome(
                 after,
-                "Day ${meal.day}, ${time.label.lowercase()}: ${restaurant.name}." +
+                "Day ${choice.day}, ${mealTime(choice.meal).label.lowercase()}: ${restaurant.name}." +
                     (if (twice) " It is on the route more than once now." else "") +
                     " " + after.openMeals(),
             )
@@ -151,6 +193,43 @@ private val routeEditors: List<StateTool<Trip>> =
     )
 
 /**
+ * The trip with [choice] on its route, in the place of the meal of its day and time.
+ *
+ * @throws IllegalArgumentException with what is wrong, for the model, when the day, the meal or the restaurant is not one of the trip.
+ */
+private fun Trip.withMeal(choice: MealChoice): Trip {
+    val time = mealTime(choice.meal)
+    val stop = stopOn(choice.day) ?: throw IllegalArgumentException("The trip has $days days. There is no day ${choice.day}.")
+    val restaurant = restaurant(choice.restaurant) ?: throw IllegalArgumentException("There is no candidate with the id \"${choice.restaurant}\". Use an id from the list.")
+    if (restaurant.stop != stop.name) throw IllegalArgumentException("${restaurant.name} is in ${restaurant.stop}, but day ${choice.day} is in ${stop.name}.")
+    val meal = Meal(choice.day, time, restaurant.id, choice.dish.trim(), choice.why.trim(), choice.caution.trim())
+    return copy(route = route.filterNot { it.day == meal.day && it.time == meal.time } + meal)
+}
+
+/** Whether [plan] finished the route: it has a message, each of its meals is on the route, no meal is open and no restaurant is there twice. */
+private fun Trip.finishedBy(plan: RoutePlan): Boolean =
+    plan.message.isNotBlank() &&
+        plan.meals.all { choice -> route.any { it.day == choice.day && it.time == MealTime.of(choice.meal) && it.restaurantId == choice.restaurant.trim() } } &&
+        (1..days).all { day -> dailyMeals.all { time -> route.any { it.day == day && it.time == time } } } &&
+        route.groupBy { it.restaurantId }.values.none { it.size > 1 }
+
+/**
+ * The route plan of the agent's last answer, when that answer finished the route and all of its
+ * calls ran: then the model need not be asked again, and its message is the summary.
+ */
+internal val Trip.finishingPlan: RoutePlan?
+    get() {
+        val results = messages.takeLastWhile { it is ChatMessage.ToolResult }.filterIsInstance<ChatMessage.ToolResult>()
+        val answer = messages.getOrNull(messages.size - results.size - 1) as? ChatMessage.Assistant ?: return null
+        if (results.isEmpty() || results.size < answer.toolCalls.size || results.any { it.isError }) return null
+        val call = answer.toolCalls.lastOrNull { it.name == "set_route" } ?: return null
+        val plan = runCatching { LENIENT.decodeFromJsonElement<RoutePlan>(call.input) }.getOrNull() ?: return null
+        return plan.takeIf { finishedBy(it) }
+    }
+
+private val LENIENT = Json { ignoreUnknownKeys = true }
+
+/**
  * This search tool, with a reminder in its result once the agent has searched [SEARCHES] times in
  * this turn: a model that keeps searching never writes the route, and its token budget runs out.
  */
@@ -161,7 +240,7 @@ private fun StateTool<Trip>.nudging(): StateTool<Trip> =
         if (searches < SEARCHES) {
             outcome
         } else {
-            outcome.copy(text = outcome.text + "\n\nYou have searched $searches times. Stop searching and write the route now with set_meal, from the candidates you have. ${outcome.state.openMeals()}")
+            outcome.copy(text = outcome.text + "\n\nYou have searched $searches times. Stop searching and write the route now with set_route, from the candidates you have. ${outcome.state.openMeals()}")
         }
     }
 
@@ -171,7 +250,7 @@ private fun Trip.searchesThisTurn(): Int {
     return turn.filterIsInstance<ChatMessage.Assistant>().sumOf { answer -> answer.toolCalls.count { it.name !in EDITORS } }
 }
 
-private val EDITORS = setOf("set_meal", "remove_meal")
+private val EDITORS = setOf("set_route", "set_meal", "remove_meal")
 
 /** After this many searches in one turn, every search result asks the agent to write the route. */
 private const val SEARCHES = 8

@@ -58,7 +58,7 @@ data class Trip(
     fun stopOn(day: Int): Stop? = stops.firstOrNull { day in it.firstDay until it.firstDay + it.days }
 
     /** What the agent wrote when it had finished the route. */
-    val summary: String get() = (messages.lastOrNull() as? ChatMessage.Assistant)?.text.orEmpty()
+    val summary: String get() = (messages.lastOrNull() as? ChatMessage.Assistant)?.text ?: finishingPlan?.message.orEmpty()
 }
 
 /** The places of the trip, as the model reads them out of the traveller's words. What the traveller likes is in the [Profile]. The descriptions are what the model sees. */

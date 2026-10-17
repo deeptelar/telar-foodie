@@ -7,6 +7,9 @@ import io.ktor.client.HttpClient
 import kotlinx.browser.localStorage
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /**
  * What the traveller set up: which model plans, and the keys. It is kept in the `localStorage` of
@@ -45,14 +48,31 @@ data class Settings(
                     // the key is the traveller's own; never ship a page with a key of yours in it.
                     headers = mapOf("anthropic-dangerous-direct-browser-access" to "true"),
                 )
-            else -> OpenAiChatModel(client = client, apiKey = openAiKey.trim().ifEmpty { null }, model = openAiModel.trim(), baseUrl = openAiUrl.trim().trimEnd('/'))
+            else -> openAi(client)
         }
+
+    /**
+     * The model that chooses the restaurants. That takes many rounds with long requests, and
+     * picking from a list of candidates needs little thought: a reasoning model of OpenAI thinks
+     * less there than it does by default, which saves most of the wait.
+     */
+    fun planModel(client: HttpClient): ChatModel? =
+        if (hasModel && provider == Provider.OPENAI && thinksLess(openAiModel.trim())) openAi(client, buildJsonObject { put("reasoning_effort", "low") }) else model(client)
+
+    private fun openAi(client: HttpClient, parameters: JsonObject = JsonObject(emptyMap())): OpenAiChatModel =
+        OpenAiChatModel(client = client, apiKey = openAiKey.trim().ifEmpty { null }, model = openAiModel.trim(), parameters = parameters, baseUrl = openAiUrl.trim().trimEnd('/'))
+
+    /** The reasoning models of OpenAI that take a lower effort. A `pro` model only thinks hard. */
+    private fun thinksLess(model: String): Boolean = REASONING.any { model.startsWith(it) } && "pro" !in model
 
     fun save() {
         localStorage.setItem(KEY, Json.encodeToString(this))
     }
 
     companion object {
+        /** How the names of OpenAI's reasoning models start. */
+        private val REASONING = listOf("gpt-5", "o3", "o4")
+
         private const val KEY = "foodie.settings"
 
         val CLAUDE_MODELS: List<Pair<String, String>> =

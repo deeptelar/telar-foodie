@@ -98,11 +98,11 @@ How to choose:
 - When the candidates have no good place for a dish, search for one with the tools before you settle for less.
 
 How to work:
-- Start from the candidates you were given: they are enough for most meals. Write the route with `set_meal`, one call per meal; nothing is on the route until you call it. Put several calls in one answer, for example all the meals of a day.
+- Start from the candidates you were given: they are enough for most meals. Write the whole route in one answer, with one call of `set_route` that has every meal of every day and your message to the traveller; nothing is on the route until you call it.
 - Search only for a dish or a kind of place that the candidates lack, with words such as "pastry" or "seafood", and only a few times. A search for a common word finds nothing new.
 - Never name a restaurant that is not a candidate, and never invent an id.
 - In `why`, say what speaks for the place, in one sentence, and only what the sources say. If little is known, say so.
-- When the route is complete, answer the traveller in three to five sentences: what the trip tastes like and what to look forward to. Do not list the restaurants again; the traveller sees the route.
+- If `set_route` says that something is wrong, fix it with `set_meal` or `remove_meal`, and then answer the traveller in three to five sentences: what the trip tastes like and what to look forward to. Do not list the restaurants again; the traveller sees the route.
 - When the traveller asks for a change later, change what was asked and leave the rest of the route as it is."""
 
 /** How many candidates of each stop the agent reads at the start. The tool `candidates` shows the others. */

@@ -65,8 +65,10 @@ data class Activity(
  *
  * @param tokenBudget the agent stops asking the model once it has used this many tokens for the
  *   route, or for one change of it.
+ * @param planModel the model of the agent that chooses the restaurants, for example [model] set to
+ *   think less: its rounds are the longest wait of a plan.
  */
-fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): CompiledGraph<Trip> =
+fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, planModel: ChatModel = model): CompiledGraph<Trip> =
     StateGraph<Trip> {
         // A model that is overloaded for a moment is asked again. The second try starts after a pause.
         val again = Retry(attempts = 2, pause = 2.seconds)
@@ -165,7 +167,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
 
         val plan =
             toolLoop(
-                model = model,
+                model = planModel,
                 stateTools = routeTools(sources),
                 messages = { it.messages },
                 append = { trip, new -> trip.copy(messages = trip.messages + new) },
@@ -175,7 +177,8 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                 modelNode = Nodes.PLAN,
                 toolsNode = Nodes.TOOLS,
                 countTokens = { trip, used -> trip.copy(tokens = trip.tokens + used) },
-                stopWhen = { it.tokens.total - it.turnStart >= tokenBudget },
+                // A route that the agent's last answer finished needs no more rounds: its message is the summary.
+                stopWhen = { it.tokens.total - it.turnStart >= tokenBudget || it.finishingPlan != null },
                 retry = again,
             )
 
