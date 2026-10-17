@@ -533,13 +533,18 @@ button.chip.answer.picked {
 
 .edit-line {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
 }
 
-.edit-line input[type="text"] {
+.edit-line input[type="text"], .edit-line textarea {
     flex: 1;
     min-width: 0;
+}
+
+.edit-line textarea {
+    resize: none;
+    overflow: hidden;
 }
 
 

@@ -851,7 +851,23 @@ class App(
     private fun Element.textRow(label: String, value: String, placeholder: String, changed: ((Profile) -> Profile) -> Unit, set: (Profile, String) -> Profile) {
         editRow(label) {
             add("div", "edit-line") {
-                textInput(value, placeholder, label) { text -> editing = editing?.let { it.copy(profile = set(it.profile, text)) } }
+                // Words such as a diet with its reasons need more than a line: the field grows with them.
+                (add("textarea") as HTMLTextAreaElement).apply {
+                    rows = 1
+                    this.value = value
+                    this.placeholder = placeholder
+                    setAttribute("aria-label", label)
+                    fun fit() {
+                        style.height = "auto"
+                        style.height = "${scrollHeight + 2}px"
+                    }
+                    oninput = {
+                        fit()
+                        editing = editing?.let { it.copy(profile = set(it.profile, this.value)) }
+                    }
+                    // The field is on the page only after this is drawn, and only then has a height.
+                    window.requestAnimationFrame { fit() }
+                }
                 eraseButton { changed { set(it, "") } }
             }
         }

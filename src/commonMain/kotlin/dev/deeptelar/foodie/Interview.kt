@@ -86,7 +86,10 @@ data class Profile(
     val taste: String = "",
     @Description("What the traveller likes to drink, for example \"natural wine\" or \"no alcohol\". Empty if not said.")
     val drinks: String = "",
-    @Description("Anything else the traveller wishes for, for example \"markets\" or \"no long walks\". Empty if nothing was said.")
+    @Description(
+        "Anything else the traveller wishes for, for example \"markets\" or \"no long walks\". " +
+            "Not the places, the days or where the traveller stays: the planner has those already. Empty if nothing else was said.",
+    )
     val wishes: String = "",
 )
 
