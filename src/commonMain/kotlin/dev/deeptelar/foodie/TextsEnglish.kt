@@ -98,22 +98,24 @@ object English : Texts {
     override val oneQuestion = "One question"
     override val aFewQuestions = "A few questions"
     override val oneMoreThing = "One more thing before I plan."
-    override val lastQuestions = "The last ones. Tap what fits, write what does not, or skip a question."
+    override val lastQuestions = "The last ones. Tap all that fit, write what does not, or skip a question."
     override val continueAnswers = "Continue"
     override val planNow = "That's enough, plan it"
     override val sampleAsks = "This is the sample: a script asks the questions, and it does not read the answers."
     override val allergyNote = "The planner leaves out what you name and says what to tell the staff. It cannot know what a kitchen puts in a dish: always tell the waiter."
+    override val pregnancyNote = "With a pregnancy the planner follows the usual advice: no raw fish, meat or eggs, no unpasteurised cheese, cured meats or alcohol. Your doctor's advice comes first."
     override val yourAnswer = "Your answer"
     override val somethingElse = "Something else, or more about it"
 
     override fun youAlreadyToldMe(topics: List<String>) = "You already told me: ${topics.joinToString()}."
 
-    override fun moreQuestions(count: Int) = "About $count more after these. Tap what fits, write what does not, or skip a question."
+    override fun moreQuestions(count: Int) = "About $count more after these. Tap all that fit, write what does not, or skip a question."
 
     override fun topic(topic: Topic) =
         when (topic) {
             Topic.WHERE -> "where and how long"
             Topic.ALLERGIES -> "allergies"
+            Topic.PREGNANCY -> "pregnancy"
             Topic.DIET -> "diet"
             Topic.DATES -> "when"
             Topic.PARTY -> "who is coming"
@@ -128,16 +130,17 @@ object English : Texts {
         when (topic) {
             Topic.WHERE -> Question(topic, "Where are you going, and for how many days in each place?")
             Topic.ALLERGIES ->
-                Question(topic, "Do you have a food allergy? If you do, do you need to avoid even traces?", listOf("None", "Nuts", "Shellfish", "Gluten", "Dairy"), several = true)
-            Topic.DIET -> Question(topic, "Is there anything you do not eat?", listOf("I eat everything", "Vegetarian", "Pescatarian", "Halal", "No pork"))
+                Question(topic, "Do you have a food allergy? If you do, do you need to avoid even traces?", listOf("None", "Nuts", "Shellfish", "Gluten", "Dairy"), alone = listOf("None"))
+            Topic.PREGNANCY -> Question(topic, "Is anyone on this trip pregnant?", listOf("No", "Yes"), alone = listOf("No", "Yes"))
+            Topic.DIET -> Question(topic, "Is there anything you do not eat?", listOf("I eat everything", "Vegetarian", "Pescatarian", "Halal", "No pork"), alone = listOf("I eat everything"))
             Topic.DATES -> Question(topic, "When are you going?", listOf("Spring", "Summer", "Autumn", "Winter"))
-            Topic.PARTY -> Question(topic, "Who is eating with you?", listOf("Just me", "Two of us", "Family with children", "Group of friends"))
+            Topic.PARTY -> Question(topic, "Who is eating with you?", listOf("Just me", "Two of us", "Family with children", "Group of friends"), alone = listOf("Just me"))
             Topic.STAY -> Question(topic, "Where are you staying in each place? A neighbourhood or the name of the hotel is enough.")
-            Topic.MEALS -> Question(topic, "Which meals should the route plan?", listOf("Breakfast", "Lunch", "Snack", "Dinner"), several = true)
+            Topic.MEALS -> Question(topic, "Which meals should the route plan?", listOf("Breakfast", "Lunch", "Snack", "Dinner"))
             Topic.BUDGET ->
-                Question(topic, "What would you like to spend on a meal?", listOf("As little as possible", "Mid-range", "Mid-range, and one special dinner", "Money is no object"))
-            Topic.TASTE -> Question(topic, "How adventurous are you with food, and is there anything you do not like?", listOf("The classics", "Curious", "Anything the locals eat"))
-            Topic.DRINKS -> Question(topic, "What should the route have to drink?", listOf("Wine", "Beer", "Coffee", "Cocktails", "No alcohol"), several = true)
+                Question(topic, "What would you like to spend on a meal?", listOf("As little as possible", "Mid-range", "Mid-range, and one special dinner", "Money is no object"), alone = listOf("As little as possible", "Mid-range", "Mid-range, and one special dinner", "Money is no object"))
+            Topic.TASTE -> Question(topic, "How adventurous are you with food, and is there anything you do not like?", listOf("The classics", "Curious", "Anything the locals eat"), alone = listOf("The classics", "Curious", "Anything the locals eat"))
+            Topic.DRINKS -> Question(topic, "What should the route have to drink?", listOf("Wine", "Beer", "Coffee", "Cocktails", "No alcohol"))
         }
 
     override val hereIsWhatIHave = "Here is what I have"
@@ -147,6 +150,8 @@ object English : Texts {
     override val sampleDidNotRead = "This is the sample: the script did not read your answers."
     override val allergies = "Allergies"
     override val noAllergies = "None"
+    override val pregnancy = "Pregnancy"
+    override val someoneIsPregnant = "Someone is pregnant"
     override val diet = "Diet"
     override val eatsEverything = "Eats everything"
     override val whenLabel = "When"
@@ -245,9 +250,9 @@ object English : Texts {
                 Topic.ALLERGIES,
                 "Lisbon cooks a lot of shellfish, and many of its pastries have almonds. Do you have a food allergy?",
                 listOf("None", "Shellfish", "Nuts", "Gluten"),
-                several = true,
+                alone = listOf("None"),
             ),
-            Question(Topic.DIET, "Lisbon loves pork as much as fish: the bifana is a pork roll. Is there anything you do not eat?", listOf("I eat everything", "No pork", "Pescatarian", "Vegetarian")),
+            Question(Topic.DIET, "Lisbon loves pork as much as fish: the bifana is a pork roll. Is there anything you do not eat?", listOf("I eat everything", "No pork", "Pescatarian", "Vegetarian"), alone = listOf("I eat everything")),
             Question(Topic.DATES, "When are you going? In June the whole city grills sardines in the street.", listOf("June", "Another summer month", "Another season")),
         )
     override val sampleDishes =

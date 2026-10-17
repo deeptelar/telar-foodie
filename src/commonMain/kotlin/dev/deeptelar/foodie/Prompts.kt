@@ -60,11 +60,12 @@ internal fun dishesPrompt(trip: Trip): String =
         appendLine("The stops of the trip:")
         trip.stops.forEach { appendLine("- ${it.name}") }
         val profile = trip.profile
-        if (profile.allergies.isNotEmpty() || profile.diet.isNotBlank()) {
+        if (profile.allergies.isNotEmpty() || profile.diet.isNotBlank() || profile.pregnant) {
             appendLine()
             appendLine("Leave out what the traveller cannot eat:")
             if (profile.diet.isNotBlank()) appendLine("- Diet: ${profile.diet}")
             profile.allergies.forEach { appendLine("- " + it.line()) }
+            if (profile.pregnant) appendLine("- $PREGNANCY_RULE")
         }
         profile.taste.takeIf { it.isNotBlank() }?.let { appendLine("\nHow adventurous the traveller is: $it.") }
         profile.season.takeIf { it.isNotBlank() }?.let { appendLine("The trip is in $it: name what is in season then.") }
@@ -88,6 +89,7 @@ How to choose:
 - Prefer a place that cooks the local cuisine, that more than one source knows, and that the guide describes in words that fit: small, old, simple, full of locals. A high rating from many people counts. A place whose description speaks of tourists, views or an international menu is a weaker choice.
 - Follow what you know about the traveller: diet, budget, who comes along, how adventurous they are, what they drink and what they wish for. With one special meal, make one dinner of the trip a place to remember.
 - Never put a dish on the route that the traveller's allergies or diet rule out. With an allergy, say in `caution` what in the dish or the kitchen may contain it and what to tell the staff.
+- When someone on the trip is pregnant, choose dishes they can eat, and say in `caution` what to leave out or ask for at a place whose food often has it: raw or undercooked fish, meat or eggs, unpasteurised cheese, cured meats, fish high in mercury, alcohol.
 - Keep the meals of a day close to each other where you can.
 - When the candidates have no good place for a dish, search for one with the tools before you settle for less.
 
@@ -142,6 +144,7 @@ private fun profileLines(profile: Profile): List<String> =
     listOfNotNull(
         if (profile.allergies.isEmpty()) "Allergies: none said" else "Allergies: " + profile.allergies.joinToString { it.line() },
         "Diet: " + profile.diet.ifBlank { "none said" },
+        if (profile.pregnant) "Pregnancy: $PREGNANCY_RULE" else null,
         "Budget: ${profile.budget}" + if (profile.splurge) ", with one special meal" else "",
         profile.party.takeIf { it.isNotBlank() }?.let { "Who eats: $it" },
         profile.season.takeIf { it.isNotBlank() }?.let { "When: $it" },
@@ -151,3 +154,8 @@ private fun profileLines(profile: Profile): List<String> =
     )
 
 private fun Allergy.line(): String = if (severe) "$food, even traces" else food
+
+/** What a model is told when someone on the trip is pregnant: the usual advice on food in pregnancy. */
+private const val PREGNANCY_RULE =
+    "someone on the trip is pregnant, so their dishes have no raw or undercooked fish, meat or eggs, no unpasteurised cheese, " +
+        "no cured meats, no fish high in mercury and no alcohol"

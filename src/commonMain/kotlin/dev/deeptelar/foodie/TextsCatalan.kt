@@ -98,23 +98,25 @@ object Catalan : Texts {
     override val oneQuestion = "Una pregunta"
     override val aFewQuestions = "Unes quantes preguntes"
     override val oneMoreThing = "Una cosa més abans de planificar."
-    override val lastQuestions = "Són les últimes. Toca el que encaixi, escriu el que no o salta una pregunta."
+    override val lastQuestions = "Són les últimes. Toca tot el que encaixi, escriu el que no o salta una pregunta."
     override val continueAnswers = "Continua"
     override val planNow = "Ja n'hi ha prou, planifica-ho"
     override val sampleAsks = "Això és l'exemple: un guió fa les preguntes i no llegeix les respostes."
     override val allergyNote =
         "El planificador deixa fora el que diguis i t'indica què has de dir al personal. No pot saber què posa una cuina en un plat: digues-ho sempre al cambrer."
+    override val pregnancyNote = "Amb un embaràs, el planificador segueix els consells habituals: res de peix, carn o ou crus, formatges sense pasteuritzar, embotits ni alcohol. El que digui el teu metge va primer."
     override val yourAnswer = "La teva resposta"
     override val somethingElse = "Una altra cosa, o més detalls"
 
     override fun youAlreadyToldMe(topics: List<String>) = "Ja m'has dit: ${topics.joinedWith("i")}."
 
-    override fun moreQuestions(count: Int) = "En queden unes $count després d'aquestes. Toca el que encaixi, escriu el que no o salta una pregunta."
+    override fun moreQuestions(count: Int) = "En queden unes $count després d'aquestes. Toca tot el que encaixi, escriu el que no o salta una pregunta."
 
     override fun topic(topic: Topic) =
         when (topic) {
             Topic.WHERE -> "on i quant de temps"
             Topic.ALLERGIES -> "al·lèrgies"
+            Topic.PREGNANCY -> "embaràs"
             Topic.DIET -> "dieta"
             Topic.DATES -> "quan"
             Topic.PARTY -> "qui ve"
@@ -129,16 +131,17 @@ object Catalan : Texts {
         when (topic) {
             Topic.WHERE -> Question(topic, "On vas i quants dies estaràs a cada lloc?")
             Topic.ALLERGIES ->
-                Question(topic, "Tens alguna al·lèrgia alimentària? Si en tens, has d'evitar fins i tot les traces?", listOf("Cap", "Fruits secs", "Marisc", "Gluten", "Lactis"), several = true)
-            Topic.DIET -> Question(topic, "Hi ha res que no mengis?", listOf("Menjo de tot", "Vegetarià", "Pescetarià", "Halal", "Sense porc"))
+                Question(topic, "Tens alguna al·lèrgia alimentària? Si en tens, has d'evitar fins i tot les traces?", listOf("Cap", "Fruits secs", "Marisc", "Gluten", "Lactis"), alone = listOf("Cap"))
+            Topic.PREGNANCY -> Question(topic, "Hi ha algú embarassada en aquest viatge?", listOf("No", "Sí"), alone = listOf("No", "Sí"))
+            Topic.DIET -> Question(topic, "Hi ha res que no mengis?", listOf("Menjo de tot", "Vegetarià", "Pescetarià", "Halal", "Sense porc"), alone = listOf("Menjo de tot"))
             Topic.DATES -> Question(topic, "Quan hi vas?", listOf("Primavera", "Estiu", "Tardor", "Hivern"))
-            Topic.PARTY -> Question(topic, "Amb qui menges?", listOf("Només jo", "Dues persones", "Família amb nens", "Grup d'amics"))
+            Topic.PARTY -> Question(topic, "Amb qui menges?", listOf("Només jo", "Dues persones", "Família amb nens", "Grup d'amics"), alone = listOf("Només jo"))
             Topic.STAY -> Question(topic, "On t'allotges a cada lloc? N'hi ha prou amb el barri o el nom de l'hotel.")
-            Topic.MEALS -> Question(topic, "Quins àpats ha de planificar la ruta?", listOf("Esmorzar", "Dinar", "Berenar", "Sopar"), several = true)
+            Topic.MEALS -> Question(topic, "Quins àpats ha de planificar la ruta?", listOf("Esmorzar", "Dinar", "Berenar", "Sopar"))
             Topic.BUDGET ->
-                Question(topic, "Quant vols gastar per àpat?", listOf("Com menys millor", "Preu mitjà", "Preu mitjà i un sopar especial", "Els diners no importen"))
-            Topic.TASTE -> Question(topic, "Fins on t'atreveixes a tastar, i hi ha res que no t'agradi?", listOf("Els clàssics", "Tinc curiositat", "El que mengi la gent del lloc"))
-            Topic.DRINKS -> Question(topic, "Què vols beure a la ruta?", listOf("Vi", "Cervesa", "Cafè", "Còctels", "Sense alcohol"), several = true)
+                Question(topic, "Quant vols gastar per àpat?", listOf("Com menys millor", "Preu mitjà", "Preu mitjà i un sopar especial", "Els diners no importen"), alone = listOf("Com menys millor", "Preu mitjà", "Preu mitjà i un sopar especial", "Els diners no importen"))
+            Topic.TASTE -> Question(topic, "Fins on t'atreveixes a tastar, i hi ha res que no t'agradi?", listOf("Els clàssics", "Tinc curiositat", "El que mengi la gent del lloc"), alone = listOf("Els clàssics", "Tinc curiositat", "El que mengi la gent del lloc"))
+            Topic.DRINKS -> Question(topic, "Què vols beure a la ruta?", listOf("Vi", "Cervesa", "Cafè", "Còctels", "Sense alcohol"))
         }
 
     override val hereIsWhatIHave = "Això és el que tinc"
@@ -148,6 +151,8 @@ object Catalan : Texts {
     override val sampleDidNotRead = "Això és l'exemple: el guió no ha llegit les teves respostes."
     override val allergies = "Al·lèrgies"
     override val noAllergies = "Cap"
+    override val pregnancy = "Embaràs"
+    override val someoneIsPregnant = "Hi ha algú embarassada"
     override val diet = "Dieta"
     override val eatsEverything = "Menja de tot"
     override val whenLabel = "Quan"
@@ -263,9 +268,9 @@ object Catalan : Texts {
                 Topic.ALLERGIES,
                 "A Lisboa es cuina molt de marisc, i molts dels seus dolços porten ametlla. Tens alguna al·lèrgia alimentària?",
                 listOf("Cap", "Marisc", "Fruits secs", "Gluten"),
-                several = true,
+                alone = listOf("Cap"),
             ),
-            Question(Topic.DIET, "Lisboa estima el porc tant com el peix: la bifana és un entrepà de porc. Hi ha res que no mengis?", listOf("Menjo de tot", "Sense porc", "Pescetarià", "Vegetarià")),
+            Question(Topic.DIET, "Lisboa estima el porc tant com el peix: la bifana és un entrepà de porc. Hi ha res que no mengis?", listOf("Menjo de tot", "Sense porc", "Pescetarià", "Vegetarià"), alone = listOf("Menjo de tot")),
             Question(Topic.DATES, "Quan hi vas? Al juny tota la ciutat fa sardines a la brasa al carrer.", listOf("Al juny", "Un altre mes d'estiu", "Una altra època de l'any")),
         )
     override val sampleDishes =

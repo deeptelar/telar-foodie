@@ -107,6 +107,7 @@ interface Texts {
     val planNow: String
     val sampleAsks: String
     val allergyNote: String
+    val pregnancyNote: String
     val yourAnswer: String
     val somethingElse: String
 
@@ -129,6 +130,8 @@ interface Texts {
     val sampleDidNotRead: String
     val allergies: String
     val noAllergies: String
+    val pregnancy: String
+    val someoneIsPregnant: String
     val diet: String
     val eatsEverything: String
     val whenLabel: String

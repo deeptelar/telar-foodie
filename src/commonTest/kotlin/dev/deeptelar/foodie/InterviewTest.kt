@@ -11,28 +11,29 @@ class InterviewTest {
     fun `the next round asks the first open topics, in the model's words where it wrote some`() {
         val next = nextQuestions(covered = setOf(Topic.WHERE, Topic.ALLERGIES, Topic.DIET, Topic.DATES, Topic.PARTY, Topic.STAY, Topic.MEALS), wrote = listOf(naples), texts = English)
 
-        assertEquals(listOf(Topic.BUDGET, Topic.TASTE, Topic.DRINKS), next.map { it.topic })
-        assertEquals(English.question(Topic.BUDGET), next[0])
+        assertEquals(listOf(Topic.PREGNANCY, Topic.BUDGET, Topic.TASTE), next.map { it.topic })
+        assertEquals(English.question(Topic.BUDGET), next[1])
         // The model's answers are tidied: no blanks, no repeats.
-        assertEquals(listOf("Yes", "Only the classics"), next[1].options)
+        assertEquals(listOf("Yes", "Only the classics"), next[2].options)
     }
 
     @Test
     fun `a question the model wrote for a topic that is not next waits for its round`() {
         val next = nextQuestions(covered = emptySet(), wrote = listOf(naples), texts = English)
 
-        assertEquals(listOf(Topic.WHERE, Topic.ALLERGIES, Topic.DIET), next.map { it.topic })
-        assertEquals(listOf(English.question(Topic.WHERE), English.question(Topic.ALLERGIES), English.question(Topic.DIET)), next)
+        assertEquals(listOf(Topic.WHERE, Topic.ALLERGIES, Topic.PREGNANCY), next.map { it.topic })
+        assertEquals(listOf(English.question(Topic.WHERE), English.question(Topic.ALLERGIES), English.question(Topic.PREGNANCY)), next)
     }
 
     @Test
-    fun `what the request answers is not asked, except allergies`() {
-        val trip = Trip("Four days in Naples with my partner. I'm allergic to peanuts.")
+    fun `what the request answers is not asked, except allergies and pregnancy`() {
+        val trip = Trip("Four days in Naples with my partner, who is pregnant. I'm allergic to peanuts.")
 
-        val read = trip.read(Reading(Profile(allergies = listOf(Allergy("peanuts"))), answered = listOf(Topic.WHERE, Topic.PARTY, Topic.ALLERGIES)))
+        val read =
+            trip.read(Reading(Profile(allergies = listOf(Allergy("peanuts")), pregnant = true), answered = listOf(Topic.WHERE, Topic.PARTY, Topic.ALLERGIES, Topic.PREGNANCY)))
 
-        assertEquals(listOf(Topic.ALLERGIES, Topic.DIET, Topic.DATES), read.questions.map { it.topic })
-        assertEquals(setOf(Topic.WHERE, Topic.PARTY, Topic.ALLERGIES, Topic.DIET, Topic.DATES), read.interview.covered)
+        assertEquals(listOf(Topic.ALLERGIES, Topic.PREGNANCY, Topic.DIET), read.questions.map { it.topic })
+        assertEquals(setOf(Topic.WHERE, Topic.PARTY, Topic.ALLERGIES, Topic.PREGNANCY, Topic.DIET), read.interview.covered)
         assertEquals(1, read.interview.rounds)
         assertEquals(0, read.interview.read)
         assertEquals(listOf(Allergy("peanuts")), read.profile.allergies)
@@ -89,5 +90,14 @@ class InterviewTest {
         assertEquals(InterviewStage.ASKING, corrected.interview.stage)
         assertEquals(InterviewStage.CHECKING, corrected.read(Reading(Profile(party = "three adults"))).interview.stage)
         assertEquals(InterviewStage.DONE, checking.confirmed().interview.stage)
+    }
+
+    @Test
+    fun `an answer that rules out the others must be one of the answers`() {
+        val wrote = Question(Topic.DIET, "Anything you do not eat?", listOf("I eat everything", "No pork"), alone = listOf(" I eat everything", "Nothing at all"))
+
+        val next = nextQuestions(covered = setOf(Topic.WHERE, Topic.ALLERGIES, Topic.PREGNANCY), wrote = listOf(wrote), texts = English)
+
+        assertEquals(listOf("I eat everything"), next.first().alone)
     }
 }

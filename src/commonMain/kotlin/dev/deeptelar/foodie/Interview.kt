@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 /*
  * The interview before a trip is planned. A planner who knows food does not hand out a form: they
  * ask what the trip needs, skip what the traveller already said, and ask what is risky first. The
- * topics and their order are fixed here, so no model can leave out the question about allergies.
+ * topics and their order are fixed here, so no model can leave out the questions about allergies
+ * and pregnancy.
  * The model reads the traveller's words and writes the questions for the places of the trip.
  */
 
@@ -20,6 +21,7 @@ enum class Topic(
 ) {
     WHERE("Where and how long"),
     ALLERGIES("Allergies"),
+    PREGNANCY("Pregnancy"),
     DIET("Diet"),
     DATES("When"),
     PARTY("Who is coming"),
@@ -40,10 +42,16 @@ data class Question(
             "Name a dish or a habit of the place when it helps the traveller answer.",
     )
     val text: String,
-    @Description("Two to five short answers the traveller can tap, each a few words. Empty when only the traveller's own words can answer, such as the name of a hotel.")
+    @Description(
+        "Two to five short answers the traveller can tap, each a few words. The traveller can tap several of them together. " +
+            "Empty when only the traveller's own words can answer, such as the name of a hotel.",
+    )
     val options: List<String> = emptyList(),
-    @Description("Whether the traveller can tap more than one of the answers.")
-    val several: Boolean = false,
+    @Description(
+        "The answers among the options that rule out all the others, such as \"None\" or \"I eat everything\", " +
+            "or each step of a scale such as a budget. Empty when any answers can be true together.",
+    )
+    val alone: List<String> = emptyList(),
 )
 
 /** What the traveller answered to a question. An empty [text] is a question the traveller skipped. A correction of the profile has no [topic]. */
@@ -59,6 +67,8 @@ data class Answer(
 data class Profile(
     @Description("Each food the traveller is allergic to. Empty if the traveller said none or did not say.")
     val allergies: List<Allergy> = emptyList(),
+    @Description("Whether someone on the trip is pregnant. False if the traveller said no or did not say.")
+    val pregnant: Boolean = false,
     @Description("What the traveller does not eat, for example \"vegetarian\", \"halal\" or \"no pork\". Empty if the traveller eats everything or did not say.")
     val diet: String = "",
     @Description("When the trip is: dates, a month or a season. Empty if not said.")
@@ -122,6 +132,9 @@ enum class InterviewStage {
     DONE,
 }
 
+/** The topics that are asked about even when the request mentions them: a planner makes sure of what is a matter of health. */
+internal val ALWAYS_ASKED: Set<Topic> = setOf(Topic.ALLERGIES, Topic.PREGNANCY)
+
 /** How many questions a round asks at most: few enough for one screen of a phone. */
 internal const val PER_ROUND = 3
 
@@ -137,7 +150,10 @@ internal fun nextQuestions(covered: Set<Topic>, wrote: List<Question>, texts: Te
         wrote.firstOrNull { it.topic == topic && it.text.isNotBlank() }?.tidied() ?: texts.question(topic)
     }
 
-private fun Question.tidied(): Question = copy(text = text.trim(), options = options.map { it.trim() }.filter { it.isNotEmpty() }.distinct().take(6))
+private fun Question.tidied(): Question {
+    val options = options.map { it.trim() }.filter { it.isNotEmpty() }.distinct().take(6)
+    return copy(text = text.trim(), options = options, alone = alone.map { it.trim() }.filter { it in options })
+}
 
 /** Whether the profile was read from every answer the traveller gave. */
 internal val Trip.profileIsCurrent: Boolean get() = interview.read == answers.size
@@ -145,11 +161,11 @@ internal val Trip.profileIsCurrent: Boolean get() = interview.read == answers.si
 /**
  * The trip after the model read the traveller's words into [reading]: the profile is the new one,
  * what the words answer is covered, and the next round of questions is open, if a topic is left.
- * Allergies are asked about even when the request mentions one: a planner makes sure of them.
+ * Allergies and pregnancy are asked about even when the request mentions them: a planner makes sure of them.
  * With no topic left, the interview waits for the traveller to check the profile.
  */
 internal fun Trip.read(reading: Reading): Trip {
-    val covered = interview.covered + reading.answered.filter { it != Topic.ALLERGIES }
+    val covered = interview.covered + reading.answered.filter { it !in ALWAYS_ASKED }
     val read = copy(profile = reading.profile, interview = interview.copy(covered = covered, read = answers.size))
     if (interview.stage == InterviewStage.DONE) return read
     val next = if (interview.rounds < MAX_ROUNDS) nextQuestions(covered, reading.questions, language.texts) else emptyList()

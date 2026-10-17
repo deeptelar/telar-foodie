@@ -275,7 +275,7 @@ class PlannerTest {
 
             // The sample asks one round of questions, and then shows what it understood.
             val asked = planner.invoke(Trip("Anything"), config)
-            assertEquals(listOf(Topic.ALLERGIES, Topic.DIET, Topic.DATES), asked.state.questions.map { it.topic })
+            assertEquals(listOf(Topic.ALLERGIES, Topic.PREGNANCY, Topic.DIET), asked.state.questions.map { it.topic })
             val checking = planner.resume(config) { trip -> trip.answered(trip.questions.map { Answer(it.topic, it.text, it.options.first()) }) }
             assertEquals(InterviewStage.CHECKING, checking.state.interview.stage)
             val result = planner.resume(config) { it.confirmed() }
@@ -473,7 +473,7 @@ class PlannerTest {
             // What the request said is not asked. The model's words are used where it wrote some.
             assertIs<GraphResult.Interrupted<Trip>>(asked)
             assertEquals(listOf(Nodes.INTERVIEW), asked.nextNodes)
-            assertEquals(listOf("Lisbon cooks a lot of shellfish. Any allergy?", English.question(Topic.DIET).text, English.question(Topic.DATES).text), asked.state.questions.map { it.text })
+            assertEquals(listOf("Lisbon cooks a lot of shellfish. Any allergy?", English.question(Topic.PREGNANCY).text, English.question(Topic.DIET).text), asked.state.questions.map { it.text })
             assertTrue("- WHERE: Where and how long\n" in model.requests[0].messages.first().text)
 
             val checking = planner.resume(config) { trip -> trip.answered(trip.questions.map { Answer(it.topic, it.text, if (it.topic == Topic.ALLERGIES) "Shellfish, even traces" else "") }) }
@@ -531,7 +531,7 @@ class PlannerTest {
             val config = config()
 
             val asked = planner.invoke(Trip("One day in Lisbon, the two of us"), config)
-            assertEquals(listOf(Topic.ALLERGIES), asked.state.questions.map { it.topic })
+            assertEquals(listOf(Topic.ALLERGIES, Topic.PREGNANCY), asked.state.questions.map { it.topic })
             val checking = planner.resume(config) { it.answered(listOf(Answer(Topic.ALLERGIES, "Any allergy?", "None"))) }
             assertEquals(InterviewStage.CHECKING, checking.state.interview.stage)
             val again = planner.resume(config) { it.corrected("We are three.") }
@@ -547,6 +547,7 @@ class PlannerTest {
             val profile =
                 Profile(
                     allergies = listOf(Allergy("shellfish", severe = true)),
+                    pregnant = true,
                     meals = listOf(MealTime.LUNCH, MealTime.BREAKFAST),
                     budget = "high",
                     splurge = true,
@@ -569,6 +570,9 @@ class PlannerTest {
             val plan = model.requests[2].messages.first().text
             assertTrue("- Allergies: shellfish, even traces" in plan, plan)
             assertTrue("- Budget: high, with one special meal" in plan, plan)
+            // A pregnancy reaches both models, with what to leave out.
+            assertTrue("- Pregnancy: someone on the trip is pregnant, so their dishes have no raw or undercooked fish" in plan, plan)
+            assertTrue("- someone on the trip is pregnant" in dishes, dishes)
             assertTrue("- Meals of every day: breakfast, lunch\n" in plan, plan)
             // The meals the traveller asked for are the ones the agent is told are open.
             val result = model.requests[3].messages.last() as ChatMessage.ToolResult

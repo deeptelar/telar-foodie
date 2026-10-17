@@ -591,8 +591,10 @@ class App(
         add("div", "ask") {
             add("p", "question", question.text)
             if (question.options.isNotEmpty()) add("div", "chips") { question.options.forEach { chip(question, it) } }
-            if (question.topic == Topic.ALLERGIES) {
-                add("p", "hint small", texts.allergyNote)
+            when (question.topic) {
+                Topic.ALLERGIES -> add("p", "hint small", texts.allergyNote)
+                Topic.PREGNANCY -> add("p", "hint small", texts.pregnancyNote)
+                else -> Unit
             }
             val own = drafts[question.text]?.own.orEmpty()
             fun write(text: String) {
@@ -626,7 +628,10 @@ class App(
         if (speechSupported) add("div", "speak-row") { speakButton(trip?.language ?: language, texts, read, write) }
     }
 
-    /** An answer to tap. A question with one answer keeps the last one tapped; tapping it again takes it back. */
+    /**
+     * An answer to tap. Several can be tapped together, except an answer that rules out the others,
+     * such as "None": tapping it clears the rest, and tapping another clears it. A second tap takes an answer back.
+     */
     private fun Element.chip(question: Question, option: String) {
         val draft = drafts[question.text] ?: Draft()
         button(option, "chip answer" + if (option in draft.picked) " picked" else "") {
@@ -634,8 +639,8 @@ class App(
             val picked =
                 when {
                     option in now.picked -> now.picked - option
-                    question.several -> now.picked + option
-                    else -> listOf(option)
+                    option in question.alone -> listOf(option)
+                    else -> now.picked.filter { it !in question.alone } + option
                 }
             drafts = drafts + (question.text to now.copy(picked = picked))
             // Only the chips of this question are drawn again: what the traveller is typing stays.
@@ -676,6 +681,7 @@ class App(
     private fun profileRows(profile: Profile): List<Pair<String, String>> =
         listOfNotNull(
             texts.allergies to if (profile.allergies.isEmpty()) texts.noAllergies else profile.allergies.joinToString { if (it.severe) texts.evenTraces(it.food) else it.food },
+            if (profile.pregnant) texts.pregnancy to texts.someoneIsPregnant else null,
             texts.diet to profile.diet.ifBlank { texts.eatsEverything },
             profile.season.takeIf { it.isNotBlank() }?.let { texts.whenLabel to it },
             profile.party.takeIf { it.isNotBlank() }?.let { texts.who to it },

@@ -12,7 +12,8 @@ class TextsTest {
                 val english = English.question(topic)
                 val question = texts.question(topic)
                 assertEquals(topic, question.topic)
-                assertEquals(english.several, question.several, "$texts $topic")
+                assertEquals(english.alone.size, question.alone.size, "$texts $topic")
+                assertTrue(question.options.containsAll(question.alone), "$texts $topic")
                 assertEquals(english.options.isEmpty(), question.options.isEmpty(), "$texts $topic")
             }
         }
@@ -41,6 +42,6 @@ class TextsTest {
     fun `a Catalan trip gets plain questions in Catalan`() {
         val read = Trip("Lisboa", language = Language.CATALAN).read(Reading(Profile(), answered = listOf(Topic.WHERE)))
 
-        assertEquals(listOf(Catalan.question(Topic.ALLERGIES), Catalan.question(Topic.DIET), Catalan.question(Topic.DATES)), read.questions)
+        assertEquals(listOf(Catalan.question(Topic.ALLERGIES), Catalan.question(Topic.PREGNANCY), Catalan.question(Topic.DIET)), read.questions)
     }
 }
