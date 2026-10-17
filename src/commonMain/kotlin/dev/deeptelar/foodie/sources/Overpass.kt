@@ -109,15 +109,15 @@ class Overpass(
         }
 
         /**
-         * The big sights around [near]: the museums, monuments, viewpoints and squares that have a
-         * page in Wikipedia. The others are seldom where the visitors crowd.
+         * The big sights around [near]: the attractions, viewpoints and squares that have a page in
+         * Wikipedia. Museums, churches and fountains are left out: a city has so many that nearly
+         * every place of its centre stands next to one, and few of them draw crowds.
          */
         internal fun sightsQuery(near: Location, radius: Int): String {
             val around = "(around:$radius,${near.lat},${near.lon})"
             val statements =
                 listOf(
-                    "nwr[\"tourism\"~\"^(attraction|museum|viewpoint)$\"]",
-                    "nwr[\"historic\"~\"^(monument|castle|palace|cathedral|city_gate)$\"]",
+                    "nwr[\"tourism\"~\"^(attraction|viewpoint)$\"]",
                     "nwr[\"place\"=\"square\"]",
                 ).map { it + "[\"name\"][\"wikipedia\"]" }
             return "[out:json][timeout:25];(" + statements.joinToString("") { "$it$around;" } + ");out tags center $SIGHTS;"

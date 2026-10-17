@@ -104,8 +104,12 @@ fun Trip.nextToASight(restaurant: Restaurant): Pair<Sight, Int>? =
         .filter { it.second <= SIGHT_METRES }
         .minByOrNull { it.second }
 
-/** A place this close to a big sight lives off the visitors who pass, in metres. */
-internal const val SIGHT_METRES = 120
+/**
+ * A place this close to a big sight lives off the visitors who pass, in metres. In the centre of
+ * Lisbon, 60 m marks 1 place in 25, among them the tourist cafés under the Santa Justa lift; 120 m
+ * marked 1 in 5, and most of the old taverns with them.
+ */
+internal const val SIGHT_METRES = 60
 
 /**
  * How much speaks for [restaurant] before anyone has read about it. Being known for a dish of the
