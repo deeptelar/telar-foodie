@@ -6,6 +6,7 @@ import dev.deeptelar.telar.GraphEvent
 import dev.deeptelar.telar.MemoryCheckpointer
 import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.pendingToolCalls
+import dev.deeptelar.telar.anthropic.AnthropicChatModel
 import dev.deeptelar.telar.openai.OpenAiChatModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -25,13 +26,17 @@ import kotlin.test.assertTrue
  * FOODIE_MODEL=gemini-flash-latest FOODIE_MODEL_KEY=... ./gradlew jvmTest --tests '*LivePlannerTest*'
  * ```
  *
+ * With `FOODIE_PROVIDER=claude`, Claude plans instead, with the key in `FOODIE_MODEL_KEY` and the
+ * model in `FOODIE_MODEL`; `FOODIE_MODEL_URL` is not needed then.
+ *
  * `FOODIE_REQUEST` sets the trip, and `FOODIE_LANGUAGE` its language (`ENGLISH`, `SPANISH` or `CATALAN`).
  * What the run does is written to `build/live-planner.txt`.
  */
 class LivePlannerTest {
     @Test
     fun `a real model plans a trip and changes it`() {
-        val url = System.getenv("FOODIE_MODEL_URL") ?: return
+        val claude = System.getenv("FOODIE_PROVIDER") == "claude"
+        val url = System.getenv("FOODIE_MODEL_URL") ?: if (claude) "" else return
         val log = StringBuilder()
         fun say(line: String) {
             println(line)
@@ -40,7 +45,12 @@ class LivePlannerTest {
         try {
             runBlocking {
                 HttpClient(CIO).use { client ->
-                    val model = OpenAiChatModel(client = client, apiKey = System.getenv("FOODIE_MODEL_KEY"), model = System.getenv("FOODIE_MODEL"), baseUrl = url)
+                    val model =
+                        if (claude) {
+                            AnthropicChatModel(client = client, apiKey = System.getenv("FOODIE_MODEL_KEY"), model = System.getenv("FOODIE_MODEL"))
+                        } else {
+                            OpenAiChatModel(client = client, apiKey = System.getenv("FOODIE_MODEL_KEY"), model = System.getenv("FOODIE_MODEL"), baseUrl = url)
+                        }
                     val planner = planner(model, Sources.online(client))
                     val config = GraphConfig(threadId = "live", checkpointer = MemoryCheckpointer<Trip>(), interruptBefore = setOf(Nodes.REVIEW), maxIterations = 120)
                     val request = System.getenv("FOODIE_REQUEST") ?: "Two days in Lisbon and one in Porto. I love seafood and pastries, and I do not eat pork."
