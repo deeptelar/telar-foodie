@@ -511,3 +511,42 @@ button.chip.answer.picked {
     color: var(--bad);
     font-size: 14px;
 }
+
+/* Speaking instead of typing */
+
+.speak-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.speak-row .hint {
+    margin: 0;
+}
+
+button.speak {
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+button.speak.listening {
+    background: var(--bad);
+    border-color: var(--bad);
+    color: #fff;
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.told {
+    margin: 0;
+    padding: 8px 10px;
+    border-left: 3px solid var(--ok);
+    background: var(--paper);
+}

@@ -321,6 +321,7 @@ class App(
     // The page
 
     private fun render() {
+        stopSpeaking()
         map?.remove()
         map = null
         runPanel = null
@@ -389,14 +390,23 @@ class App(
     private fun HTMLElement.startForm() {
         add("section", "card") {
             add("h2", text = "Where are you going?")
-            add("p", "hint", "Say where, for how many days, and what you like. The planner asks about the rest.")
+            add(
+                "p",
+                "hint",
+                "Tell me about it, in writing or out loud: where, for how long, who comes along, what you love and what you cannot eat. " +
+                    "I ask about whatever is missing.",
+            )
             val text =
                 (add("textarea") as HTMLTextAreaElement).apply {
-                    rows = 3
+                    rows = 4
                     placeholder = "3 days in Lisbon and 2 in Porto. No pork, and I love pastries."
                     value = request
                     oninput = { request = value }
                 }
+            speakRow(read = { request }) {
+                request = it
+                text.value = it
+            }
             add("div", "chips") {
                 EXAMPLES.forEach { example ->
                     button(example, "chip") {
@@ -418,6 +428,9 @@ class App(
                     }
                 }
                 button("Try the sample, no key needed", "ghost") { start(SampleModel.REQUEST, sample = true) }
+            }
+            if (speechSupported) {
+                add("p", "hint small", "Speaking: your browser turns your voice into text. Most browsers do that on their maker's servers, so the recording goes there; this page only gets the text.")
             }
             if (!settings.hasModel) {
                 add("p", "hint", "To plan a trip of your own, add the key of a model under Settings. The sample plans two days in Lisbon with a script in place of the model.")
@@ -533,6 +546,12 @@ class App(
         add("section", "card") {
             add("h2", text = if (trip.questions.size == 1) "One question" else "A few questions")
             val left = Topic.entries.count { it !in trip.interview.covered }
+            // What the request already said, so the traveller sees that it was heard, and why these are the questions.
+            val asked = trip.answers.mapNotNull { it.topic } + trip.questions.map { it.topic }
+            val told = Topic.entries.filter { it in trip.interview.covered && it !in asked }
+            if (interviewing && trip.interview.rounds == 1 && told.isNotEmpty()) {
+                add("p", "told", "You already told me: ${told.joinToString { it.label.lowercase() }}.")
+            }
             add(
                 "p",
                 "hint",
@@ -567,21 +586,31 @@ class App(
             fun write(text: String) {
                 drafts = drafts + (question.text to (drafts[question.text] ?: Draft()).copy(own = text))
             }
-            if (question.options.isEmpty()) {
-                (add("textarea") as HTMLTextAreaElement).apply {
-                    rows = 2
-                    placeholder = "Your answer"
-                    value = own
-                    oninput = { write(value) }
+            val field =
+                if (question.options.isEmpty()) {
+                    (add("textarea") as HTMLTextAreaElement).apply {
+                        rows = 2
+                        placeholder = "Your answer"
+                        value = own
+                        oninput = { write(value) }
+                    }
+                } else {
+                    (add("input") as HTMLInputElement).apply {
+                        placeholder = "Something else, or more about it"
+                        value = own
+                        oninput = { write(value) }
+                    }
                 }
-            } else {
-                (add("input") as HTMLInputElement).apply {
-                    placeholder = "Something else, or more about it"
-                    value = own
-                    oninput = { write(value) }
-                }
+            speakRow(read = { drafts[question.text]?.own.orEmpty() }) {
+                write(it)
+                if (field is HTMLTextAreaElement) field.value = it else (field as HTMLInputElement).value = it
             }
         }
+    }
+
+    /** A microphone button under a text field, where the browser can turn speech into text. */
+    private fun HTMLElement.speakRow(read: () -> String, write: (String) -> Unit) {
+        if (speechSupported) add("div", "speak-row") { speakButton(read, write) }
     }
 
     /** An answer to tap. A question with one answer keeps the last one tapped; tapping it again takes it back. */
@@ -617,6 +646,7 @@ class App(
                     rows = 2
                     placeholder = "Anything to correct? For example: we are three, not two."
                 }
+            speakRow(read = { correction.value }) { correction.value = it }
             add("div", "actions") {
                 button("Plan my route", "primary") { resume { it.confirmed() } }
                 button("Correct it", "ghost") {
@@ -717,6 +747,7 @@ class App(
                         rows = 2
                         placeholder = "A vegetarian dinner on day 2, and somewhere cheaper for the first lunch."
                     }
+                speakRow(read = { wish.value }) { wish.value = it }
                 add("div", "actions") {
                     button("Update the route", "primary") {
                         val text = wish.value.trim()

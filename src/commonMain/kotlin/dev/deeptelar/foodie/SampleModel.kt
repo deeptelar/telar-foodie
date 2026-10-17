@@ -43,7 +43,8 @@ class SampleModel(
     private fun interview(messages: List<ChatMessage>): Reading {
         val first = messages.none { "answers to the planner's questions" in it.text }
         return if (first) {
-            Reading(PROFILE, answered = Topic.entries - QUESTIONS.map { it.topic }, questions = QUESTIONS)
+            // The sample's request says where it goes and what the traveller likes. The rest is asked.
+            Reading(PROFILE, answered = listOf(Topic.WHERE, Topic.TASTE), questions = QUESTIONS)
         } else {
             Reading(PROFILE, answered = Topic.entries)
         }
@@ -95,8 +96,8 @@ class SampleModel(
                     listOf("None", "Shellfish", "Nuts", "Gluten"),
                     several = true,
                 ),
+                Question(Topic.DIET, "Lisbon loves pork as much as fish: the bifana is a pork roll. Is there anything you do not eat?", listOf("I eat everything", "No pork", "Pescatarian", "Vegetarian")),
                 Question(Topic.DATES, "When are you going? In June the whole city grills sardines in the street.", listOf("June", "Another summer month", "Another season")),
-                Question(Topic.BUDGET, "Lunch at a tasca is cheap, a seafood dinner can cost five times as much. What suits you?", listOf("Tascas only", "A mix", "One big seafood dinner")),
             )
 
         private val BRIEF =

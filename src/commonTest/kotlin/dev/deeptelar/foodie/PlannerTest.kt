@@ -275,7 +275,7 @@ class PlannerTest {
 
             // The sample asks one round of questions, and then shows what it understood.
             val asked = planner.invoke(Trip("Anything"), config)
-            assertEquals(listOf(Topic.ALLERGIES, Topic.DATES, Topic.BUDGET), asked.state.questions.map { it.topic })
+            assertEquals(listOf(Topic.ALLERGIES, Topic.DIET, Topic.DATES), asked.state.questions.map { it.topic })
             val checking = planner.resume(config) { trip -> trip.answered(trip.questions.map { Answer(it.topic, it.text, it.options.first()) }) }
             assertEquals(InterviewStage.CHECKING, checking.state.interview.stage)
             val result = planner.resume(config) { it.confirmed() }

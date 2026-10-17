@@ -8,7 +8,9 @@ changes until you like it.
 
 The whole app is one web page. There is no server behind it: the workflow runs in your browser, the
 plan is saved in your browser, and the key of your model goes from your browser straight to its
-provider.
+provider. You can also speak instead of typing: the browser turns your voice into text with its own
+speech service (Chrome's runs on Google's servers), and the page only gets the text. Firefox has
+none, so there the microphone buttons are not shown.
 
 It is built with [Telar](https://github.com/deeptelar/telar), a Kotlin library for AI agents and
 workflows, and is meant as an example of a complete app on it.
