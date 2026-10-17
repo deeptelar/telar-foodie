@@ -157,6 +157,11 @@ internal fun profileChangePrompt(trip: Trip): String =
         append("Change the meals that no longer fit, add or remove meals so that every day has these meals, and keep the rest of the route.")
     }
 
+/** What the agent is told when the traveller paused it to add something, or to send it another way. */
+internal fun asidePrompt(text: String): String =
+    "While you worked, I paused you to say this:\n\n${text.trim()}\n\n" +
+        "Plan the route with it in mind: change what it changes, keep what still fits, and go on."
+
 /** The profile for a model, one line for each thing the traveller said. */
 private fun profileLines(profile: Profile): List<String> =
     listOfNotNull(

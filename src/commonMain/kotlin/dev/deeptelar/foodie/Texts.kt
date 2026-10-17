@@ -88,6 +88,12 @@ interface Texts {
     // A run that stopped
 
     val stoppedHalfway: String
+    val pause: String
+    val paused: String
+
+    /** On a paused run: what the traveller can write before it goes on. */
+    val pausedHint: String
+    val asidePlaceholder: String
     val continueRun: String
     val startOver: String
     val gotStuck: String

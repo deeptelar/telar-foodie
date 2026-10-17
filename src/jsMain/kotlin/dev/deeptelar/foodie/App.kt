@@ -49,6 +49,9 @@ private enum class Phase {
     /** The traveller said yes and the run ended. */
     DONE,
 
+    /** The traveller paused the run, to add something or to send it another way. */
+    PAUSED,
+
     /** A saved run that stopped in the middle, because the page was closed while it ran. */
     STOPPED,
 
@@ -151,13 +154,38 @@ class App(
     private fun start(request: String, sample: Boolean) {
         this.sample = sample
         this.request = request
-        trip = null
-        run { planner().stream(Trip(request, language = language), config) }
+        val trip = Trip(request, language = language)
+        this.trip = trip
+        run { planner().stream(trip, config) }
     }
 
-    /** Continues the saved run, with [update] applied to its state first. */
+    /**
+     * Continues the saved run, with [update] applied to its state first. [trip] is then the state
+     * the run continues with, which is saved only when its step is done: a pause before that keeps it.
+     */
     private fun resume(update: (Trip) -> Trip = { it }) {
-        run { planner().streamResume(config) { update(it) } }
+        run { planner().streamResume(config) { update(it).also { started -> trip = started } } }
+    }
+
+    /** Stops the run where it is. What its current step did is lost, and the step runs again when the run goes on. */
+    private fun pause() {
+        job?.cancel()
+        phase = Phase.PAUSED
+        render()
+    }
+
+    /** Continues a paused run from [from], with the traveller's [text] if they wrote any. */
+    private fun goOn(from: Trip, text: String) {
+        when {
+            text.isEmpty() -> resume { from }
+            from.planning -> resume { from.redirected(text) }
+            // What the planner read from the trip is read again with the words: the run starts again from the interview.
+            else -> {
+                val told = from.toldMore(text)
+                trip = told
+                run { planner().stream(told, config) }
+            }
+        }
     }
 
     private fun run(events: () -> Flow<GraphEvent<Trip>>) {
@@ -399,15 +427,7 @@ class App(
             Phase.QUESTION -> if (trip != null) root.questionCard(trip)
             Phase.CHECKING -> if (trip != null) root.profileCard(trip)
             Phase.REVIEW, Phase.DONE -> if (trip != null) root.route(trip)
-            Phase.STOPPED ->
-                root.add("section", "card") {
-                    add("h2", text = texts.stoppedHalfway)
-                    add("p", text = texts.closedWhileWorking(request.trim()))
-                    add("div", "actions") {
-                        button(texts.continueRun, "primary") { resume() }
-                        button(texts.startOver, "ghost") { startOver() }
-                    }
-                }
+            Phase.PAUSED, Phase.STOPPED -> if (trip != null) root.pausedCard(trip)
             Phase.FAILED ->
                 root.add("section", "card failed") {
                     add("h2", text = texts.gotStuck)
@@ -587,7 +607,33 @@ class App(
             }
         }
         if (sample) panel.add("p", "hint", texts.sampleRunning)
-        panel.add("div", "actions") { button(texts.cancel, "ghost") { startOver() } }
+        panel.add("div", "actions") {
+            button(texts.pause, "ghost") { pause() }
+            button(texts.cancel, "ghost") { startOver() }
+        }
+    }
+
+    /** A run that does not run: the traveller paused it, or the page was closed while it ran. Words written here go with it when it goes on. */
+    private fun HTMLElement.pausedCard(trip: Trip) {
+        add("section", "card") {
+            if (phase == Phase.PAUSED) {
+                add("h2", text = texts.paused)
+            } else {
+                add("h2", text = texts.stoppedHalfway)
+                add("p", text = texts.closedWhileWorking(request.trim()))
+            }
+            add("p", "hint", texts.pausedHint)
+            val aside =
+                (add("textarea") as HTMLTextAreaElement).apply {
+                    rows = 3
+                    placeholder = texts.asidePlaceholder
+                }
+            speakRow(read = { aside.value }) { aside.value = it }
+            add("div", "actions") {
+                button(texts.continueRun, "primary") { goOn(trip, aside.value.trim()) }
+                button(texts.startOver, "ghost") { startOver() }
+            }
+        }
     }
 
     private fun HTMLElement.questionCard(trip: Trip) {

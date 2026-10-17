@@ -86,6 +86,10 @@ object Spanish : Texts {
     override fun didLookThrough(stop: String, words: String) = "He repasado los lugares de $stop" + if (words.isBlank()) "" else " buscando $words"
 
     override val stoppedHalfway = "Tu plan se quedó a medias"
+    override val pause = "Pausar"
+    override val paused = "En pausa"
+    override val pausedHint = "Añade lo que el planificador debería saber, o dile que haga algo de otra manera. Seguirá teniéndolo en cuenta."
+    override val asidePlaceholder = "Por ejemplo: tendremos coche. O: más marisco y menos pasta."
     override val continueRun = "Continuar"
     override val startOver = "Empezar de nuevo"
     override val gotStuck = "El planificador se ha atascado"

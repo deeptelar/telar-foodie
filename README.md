@@ -71,6 +71,13 @@ Around the graph:
   page while the planner works, and it continues where it stopped. A source that had answered
   before the page was closed is not asked again: the street map is slow, and Google bills each
   search.
+- **The traveller can pause the planner.** Pause cancels the run's job; what was saved stays.
+  Words written then go with the run when it goes on
+  ([`Pause.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Pause.kt)): before the route, they
+  join the answers and the run starts again from the interview; once the agent plans, they are its
+  next message, through `resume` with an update.
+- **The profile is the traveller's.** Every field of it can be changed or erased, before the route
+  and on it. It is kept only in the browser, with the trip.
 - **The page shows the run live.** [`App.kt`](src/jsMain/kotlin/dev/deeptelar/foodie/App.kt)
   collects `stream()`: a node that starts, what it reports with `reportProgress`, the text of the
   model as it is written, and the tool calls of the agent.

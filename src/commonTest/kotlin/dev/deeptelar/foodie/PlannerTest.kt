@@ -719,4 +719,72 @@ class PlannerTest {
                 assertTrue("Write everything the traveller reads in Catalan" in text, text)
             }
         }
+
+    @Test
+    fun `words added in a pause before the route are read with the answers, and the trip is read again`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(Reading(Profile(), answered = Topic.entries))
+                    answers(Reading(Profile(), answered = Topic.entries))
+                    // After the pause: the interview reads again, and everything after it is found again.
+                    answers(Reading(Profile(drinks = "natural wine"), answered = Topic.entries))
+                    answers(brief)
+                    answers(menu)
+                    says("Planned with wine.")
+                }
+            val planner = planner(model, sources())
+            val config = config()
+            planner.invoke(Trip("One day in Lisbon"), config)
+            val checking = planner.resume(config) { it.answered(listOf(Answer(Topic.ALLERGIES, "Any allergy?", "None"))) }.state
+
+            // The traveller confirmed, and paused while the brief was read: the page has the trip the run started from.
+            val paused = checking.confirmed()
+            assertTrue(!paused.planning)
+            val planned = planner.invoke(paused.toldMore("We love natural wine."), config)
+
+            assertTrue("- The traveller added, while the planner worked: We love natural wine." in model.requests[2].messages.first().text)
+            assertEquals(listOf(Nodes.REVIEW), (planned as GraphResult.Interrupted).nextNodes)
+            assertEquals("natural wine", planned.state.profile.drinks)
+            assertEquals(listOf(lisbon), planned.state.stops.map { it.name })
+            assertEquals(0, model.remaining)
+        }
+
+    @Test
+    fun `words added in a pause of the agent are its next message, and calls it did not make are dropped`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "dinner", "r2", "caldo verde", "The map lists it as Portuguese."))
+                    calls("set_meal", MealChoice(1, "dinner", "r1", "bacalhau à brás", "Seafood, as asked."))
+                    says("Planned with seafood.")
+                }
+            val planner = planner(model, sources())
+            // The run stops where a pause would find it: the agent asked for a call that has not run.
+            val config = config().copy(interruptAfter = setOf(Nodes.PLAN))
+            val paused = planner.invoke(interviewed("One day in Lisbon"), config)
+            assertEquals(listOf(Nodes.TOOLS), (paused as GraphResult.Interrupted).nextNodes)
+            assertTrue(paused.state.planning)
+
+            val redirected = planner.resume(config.copy(interruptAfter = emptySet())) { it.redirected("More seafood, please.") }
+
+            assertEquals(listOf("r1"), redirected.state.route.map { it.restaurantId })
+            val told = model.requests[3].messages
+            assertTrue(told.none { it is ChatMessage.Assistant && it.toolCalls.isNotEmpty() })
+            assertTrue("More seafood, please." in told.last().text)
+        }
+
+    @Test
+    fun `words added before the agent wrote anything come after the trip in its first message`() {
+        val trip = interviewed("One day in Lisbon").copy(stops = listOf(Stop(lisbon, 1, 1, 38.7, -9.1)), dishes = menu.dishes)
+
+        val redirected = trip.redirected("Only vegetarian places.")
+
+        val first = redirected.messages.single().text
+        assertTrue(first.startsWith("Plan the meals of this trip."))
+        assertTrue(first.endsWith("Plan the route with it in mind: change what it changes, keep what still fits, and go on."))
+        assertTrue("Only vegetarian places." in first)
+    }
 }
