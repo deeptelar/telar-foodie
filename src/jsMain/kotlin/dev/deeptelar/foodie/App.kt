@@ -32,8 +32,11 @@ private enum class Phase {
     /** The graph runs. */
     RUNNING,
 
-    /** The run paused in `brief` with a question for the traveller. */
+    /** The run paused in `interview` or `brief` with questions for the traveller. */
     QUESTION,
+
+    /** The interview is over: the traveller checks what the planner understood. */
+    CHECKING,
 
     /** The run paused before `review`: the route is there, and the traveller says yes or asks for a change. */
     REVIEW,
@@ -206,7 +209,8 @@ class App(
             when {
                 result is GraphResult.Completed -> Phase.DONE
                 Nodes.REVIEW in (result as GraphResult.Interrupted).nextNodes -> Phase.REVIEW
-                result.state.question.isNotEmpty() -> Phase.QUESTION
+                result.state.questions.isNotEmpty() -> Phase.QUESTION
+                result.state.interview.stage == InterviewStage.CHECKING -> Phase.CHECKING
                 else -> Phase.STOPPED
             }
         steps = steps(trip)
@@ -247,7 +251,8 @@ class App(
     private fun steps(trip: Trip?): List<Step> {
         val steps =
             listOf(
-                Step(Nodes.BRIEF, "Understanding your trip"),
+                Step(Nodes.INTERVIEW, "Getting to know your trip"),
+                Step(Nodes.BRIEF, "Finding your stops on the map"),
                 Step(Nodes.GUIDE, "Travel guide · Wikivoyage"),
                 Step(Nodes.MAP, "Street map · OpenStreetMap"),
                 Step(Nodes.REVIEWS, "Reviews · Google"),
@@ -259,8 +264,9 @@ class App(
         if (trip != null) {
             val done =
                 when {
-                    trip.dishes.isNotEmpty() -> setOf(Nodes.BRIEF, Nodes.GUIDE, Nodes.MAP, Nodes.REVIEWS, Nodes.DISHES)
-                    trip.stops.isNotEmpty() -> setOf(Nodes.BRIEF)
+                    trip.dishes.isNotEmpty() -> setOf(Nodes.INTERVIEW, Nodes.BRIEF, Nodes.GUIDE, Nodes.MAP, Nodes.REVIEWS, Nodes.DISHES)
+                    trip.stops.isNotEmpty() -> setOf(Nodes.INTERVIEW, Nodes.BRIEF)
+                    trip.interview.stage == InterviewStage.DONE -> setOf(Nodes.INTERVIEW)
                     else -> emptySet()
                 }
             steps.filter { it.node in done }.forEach {
@@ -281,6 +287,7 @@ class App(
         if (trip == null || step.status == Status.WAITING || (!step.settled && step.node != Nodes.PLAN)) return ""
         fun from(source: Source) = trip.restaurants.count { source in it.sources }.let { "$it ${if (it == 1) "place" else "places"}" }
         return when (step.node) {
+            Nodes.INTERVIEW -> profileLines(trip.profile).joinToString(" · ")
             Nodes.BRIEF -> trip.stops.joinToString(" · ") { "${it.days} ${if (it.days == 1) "day" else "days"} in ${it.name}" }
             Nodes.GUIDE -> from(Source.GUIDE)
             Nodes.MAP -> from(Source.MAP)
@@ -329,7 +336,8 @@ class App(
         when (phase) {
             Phase.START -> root.startForm()
             Phase.RUNNING -> runPanel = root.add("section", "card run").also { fillRun(it) }
-            Phase.QUESTION -> root.questionCard(trip?.question.orEmpty())
+            Phase.QUESTION -> if (trip != null) root.questionCard(trip)
+            Phase.CHECKING -> if (trip != null) root.profileCard(trip)
             Phase.REVIEW, Phase.DONE -> if (trip != null) root.route(trip)
             Phase.STOPPED ->
                 root.add("section", "card") {
@@ -412,7 +420,8 @@ class App(
         add("section", "how") {
             add("h2", text = "How it works")
             add("ol") {
-                add("li", text = "A model reads your request and finds your stops on the map. If it cannot, it asks you.")
+                add("li", text = "A model reads your request and asks what a food planner would: allergies, budget, who is coming, how adventurous you are.")
+                add("li", text = "It finds your stops on the map. If it cannot, it asks you.")
                 add("li", text = "A travel guide, a street map and, with a Google key, reviews are searched at the same time.")
                 add("li", text = "The model names what each place is known for.")
                 add("li", text = "An agent chooses a restaurant for each meal. It can search the sources again for a dish.")
@@ -513,25 +522,64 @@ class App(
         panel.add("div", "actions") { button("Cancel", "ghost") { startOver() } }
     }
 
-    private fun HTMLElement.questionCard(question: String) {
+    private fun HTMLElement.questionCard(trip: Trip) {
         add("section", "card") {
-            add("h2", text = "One question")
-            add("p", "question", question)
-            val answer =
-                (add("textarea") as HTMLTextAreaElement).apply {
-                    rows = 2
-                    placeholder = "Your answer"
+            add("h2", text = if (trip.questions.size == 1) "One question" else "A few questions")
+            val fields =
+                trip.questions.map { question ->
+                    add("p", "question", question.text)
+                    question to
+                        (add("textarea") as HTMLTextAreaElement).apply {
+                            rows = 2
+                            placeholder = "Your answer"
+                        }
                 }
+            fun answers() = fields.map { (question, field) -> Answer(question.topic, question.text, field.value.trim()) }
             add("div", "actions") {
-                button("Continue", "primary") {
-                    val text = answer.value.trim()
-                    // The answer joins the request, and the node that asked reads the request again.
-                    if (text.isEmpty()) answer.focus() else resume { it.copy(request = it.request + "\n" + text, question = "") }
+                // The answers join the trip, and the node that asked reads them.
+                button("Continue", "primary") { resume { it.answered(answers()) } }
+                // The questions of the brief come after the interview, and it cannot go on without them.
+                if (trip.interview.stage != InterviewStage.DONE) {
+                    button("That's enough, plan it", "ghost") { resume { it.planNow(answers()) } }
                 }
                 button("Start over", "ghost") { startOver() }
             }
         }
     }
+
+    private fun HTMLElement.profileCard(trip: Trip) {
+        add("section", "card") {
+            add("h2", text = "Here is what I have")
+            add("ul") { profileLines(trip.profile).forEach { add("li", text = it) } }
+            val correction =
+                (add("textarea") as HTMLTextAreaElement).apply {
+                    rows = 2
+                    placeholder = "Anything to correct? For example: we are three, not two."
+                }
+            add("div", "actions") {
+                button("Plan my route", "primary") { resume { it.confirmed() } }
+                button("Correct it", "ghost") {
+                    val text = correction.value.trim()
+                    if (text.isEmpty()) correction.focus() else resume { it.corrected(text) }
+                }
+                button("Start over", "ghost") { startOver() }
+            }
+        }
+    }
+
+    /** The profile in words for the traveller, one line for each thing that is known. */
+    private fun profileLines(profile: Profile): List<String> =
+        listOfNotNull(
+            if (profile.allergies.isEmpty()) "No food allergies" else "Allergic to " + profile.allergies.joinToString { if (it.severe) "${it.food} (even traces)" else it.food },
+            profile.diet.ifBlank { "Eats everything" },
+            profile.season.takeIf { it.isNotBlank() }?.let { "Travelling: $it" },
+            profile.party.takeIf { it.isNotBlank() }?.let { "Eating together: $it" },
+            profile.meals.takeIf { it.isNotEmpty() }?.let { meals -> "Meals: " + meals.joinToString { it.label.lowercase() } },
+            "Budget: ${profile.budget}" + if (profile.splurge) ", with one special meal" else "",
+            profile.taste.takeIf { it.isNotBlank() }?.let { "Taste: $it" },
+            profile.drinks.takeIf { it.isNotBlank() }?.let { "Drinks: $it" },
+            profile.wishes.takeIf { it.isNotBlank() }?.let { "Wishes: $it" },
+        )
 
     private fun HTMLElement.route(trip: Trip) {
         add("section", "route") {

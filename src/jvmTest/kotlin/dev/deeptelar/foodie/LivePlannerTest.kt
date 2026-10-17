@@ -46,6 +46,17 @@ class LivePlannerTest {
 
                     say("Request: $request")
                     var trip = follow(planner.stream(Trip(request), config), ::say)
+                    // The interview: every question gets its first answer, and the profile is taken as it is.
+                    while (trip.route.isEmpty() && (trip.questions.isNotEmpty() || trip.interview.stage == InterviewStage.CHECKING)) {
+                        trip =
+                            if (trip.questions.isNotEmpty()) {
+                                trip.questions.forEach { say("  asks (${it.topic}): ${it.text} ${it.options}") }
+                                follow(planner.streamResume(config) { it.answered(it.questions.map { q -> Answer(q.topic, q.text, q.options.firstOrNull().orEmpty()) }) }, ::say)
+                            } else {
+                                say("  profile: ${trip.profile}")
+                                follow(planner.streamResume(config) { it.confirmed() }, ::say)
+                            }
+                    }
                     describe(trip, ::say)
                     assertTrue(trip.route.isNotEmpty(), "the route is empty")
 
@@ -81,7 +92,7 @@ class LivePlannerTest {
                 }
                 is GraphEvent.Interrupted -> {
                     last = event.state
-                    say("paused before ${event.nextNodes}" + event.state.question.let { if (it.isEmpty()) "" else ", question: $it" })
+                    say("paused before ${event.nextNodes}")
                 }
                 is GraphEvent.Completed -> {
                     last = event.state

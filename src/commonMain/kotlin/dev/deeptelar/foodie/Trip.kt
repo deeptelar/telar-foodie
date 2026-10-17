@@ -12,11 +12,9 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class Trip(
-    /** What the traveller wrote, with the answers to the planner's questions added below it. */
+    /** What the traveller wrote. */
     val request: String,
-    /** A question the planner needs answered before it can go on. Empty when it has none. */
-    val question: String = "",
-    /** The questions of the interview the traveller has not answered yet. */
+    /** The planner's questions the traveller has not answered yet. */
     val questions: List<Question> = emptyList(),
     /** The traveller's answers to the planner's questions, in the order they were given. */
     val answers: List<Answer> = emptyList(),

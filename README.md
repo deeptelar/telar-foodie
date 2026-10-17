@@ -1,7 +1,8 @@
 # Foodie Route
 
 **Plan where to eat on a trip, at places where the people who live there eat.** You write where you
-are going and what you like. An agent reads a travel guide, the street map and, if you want,
+are going and what you like, and the planner asks what a food planner would: allergies, budget, who
+is coming, how adventurous you are. An agent reads a travel guide, the street map and, if you want,
 reviews, names what each place is known for, and draws a route of meals on a map. You can ask for
 changes until you like it.
 
@@ -19,7 +20,9 @@ All of it is in [`Planner.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Planne
 
 ```mermaid
 flowchart LR
-    START([START]) --> brief
+    START([START]) --> interview
+    interview -- a round of questions --> interview
+    interview -- checked --> brief
     brief --> guide & map & reviews
     guide & map & reviews --> dishes
     dishes --> plan
@@ -32,7 +35,8 @@ flowchart LR
 
 | Node | What it does | What of Telar it shows |
 |---|---|---|
-| `brief` | A model reads the request into a `Brief`, and the stops are found on the map. When the request names no place, or the map does not know one, the run pauses with a question. | A typed answer with `ask<Brief>`, `interrupt` from inside a node, `Retry` |
+| `interview` | Asks the traveller what a food planner asks, a few questions at a time and allergies first, and reads the answers into a `Profile`. The topics are fixed in code; the model writes the questions for the places of the trip and skips what the request already says. Each round pauses the run, and at the end the traveller checks the profile. | A loop on one node with a conditional edge, `interrupt` in every round, `ask<Reading>` |
+| `brief` | A model reads the request and the answers into a `Brief`, and the stops are found on the map. When the request names no place, or the map does not know one, the run pauses with a question. | A typed answer with `ask<Brief>`, `interrupt` from inside a node, `Retry` |
 | `guide`, `map`, `reviews` | The three sources are asked at the same time. `reviews` is only in the graph when there is a Google key. What a source answered is kept when the step runs again. | Parallel nodes with a `work` and an update, and no reducer; `effect` |
 | `dishes` | A model names what each stop is known for, with what the guide says in front of it. | `ask<Menu>` |
 | `plan` ⇄ `tools` | An agent chooses a restaurant for each meal. Its tools search the sources again and write the route into the state. | `toolLoop` in a graph of your own, `StateTool`, a token budget |

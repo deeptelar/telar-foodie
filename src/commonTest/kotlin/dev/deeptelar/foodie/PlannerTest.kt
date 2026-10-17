@@ -50,6 +50,9 @@ class PlannerTest {
     private val brief = Brief(stops = listOf(BriefStop(lisbon, days = 1, cuisines = listOf("portuguese"))), diet = "no pork")
     private val menu = Menu(listOf(Dish(lisbon, "bacalhau à brás", "Salt cod with eggs and fried potato.", "dinner")))
 
+    /** A trip whose interview is over, for the tests of what comes after it. */
+    private fun interviewed(request: String) = Trip(request, interview = Interview(read = 0, stage = InterviewStage.DONE))
+
     private fun config() = GraphConfig(threadId = "trip", checkpointer = MemoryCheckpointer<Trip>(), interruptBefore = setOf(Nodes.REVIEW))
 
     @Test
@@ -66,11 +69,11 @@ class PlannerTest {
                     says("A day of salt cod.")
                 }
 
-            val run = planner(model, sources()).stream(Trip("One day in Lisbon, no pork"), config()).record()
+            val run = planner(model, sources()).stream(interviewed("One day in Lisbon, no pork"), config()).record()
 
             // The three sources that exist here ran in one step, and the run stopped before the review.
             assertEquals(
-                listOf(setOf(Nodes.BRIEF), setOf(Nodes.GUIDE, Nodes.MAP), setOf(Nodes.DISHES), setOf(Nodes.PLAN), setOf(Nodes.TOOLS), setOf(Nodes.PLAN), setOf(Nodes.ORDER)),
+                listOf(setOf(Nodes.INTERVIEW), setOf(Nodes.BRIEF), setOf(Nodes.GUIDE, Nodes.MAP), setOf(Nodes.DISHES), setOf(Nodes.PLAN), setOf(Nodes.TOOLS), setOf(Nodes.PLAN), setOf(Nodes.ORDER)),
                 run.steps.map { it.toSet() },
             )
             val paused = assertIs<GraphResult.Interrupted<Trip>>(run.result)
@@ -101,7 +104,7 @@ class PlannerTest {
                     says("Nothing to plan.")
                 }
 
-            planner(model, sources()).invoke(Trip("One day in Lisbon, no pork"), config())
+            planner(model, sources()).invoke(interviewed("One day in Lisbon, no pork"), config())
 
             val first = model.requests[2].messages.first().text
             assertTrue("Diet: no pork" in first, first)
@@ -126,8 +129,9 @@ class PlannerTest {
                     says("Changed the lunch.")
                 }
 
-            planner(model, sources()).test(Trip("One day in Lisbon"), config()) {
-                // A step, not a node: in Telar 0.1.0-alpha10, expectStep after expectNode stops at the end of the node's step.
+            planner(model, sources()).test(interviewed("One day in Lisbon"), config()) {
+                // Steps, not nodes: in Telar 0.1.0-alpha10, expectStep after expectNode stops at the end of the node's step.
+                expectStep(Nodes.INTERVIEW)
                 expectStep(Nodes.BRIEF)
                 expectStep(Nodes.GUIDE, Nodes.MAP)
                 expectNodes(Nodes.DISHES, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
@@ -164,13 +168,13 @@ class PlannerTest {
             val planner = planner(model, sources())
             val config = config()
 
-            val asked = planner.invoke(Trip("I love seafood"), config)
+            val asked = planner.invoke(interviewed("I love seafood"), config)
 
             assertIs<GraphResult.Interrupted<Trip>>(asked)
-            assertEquals("Which city are you visiting?", asked.state.question)
+            assertEquals(listOf(Question(Topic.WHERE, "Which city are you visiting?")), asked.state.questions)
             assertEquals(listOf(Nodes.BRIEF), asked.nextNodes)
 
-            val answered = planner.resume(config) { it.copy(request = it.request + "\nLisbon, one day", question = "") }
+            val answered = planner.resume(config) { it.answered(listOf(Answer(Topic.WHERE, "Which city are you visiting?", "Lisbon, one day"))) }
 
             assertEquals(listOf(lisbon), answered.state.stops.map { it.name })
             assertTrue("Lisbon, one day" in model.requests[1].messages.first().text)
@@ -181,9 +185,9 @@ class PlannerTest {
         runTest {
             val model = ScriptedChatModel { answers(Brief(stops = listOf(BriefStop("Atlantis")))) }
 
-            val asked = planner(model, sources()).invoke(Trip("Two days in Atlantis"), config())
+            val asked = planner(model, sources()).invoke(interviewed("Two days in Atlantis"), config())
 
-            assertEquals("I could not find Atlantis on the map. Which place do you mean?", asked.state.question)
+            assertEquals("I could not find Atlantis on the map. Which place do you mean?", asked.state.questions.single().text)
             assertNotNull(asked.state.brief)
         }
 
@@ -198,7 +202,7 @@ class PlannerTest {
                 }
             val broken = StreetMap { _, _, _, _ -> throw SourceException("No server of the street map answered.") }
 
-            val trip = planner(model, sources(map = broken)).invoke(Trip("One day in Lisbon"), config()).state
+            val trip = planner(model, sources(map = broken)).invoke(interviewed("One day in Lisbon"), config()).state
 
             assertEquals(listOf("The street map gave no answer for $lisbon: No server of the street map answered."), trip.notes)
             assertEquals(listOf("Restaurante Santa Rita"), trip.restaurants.map { it.name })
@@ -217,7 +221,7 @@ class PlannerTest {
             // What Ktor throws in a browser for a request that got no response.
             val unreachable = StreetMap { _, _, _, _ -> throw Error("Fail to fetch") }
 
-            val trip = planner(model, sources(map = unreachable)).invoke(Trip("One day in Lisbon"), config()).state
+            val trip = planner(model, sources(map = unreachable)).invoke(interviewed("One day in Lisbon"), config()).state
 
             assertEquals(listOf("The street map gave no answer for $lisbon: Fail to fetch"), trip.notes)
         }
@@ -237,7 +241,7 @@ class PlannerTest {
                     listOf(zeDaMouraria)
                 }
 
-            val trip = planner(model, sources(map = slow)).invoke(Trip("One day in Lisbon"), config()).state
+            val trip = planner(model, sources(map = slow)).invoke(interviewed("One day in Lisbon"), config()).state
 
             assertEquals(listOf("The street map took too long for $lisbon."), trip.notes)
             assertEquals(listOf("Restaurante Santa Rita"), trip.restaurants.map { it.name })
@@ -258,7 +262,15 @@ class PlannerTest {
                     }
                 }
 
-            val result = planner(SampleModel(pause = Duration.ZERO), sources(map = map)).invoke(Trip("Anything"), config())
+            val planner = planner(SampleModel(pause = Duration.ZERO), sources(map = map))
+            val config = config()
+
+            // The sample asks one round of questions, and then shows what it understood.
+            val asked = planner.invoke(Trip("Anything"), config)
+            assertEquals(listOf(Topic.ALLERGIES, Topic.DATES, Topic.BUDGET), asked.state.questions.map { it.topic })
+            val checking = planner.resume(config) { trip -> trip.answered(trip.questions.map { Answer(it.topic, it.text, it.options.first()) }) }
+            assertEquals(InterviewStage.CHECKING, checking.state.interview.stage)
+            val result = planner.resume(config) { it.confirmed() }
 
             assertIs<GraphResult.Interrupted<Trip>>(result)
             val trip = result.state
@@ -291,9 +303,9 @@ class PlannerTest {
                     says("Planned.")
                 }
 
-            val run = planner(model, sources(reviews = reviews)).stream(Trip("One day in Lisbon"), config()).record()
+            val run = planner(model, sources(reviews = reviews)).stream(interviewed("One day in Lisbon"), config()).record()
 
-            assertEquals(setOf(Nodes.GUIDE, Nodes.MAP, Nodes.REVIEWS), run.steps[1].toSet())
+            assertEquals(setOf(Nodes.GUIDE, Nodes.MAP, Nodes.REVIEWS), run.steps[2].toSet())
             assertEquals(listOf("traditional portuguese restaurant where locals eat", "best bacalhau"), queries)
             // The rating joined the entry of the map.
             val ze = run.state.restaurants.single { it.name == "Zé da Mouraria" }
@@ -319,7 +331,7 @@ class PlannerTest {
                     says("Planned.")
                 }
 
-            val trip = planner(model, sources()).invoke(Trip("One day in Lisbon"), config()).state
+            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon"), config()).state
 
             val results = model.requests[3].messages.filterIsInstance<ChatMessage.ToolResult>()
             assertEquals(listOf(true, true, true, false), results.map { it.isError })
@@ -340,7 +352,7 @@ class PlannerTest {
                     says("Never said.")
                 }
 
-            val result = planner(model, sources(), tokenBudget = 1000).invoke(Trip("One day in Lisbon"), config())
+            val result = planner(model, sources(), tokenBudget = 1000).invoke(interviewed("One day in Lisbon"), config())
 
             assertIs<GraphResult.Interrupted<Trip>>(result)
             assertEquals(1400, result.state.tokens.total)
@@ -373,7 +385,7 @@ class PlannerTest {
             val planner = planner(model, sources(map = map, guide = guide))
             val config = config()
 
-            val closed = launch { planner.stream(Trip("One day in Lisbon"), config).collect {} }
+            val closed = launch { planner.stream(interviewed("One day in Lisbon"), config).collect {} }
             advanceTimeBy(1.seconds)
             closed.cancel()
             val reopened = planner.resume(config)
@@ -398,7 +410,7 @@ class PlannerTest {
                     says("Planned.")
                 }
 
-            planner(model, sources()).invoke(Trip("One day in Lisbon"), config())
+            planner(model, sources()).invoke(interviewed("One day in Lisbon"), config())
 
             val results = model.requests.last().messages.filterIsInstance<ChatMessage.ToolResult>()
             assertEquals("Search for a word of at least three letters, such as a dish or a cuisine.", results.first().text)
@@ -420,11 +432,104 @@ class PlannerTest {
             val planner = planner(model, sources(), tokenBudget = 1000)
             val config = config()
 
-            planner.invoke(Trip("One day in Lisbon"), config)
+            planner.invoke(interviewed("One day in Lisbon"), config)
             val changed = planner.resume(config) { it.copy(messages = it.messages + ChatMessage.User("Add a dinner.")) }
 
             // The first turn used its budget; the change was still asked of the model, and stopped at its own.
             assertEquals(listOf("r1", "r2"), changed.state.route.map { it.restaurantId })
             assertEquals(1, model.remaining)
+        }
+
+    @Test
+    fun `the interview asks in rounds, reads the answers, and plans once the traveller checked them`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(
+                        Reading(
+                            Profile(),
+                            answered = listOf(Topic.WHERE),
+                            questions = listOf(Question(Topic.ALLERGIES, "Lisbon cooks a lot of shellfish. Any allergy?", listOf("None", "Shellfish"))),
+                        ),
+                    )
+                    answers(Reading(Profile(allergies = listOf(Allergy("shellfish", severe = true)), budget = "low"), answered = Topic.entries))
+                    answers(brief)
+                    answers(menu)
+                    says("Planned.")
+                }
+            val planner = planner(model, sources())
+            val config = config()
+
+            val asked = planner.invoke(Trip("One day in Lisbon"), config)
+
+            // What the request said is not asked. The model's words are used where it wrote some.
+            assertIs<GraphResult.Interrupted<Trip>>(asked)
+            assertEquals(listOf(Nodes.INTERVIEW), asked.nextNodes)
+            assertEquals(listOf("Lisbon cooks a lot of shellfish. Any allergy?", Topic.DIET.question.text, Topic.DATES.question.text), asked.state.questions.map { it.text })
+            assertTrue("- WHERE: Where and how long\n" in model.requests[0].messages.first().text)
+
+            val checking = planner.resume(config) { trip -> trip.answered(trip.questions.map { Answer(it.topic, it.text, if (it.topic == Topic.ALLERGIES) "Shellfish, even traces" else "") }) }
+
+            // The second reading saw the answers, a skipped one too, and the planner shows what it understood.
+            assertIs<GraphResult.Interrupted<Trip>>(checking)
+            assertEquals(InterviewStage.CHECKING, checking.state.interview.stage)
+            assertEquals(listOf(Allergy("shellfish", severe = true)), checking.state.profile.allergies)
+            val second = model.requests[1].messages.first().text
+            assertTrue("- Lisbon cooks a lot of shellfish. Any allergy? Shellfish, even traces" in second, second)
+            assertTrue("- ${Topic.DIET.question.text} (no answer)" in second, second)
+            assertTrue("- ALLERGIES: Allergies (done)" in second, second)
+
+            val planned = planner.resume(config) { it.confirmed() }
+
+            assertEquals(listOf(Nodes.REVIEW), (planned as GraphResult.Interrupted).nextNodes)
+            // The brief reads the answers too.
+            assertTrue("Shellfish, even traces" in model.requests[2].messages.first().text)
+            assertEquals(0, model.remaining)
+        }
+
+    @Test
+    fun `a traveller who wants to plan right away skips the rest of the interview`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(Reading(Profile()))
+                    answers(Reading(Profile(diet = "vegetarian"), questions = listOf(Question(Topic.DATES, "When?"))))
+                    answers(brief)
+                    answers(menu)
+                    says("Planned.")
+                }
+            val planner = planner(model, sources())
+            val config = config()
+
+            planner.invoke(Trip("One day in Lisbon"), config)
+            val planned = planner.resume(config) { it.planNow(listOf(Answer(Topic.DIET, "Anything you do not eat?", "Vegetarian"))) }
+
+            assertEquals(listOf(Nodes.REVIEW), (planned as GraphResult.Interrupted).nextNodes)
+            assertEquals("vegetarian", planned.state.profile.diet)
+            assertEquals(1, planned.state.interview.rounds)
+        }
+
+    @Test
+    fun `a correction is read and the profile is shown again`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    // Even a request that says everything is asked about allergies.
+                    answers(Reading(Profile(party = "two adults"), answered = Topic.entries))
+                    answers(Reading(Profile(party = "two adults"), answered = Topic.entries))
+                    answers(Reading(Profile(party = "three adults"), answered = Topic.entries))
+                }
+            val planner = planner(model, sources())
+            val config = config()
+
+            val asked = planner.invoke(Trip("One day in Lisbon, the two of us"), config)
+            assertEquals(listOf(Topic.ALLERGIES), asked.state.questions.map { it.topic })
+            val checking = planner.resume(config) { it.answered(listOf(Answer(Topic.ALLERGIES, "Any allergy?", "None"))) }
+            assertEquals(InterviewStage.CHECKING, checking.state.interview.stage)
+            val again = planner.resume(config) { it.corrected("We are three.") }
+
+            assertEquals(InterviewStage.CHECKING, again.state.interview.stage)
+            assertEquals("three adults", again.state.profile.party)
+            assertTrue("- Is there anything to correct? We are three." in model.requests[2].messages.first().text)
         }
 }

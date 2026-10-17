@@ -21,6 +21,7 @@ import kotlin.time.Duration.Companion.seconds
 
 /** The names of the nodes of the [planner], for the code that shows a run. */
 object Nodes {
+    const val INTERVIEW = "interview"
     const val BRIEF = "brief"
     const val GUIDE = "guide"
     const val MAP = "map"
@@ -41,14 +42,17 @@ data class Activity(
  * The graph that plans a trip:
  *
  * ```
- * START → brief → guide ┐
- *               → map   ├→ dishes → plan ⇄ tools → order → review → END
- *               → reviews ┘                 ↑                  │
- *                                           └── a change ──────┘
+ * START → interview ⟲ → brief → guide ┐
+ *                            → map   ├→ dishes → plan ⇄ tools → order → review → END
+ *                            → reviews ┘                 ↑                  │
+ *                                                        └── a change ──────┘
  * ```
  *
- * - `brief` reads the request with the model and finds its places on the map. When it cannot, it
- *   pauses the run with a question for the traveller.
+ * - `interview` asks the traveller what a planner who knows food asks, a few questions at a time,
+ *   and reads the answers into a [Profile]. It loops until no topic is open and the traveller has
+ *   checked the profile. Each round pauses the run until the traveller answers.
+ * - `brief` reads the places of the trip with the model and finds them on the map. When it cannot,
+ *   it pauses the run with a question for the traveller.
  * - `guide`, `map` and `reviews` ask the three sources at the same time. `reviews` is only part of
  *   the graph when [sources] has a source of reviews.
  * - `dishes` asks the model what each stop is known for.
@@ -67,20 +71,33 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
         // A model that is overloaded for a moment is asked again. The second try starts after a pause.
         val again = Retry(attempts = 2, pause = 2.seconds)
 
+        val interview =
+            node(Nodes.INTERVIEW, retry = again) { trip ->
+                // The run waits here while questions are open, and while the traveller checks the profile.
+                // `resume` adds the answers, or the traveller's yes, and the node goes on from here.
+                if (trip.questions.isNotEmpty() || trip.interview.stage == InterviewStage.CHECKING) interrupt(trip)
+                // A yes to the profile: nothing new to read.
+                if (trip.profileIsCurrent) return@node trip
+
+                reportProgress(Activity(if (trip.answers.isEmpty()) "Reading your request" else "Reading your answers"))
+                val answer = model.ask<Reading>(ChatRequest(listOf(ChatMessage.User(interviewPrompt(trip))), INTERVIEW_SYSTEM))
+                trip.copy(tokens = trip.tokens + answer.usage).read(answer.value)
+            }
+
         val brief =
             node(Nodes.BRIEF, retry = again) { trip ->
-                // The run waits here while a question is open. `resume` adds the answer to the request and clears the question.
-                if (trip.question.isNotEmpty()) interrupt(trip)
+                // The run waits here while a question is open. `resume` adds the answer and clears the question.
+                if (trip.questions.isNotEmpty()) interrupt(trip)
 
-                reportProgress(Activity("Reading your request"))
-                val answer = model.ask<Brief>(ChatRequest(listOf(ChatMessage.User(briefPrompt(trip.request))), BRIEF_SYSTEM))
+                reportProgress(Activity("Finding the places of your trip"))
+                val answer = model.ask<Brief>(ChatRequest(listOf(ChatMessage.User(briefPrompt(trip))), BRIEF_SYSTEM))
                 val read = trip.copy(brief = answer.value, tokens = trip.tokens + answer.usage)
                 val brief = answer.value
-                if (brief.stops.isEmpty()) interrupt(read.copy(question = brief.question.ifBlank { "Where are you going, and for how many days?" }))
+                if (brief.stops.isEmpty()) interrupt(read.asking(brief.question.ifBlank { "Where are you going, and for how many days?" }))
 
                 val (stops, unknown) = located(brief, sources)
                 if (unknown.isNotEmpty()) {
-                    interrupt(read.copy(question = "I could not find ${unknown.joinToString(" or ")} on the map. Which place do you mean?"))
+                    interrupt(read.asking("I could not find ${unknown.joinToString(" or ")} on the map. Which place do you mean?"))
                 }
                 read.copy(stops = stops)
             }
@@ -157,12 +174,17 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                 retry = again,
             )
 
-        START then brief
+        START then interview
+        // Each round of questions is a step of its own, and a checkpoint: a reload in the middle of the interview keeps the answers.
+        conditionalEdge(interview, targets = setOf(interview, brief)) { if (it.interview.stage == InterviewStage.DONE) brief else interview }
         listOfNotNull(guide, map, reviews).forEach { source -> brief then source then dishes }
         dishes then plan
         order then review
         conditionalEdge(review, targets = setOf(plan, NodeRef.END)) { if (it.approved) NodeRef.END else plan }
     }.compile()
+
+/** The trip with a question about where it goes, the one thing the planner cannot go on without. */
+private fun Trip.asking(question: String): Trip = copy(questions = listOf(Question(Topic.WHERE, question)))
 
 /** The stops of [brief] that the map knows, with their days counted from the first day of the trip, and the places it does not know. */
 private suspend fun located(brief: Brief, sources: Sources): Pair<List<Stop>, List<String>> {

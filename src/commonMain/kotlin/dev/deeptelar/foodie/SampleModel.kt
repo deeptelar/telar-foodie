@@ -14,7 +14,8 @@ import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Stands in for a model, so that the page can be tried without a key. It is a script and
- * understands nothing: whatever the request says, it plans [REQUEST], two days in Lisbon.
+ * understands nothing: whatever the request says, it plans [REQUEST], two days in Lisbon. It asks
+ * one round of questions, as a model would, but does not read the answers.
  *
  * The graph, the sources and the tools around it are the real ones. The script searches the map
  * for a pastry shop, as a model would, and then puts the candidates with the most evidence on the
@@ -30,11 +31,22 @@ class SampleModel(
         val system = request.system.orEmpty()
         val message =
             when {
+                system.startsWith(INTERVIEW_SYSTEM) -> ChatMessage.Assistant(Json.encodeToString(interview(request.messages)))
                 system.startsWith(BRIEF_SYSTEM) -> ChatMessage.Assistant(Json.encodeToString(BRIEF))
                 system.startsWith(DISHES_SYSTEM) -> ChatMessage.Assistant(Json.encodeToString(Menu(DISHES)))
                 else -> plan(request.messages)
             }
         return ChatResponse(message)
+    }
+
+    /** The questions of the first round, and after it a profile with every topic answered. */
+    private fun interview(messages: List<ChatMessage>): Reading {
+        val first = messages.none { "answers to the planner's questions" in it.text }
+        return if (first) {
+            Reading(PROFILE, answered = Topic.entries - QUESTIONS.map { it.topic }, questions = QUESTIONS)
+        } else {
+            Reading(PROFILE, answered = Topic.entries)
+        }
     }
 
     private fun plan(messages: List<ChatMessage>): ChatMessage.Assistant {
@@ -72,6 +84,20 @@ class SampleModel(
         const val REQUEST = "Two days in Lisbon. I love seafood and pastries."
 
         private const val STOP = "Lisbon, Portugal"
+
+        private val PROFILE = Profile(wishes = "seafood and pastries")
+
+        private val QUESTIONS =
+            listOf(
+                Question(
+                    Topic.ALLERGIES,
+                    "Lisbon cooks a lot of shellfish, and many of its pastries have almonds. Do you have a food allergy?",
+                    listOf("None", "Shellfish", "Nuts", "Gluten"),
+                    several = true,
+                ),
+                Question(Topic.DATES, "When are you going? In June the whole city grills sardines in the street.", listOf("June", "Another summer month", "Another season")),
+                Question(Topic.BUDGET, "Lunch at a tasca is cheap, a seafood dinner can cost five times as much. What suits you?", listOf("Tascas only", "A mix", "One big seafood dinner")),
+            )
 
         private val BRIEF =
             Brief(

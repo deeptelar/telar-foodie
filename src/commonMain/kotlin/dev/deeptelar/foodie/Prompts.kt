@@ -1,10 +1,44 @@
 package dev.deeptelar.foodie
 
+internal const val INTERVIEW_SYSTEM =
+    "You interview a traveller before you plan where they eat on a trip, as a planner who knows the food of the world's regions. " +
+        "You write down what the traveller said, in the request and in the answers, and you write the next questions. " +
+        "Write down only what the traveller said: never assume an allergy, a diet or a budget. " +
+        "Ask as a person who knows the places of this trip: name a dish, a price or a habit of the place when it helps the traveller answer."
+
+internal fun interviewPrompt(trip: Trip): String =
+    buildString {
+        append(travellerWords(trip))
+        val open = Topic.entries.filter { it !in trip.interview.covered }
+        appendLine()
+        appendLine("The topics a planner asks about, in order:")
+        Topic.entries.forEach { appendLine("- ${it.name}: ${it.label}" + if (it in open) "" else " (done)") }
+        appendLine()
+        if (open.isEmpty()) {
+            appendLine("Every topic is done. Write down the profile, and ask no questions.")
+        } else {
+            appendLine("Say which topics the traveller's words answer, and write a question for each of the first open topics they do not answer.")
+        }
+    }
+
 internal const val BRIEF_SYSTEM =
     "You read what a traveller wrote about a trip and return it as data. " +
         "Return only what the traveller said. Do not add places the traveller did not name."
 
-internal fun briefPrompt(request: String): String = "The traveller wrote:\n\n$request"
+internal fun briefPrompt(trip: Trip): String = travellerWords(trip)
+
+/** The traveller's request, and the answers to the planner's questions below it. */
+private fun travellerWords(trip: Trip): String =
+    buildString {
+        appendLine("The traveller wrote:")
+        appendLine()
+        appendLine(trip.request.trim())
+        if (trip.answers.isNotEmpty()) {
+            appendLine()
+            appendLine("The traveller's answers to the planner's questions:")
+            trip.answers.forEach { appendLine("- ${it.question} ${it.text.trim().ifEmpty { "(no answer)" }}") }
+        }
+    }
 
 internal const val DISHES_SYSTEM =
     "You know the food of the world's regions well. For each stop of a trip you name what the place itself is known for: " +
