@@ -31,10 +31,11 @@ stateDiagram-v2
     state "map" as n3
     state "reviews" as n4
     state "dishes" as n5
-    state "order" as n6
-    state "⏸ review" as n7
-    state "plan" as n8
-    state "tools" as n9
+    state "specialists" as n6
+    state "order" as n7
+    state "⏸ review" as n8
+    state "plan" as n9
+    state "tools" as n10
     [*] --> n0
     n0 --> n0 : a round of questions
     n0 --> n1 : checked
@@ -42,26 +43,28 @@ stateDiagram-v2
     n1 --> n3
     n1 --> n4
     n1 --> n5
-    n2 --> n8
-    n3 --> n8
-    n4 --> n8
-    n5 --> n8
-    n6 --> n7
-    n7 --> n8 : a change
-    n7 --> [*] : yes
-    n8 --> n9 : tool calls
-    n8 --> n6 : done
-    n9 --> n8
+    n2 --> n6
+    n3 --> n6
+    n4 --> n6
+    n5 --> n6
+    n6 --> n9
+    n7 --> n8
+    n8 --> n9 : a change
+    n8 --> [*] : yes
+    n9 --> n10 : tool calls
+    n9 --> n7 : done
+    n10 --> n9
     classDef interrupt fill:#fff4e5,stroke:#e8590c,stroke-width:2px,stroke-dasharray:4 3
-    class n7 interrupt
+    class n8 interrupt
 ```
 
 | Node | What it does | What of Telar it shows |
 |---|---|---|
 | `interview` | Asks the traveller what a food planner asks, a few questions at a time and allergies first, and reads the answers into a `Profile`. The topics are fixed in code; the model writes the questions for the places of the trip and skips what the request already says. Each round pauses the run, and at the end the traveller checks the profile. | A loop on one node with a conditional edge, `interrupt` in every round, `ask<Reading>` |
 | `brief` | A model reads the request and the answers into a `Brief`, and the stops are found on the map, with where the traveller sleeps. When the request names no place, or the map does not know one, the run pauses with a question. | A typed answer with `ask<Brief>`, `interrupt` from inside a node, `Retry` |
-| `guide`, `map`, `reviews` | The three sources are asked at the same time. `reviews` is only in the graph when there is a Google key. What a source answered is kept when the step runs again. | Parallel nodes with a `work` and an update, and no reducer; `effect` |
+| `guide`, `map`, `reviews` | The three sources are asked at the same time. `reviews` is only in the graph when there is a Google key. The map also gives the big sights, since a place a few metres from one lives off the visitors who pass. What a source answered is kept when the step runs again. | Parallel nodes with a `work` and an update, and no reducer; `effect` |
 | `dishes` | A model names what each stop is known for, with what the guide says and the traveller's allergies, diet and season in front of it, and a line of history or custom for each dish. It runs beside the sources and waits only for the guide, which is read once for both; the page shows the dishes one at a time from then on, while the map is still searched and while the agent chooses. | A work node beside the sources, `ask<Menu>` in an `effect`, progress values |
+| `specialists` | Searches the map for the places known for each dish, by the words the model gave with it, such as "francesinha" in a name or a cuisine, and with a Google key the reviews too ("best francesinha in Porto"). The agent reads these places first. | A node that every node of the step before leads to, so it runs once after all of them |
 | `plan` ⇄ `tools` | An agent chooses a restaurant for each meal. Its tools search the sources again and write the route into the state. | `toolLoop` in a graph of your own, `StateTool`, a token budget |
 | `order` | Sorts the meals and measures the walks between them, the first of a day from where the traveller sleeps. | A plain node |
 | `review` | The run waits here for the traveller. A change goes back to the agent; a yes ends the run. | `interruptBefore`, `resume` with an update, a conditional edge that loops |

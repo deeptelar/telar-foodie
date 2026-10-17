@@ -27,13 +27,13 @@ class LiveSourcesTest {
                 val page = sources.guide.read("Lisbon, Portugal")
                 println("The guide: ${page.text.length} characters, ${page.restaurants.size} restaurants")
                 println(page.text.take(400))
-                page.restaurants.take(5).forEach { println("  " + it.copy(id = "-").line()) }
+                page.restaurants.take(5).forEach { println("  " + Trip("").line(it.copy(id = "-"))) }
                 assertTrue(page.text.isNotBlank())
                 assertTrue(page.restaurants.size > 10, "the guide listed ${page.restaurants.size}")
 
                 val onMap = sources.map.restaurants("Lisbon", lisbon, MapSearch.Cuisine(listOf("portuguese", "regional")), MAP_RADIUS)
                 println("The map: ${onMap.size} restaurants")
-                onMap.take(5).forEach { println("  " + it.copy(id = "-").line()) }
+                onMap.take(5).forEach { println("  " + Trip("").line(it.copy(id = "-"))) }
                 assertTrue(onMap.size > 10, "the map listed ${onMap.size}")
 
                 val both = emptyList<Restaurant>().merged(page.restaurants).merged(onMap)

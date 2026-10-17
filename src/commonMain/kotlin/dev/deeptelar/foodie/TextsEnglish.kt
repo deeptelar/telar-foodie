@@ -350,4 +350,8 @@ object English : Texts {
             "but the script took the ones with the most evidence and did not read what they cook. " +
             "Add the key of a model under Settings and the planner chooses each place for a dish, for your own trip."
     override val sampleNoChanges = "The sample is a script and cannot change the route. Add the key of a model under Settings, and the planner follows what you ask for."
+
+    override val stepSpecialists = "The places known for each dish"
+    override fun lookingForSpecialists(stop: String) = "Looking for the places known for the dishes of $stop"
+    override fun knownForDish(dish: String) = "Known for: $dish"
 }

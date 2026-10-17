@@ -368,4 +368,8 @@ object Catalan : Texts {
             "però el guió ha agafat els que tenen més suport sense llegir què cuinen. " +
             "Afegeix la clau d'un model a Configuració i el planificador triarà cada lloc per un plat, per al teu propi viatge."
     override val sampleNoChanges = "L'exemple és un guió i no pot canviar la ruta. Afegeix la clau d'un model a Configuració i el planificador seguirà el que li demanis."
+
+    override val stepSpecialists = "Els llocs coneguts per cada plat"
+    override fun lookingForSpecialists(stop: String) = "Buscant els llocs coneguts pels plats de $stop"
+    override fun knownForDish(dish: String) = "Conegut per: $dish"
 }

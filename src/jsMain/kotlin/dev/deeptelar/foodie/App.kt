@@ -362,6 +362,7 @@ class App(
                 Step(Nodes.MAP, texts.stepMap),
                 Step(Nodes.REVIEWS, texts.stepReviews),
                 Step(Nodes.DISHES, texts.stepDishes),
+                Step(Nodes.SPECIALISTS, texts.stepSpecialists),
                 Step(Nodes.PLAN, texts.stepPlan),
                 Step(Nodes.ORDER, texts.stepOrder),
             )
@@ -369,6 +370,7 @@ class App(
         if (trip != null) {
             val done =
                 when {
+                    trip.messages.isNotEmpty() -> setOf(Nodes.INTERVIEW, Nodes.BRIEF, Nodes.GUIDE, Nodes.MAP, Nodes.REVIEWS, Nodes.DISHES, Nodes.SPECIALISTS)
                     trip.dishes.isNotEmpty() -> setOf(Nodes.INTERVIEW, Nodes.BRIEF, Nodes.GUIDE, Nodes.MAP, Nodes.REVIEWS, Nodes.DISHES)
                     trip.stops.isNotEmpty() -> setOf(Nodes.INTERVIEW, Nodes.BRIEF)
                     trip.interview.stage == InterviewStage.DONE -> setOf(Nodes.INTERVIEW)
@@ -398,6 +400,7 @@ class App(
             Nodes.MAP -> from(Source.MAP)
             Nodes.REVIEWS -> from(Source.REVIEWS)
             Nodes.DISHES -> trip.dishes.joinToString(", ") { it.name }
+            Nodes.SPECIALISTS -> texts.places(trip.restaurants.count { trip.speciality(it) != null })
             Nodes.PLAN -> if (trip.route.isEmpty()) "" else texts.mealsOnTheRoute(trip.route.size)
             else -> ""
         }
@@ -1266,7 +1269,10 @@ class App(
                 }
                 add("p", "why", meal.why)
                 if (meal.caution.isNotBlank()) add("p", "caution", "⚠ ${meal.caution}")
-                add("div", "badges") { restaurant.sources.forEach { add("span", "badge", texts.source(it)) } }
+                add("div", "badges") {
+                    trip.speciality(restaurant)?.let { add("span", "badge speciality", texts.knownForDish(it.name)) }
+                    restaurant.sources.forEach { add("span", "badge", texts.source(it)) }
+                }
                 val facts = listOf(restaurant.cuisine, restaurant.address, restaurant.price, restaurant.hours).filter { it.isNotBlank() }
                 if (facts.isNotEmpty()) add("p", "facts", facts.joinToString(" · "))
                 add("div", "links") {

@@ -90,7 +90,13 @@ You choose from the candidates, restaurants found in three sources: a travel gui
 How to choose:
 - Every day gets the meals the traveller asked for. If the traveller did not say, every day gets a lunch and a dinner; add a breakfast or a snack on a day when the stop has a pastry, a street food or a market worth a detour.
 - Each meal is at one candidate, named by its id, with one typical dish to order there. Use a restaurant once.
-- Prefer a place that cooks the local cuisine, that more than one source knows, and that the guide describes in words that fit: small, old, simple, full of locals. A high rating from many people counts. A place whose description speaks of tourists, views or an international menu is a weaker choice.
+- Prefer the places where people who live there eat, over the places made for visitors:
+  - A place "known for" a dish of the stop is the strongest choice for that dish: the one place in town for it, such as a francesinha in Porto. Order that dish there.
+  - Then a small place of the local cuisine: a tasca, a family kitchen, a pastry shop, a stall of a market. The guide's words count when they fit: small, old, simple, full of locals.
+  - Being in the travel guide is no reason by itself: the guide is written for visitors, and many of its places live off them.
+  - A place a few metres from a big sight (the line says so) lives off the visitors who pass: choose it only when a source speaks for it in words.
+  - A place whose description speaks of tourists, views, a menu in many languages or an international menu is a weak choice.
+  - A high rating from many people counts, but a very famous place is often full of visitors: a good rating at a small place counts more.
 - Follow what you know about the traveller: diet, budget, who comes along, how adventurous they are, what they drink and what they wish for. With one special meal, make one dinner of the trip a place to remember.
 - Never put a dish on the route that the traveller's allergies or diet rule out. With an allergy, say in `caution` what in the dish or the kitchen may contain it and what to tell the staff.
 - When someone on the trip is pregnant, choose dishes they can eat, and say in `caution` what to leave out or ask for at a place whose food often has it: raw or undercooked fish, meat or eggs, unpasteurised cheese, cured meats, fish high in mercury, alcohol.
@@ -128,10 +134,10 @@ internal fun planPrompt(trip: Trip): String =
             appendLine("What ${stop.name} is known for:")
             trip.dishes.filter { it.stop == stop.name }.forEach { appendLine("- ${it.name} (${it.meal}): ${it.what}") }
             val all = trip.restaurants.count { it.stop == stop.name }
-            val shown = trip.restaurants.best(stop.name, FIRST_CANDIDATES)
+            val shown = trip.best(stop.name, FIRST_CANDIDATES)
             appendLine()
             appendLine("Candidates in ${stop.name}, ${shown.size} of $all:")
-            shown.forEach { appendLine(it.line()) }
+            shown.forEach { appendLine(trip.line(it)) }
             if (shown.isEmpty()) appendLine("None yet. Search with the tools.")
         }
         if (trip.notes.isNotEmpty()) {

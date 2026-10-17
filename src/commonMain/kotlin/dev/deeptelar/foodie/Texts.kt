@@ -326,6 +326,15 @@ interface Texts {
     val sampleWhyPastry: String
     val sampleSummary: String
     val sampleNoChanges: String
+
+    // The places known for a dish
+
+    val stepSpecialists: String
+    fun lookingForSpecialists(stop: String): String
+
+    /** On the card of a meal at a place known for a dish of its stop. */
+    fun knownForDish(dish: String): String
+
 }
 
 /** A step of a how-to, with a [link] to where it is done when there is one. */

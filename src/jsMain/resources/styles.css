@@ -440,6 +440,12 @@ h3.day {
     color: var(--ok);
 }
 
+/* A place known for a dish of its stop: what the planner looks for first. */
+.badge.speciality {
+    background: #fff7ed;
+    color: var(--accent-dark);
+}
+
 .links {
     display: flex;
     flex-wrap: wrap;

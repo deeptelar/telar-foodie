@@ -104,8 +104,8 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
             val stop = trip.knownStop(search.stop)
             val words = search.words.lowercase().split(' ', ',').filter { it.isNotBlank() }
             if (words.any { it.length < 3 }) throw IllegalArgumentException("Search for a word of at least three letters, such as a dish or a cuisine.")
-            val matching = trip.restaurants.filter { it.stop == stop.name && it.matches(words) }.sortedByDescending { it.evidence() }
-            ToolOutcome(trip, matching.listed("No candidate in ${stop.name} matches \"${search.words}\". Search the map or the guide."))
+            val matching = trip.restaurants.filter { it.stop == stop.name && it.matches(words) }.sortedByDescending { trip.evidence(it) }
+            ToolOutcome(trip, trip.listed(matching, "No candidate in ${stop.name} matches \"${search.words}\". Search the map or the guide."))
         },
         StateTool<Trip, MapLookup>("search_map", "Searches the street map around a stop, by cuisine or by a word in the name. What it finds joins the candidates.") { trip, lookup ->
             val stop = trip.knownStop(lookup.stop)
@@ -262,7 +262,7 @@ private fun mealTime(word: String): MealTime =
     MealTime.of(word) ?: throw IllegalArgumentException("\"$word\" is no meal. Use breakfast, lunch, snack or dinner.")
 
 private fun Restaurant.matches(words: List<String>): Boolean {
-    val text = "$name $cuisine $note".lowercase()
+    val text = "$name $kind $cuisine $note".lowercase()
     return words.all { it in text }
 }
 
@@ -271,14 +271,14 @@ private fun Trip.found(found: List<Restaurant>, nothing: String): ToolOutcome<Tr
     val after = copy(restaurants = restaurants.merged(found))
     // Looked up in the merged list: a restaurant that was already known keeps its id.
     val listed = found.mapNotNull { new -> after.restaurants.firstOrNull { it.isSamePlaceAs(new) } }
-    return ToolOutcome(after, listed.distinctBy { it.id }.sortedByDescending { it.evidence() }.listed(nothing))
+    return ToolOutcome(after, after.listed(listed.distinctBy { it.id }.sortedByDescending { after.evidence(it) }, nothing))
 }
 
-private fun List<Restaurant>.listed(nothing: String): String =
-    if (isEmpty()) {
+private fun Trip.listed(found: List<Restaurant>, nothing: String): String =
+    if (found.isEmpty()) {
         nothing
     } else {
-        take(SHOWN).joinToString("\n") { it.line() } + if (size > SHOWN) "\n(${size - SHOWN} more. Search with other words to see them.)" else ""
+        found.take(SHOWN).joinToString("\n") { line(it) } + if (found.size > SHOWN) "\n(${found.size - SHOWN} more. Search with other words to see them.)" else ""
     }
 
 /** The meals of every day: the ones the traveller asked for, or a lunch and a dinner. */

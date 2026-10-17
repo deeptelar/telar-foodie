@@ -368,4 +368,8 @@ object Spanish : Texts {
             "pero el guion ha cogido los que tienen más respaldo sin leer qué cocinan. " +
             "Añade la clave de un modelo en Ajustes y el planificador elegirá cada lugar por un plato, para tu propio viaje."
     override val sampleNoChanges = "El ejemplo es un guion y no puede cambiar la ruta. Añade la clave de un modelo en Ajustes y el planificador seguirá lo que le pidas."
+
+    override val stepSpecialists = "Los sitios conocidos por cada plato"
+    override fun lookingForSpecialists(stop: String) = "Buscando los sitios conocidos por los platos de $stop"
+    override fun knownForDish(dish: String) = "Conocido por: $dish"
 }

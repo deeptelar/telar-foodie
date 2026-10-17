@@ -2,6 +2,7 @@ package dev.deeptelar.foodie.sources
 
 import dev.deeptelar.foodie.Location
 import dev.deeptelar.foodie.Restaurant
+import dev.deeptelar.foodie.Sight
 import dev.deeptelar.foodie.Source
 import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.submitForm
@@ -10,6 +11,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlin.math.floor
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -37,11 +39,17 @@ class Overpass(
     /** When no server answered, the moment that was found out. */
     private var silentSince: TimeMark? = null
 
-    override suspend fun restaurants(stop: String, near: Location, search: MapSearch, radius: Int): List<Restaurant> {
+    override suspend fun restaurants(stop: String, near: Location, search: MapSearch, radius: Int): List<Restaurant> =
+        restaurants(stop, ask(query(near, search, radius))).spread(KEPT)
+
+    // The sights are a help: when no server answers for them, the map is not left alone for the restaurants.
+    override suspend fun sights(stop: String, near: Location, radius: Int): List<Sight> = sights(stop, ask(sightsQuery(near, radius), rests = false))
+
+    /** The answer to [query] of the first server that gives one. When none does and [rests], the map is left alone for [rest]. */
+    private suspend fun ask(query: String, rests: Boolean = true): JsonElement {
         silentSince?.let { since ->
             if (since.elapsedNow() < rest) throw SourceException("The street map does not answer at the moment. Go on without it.")
         }
-        val query = query(near, search, radius)
         var failure = ""
         for (offset in servers.indices) {
             val index = (preferred + offset) % servers.size
@@ -59,9 +67,9 @@ class Overpass(
             }
             preferred = index
             silentSince = null
-            return restaurants(stop, answer)
+            return answer
         }
-        silentSince = TimeSource.Monotonic.markNow()
+        if (rests) silentSince = TimeSource.Monotonic.markNow()
         throw SourceException("No server of the street map answered: $failure")
     }
 
@@ -73,27 +81,83 @@ class Overpass(
                 "https://overpass.private.coffee/api/interpreter",
             )
 
-        /** The most restaurants one question returns. */
-        const val LIMIT: Int = 120
+        /** The most places one question returns. */
+        const val LIMIT: Int = 1000
+
+        /** The most places of one question that are kept, spread over the area: see [spread]. */
+        const val KEPT: Int = 150
 
         /**
-         * Places to eat with a name around [near]. A place with a `brand` is left out: that tag
-         * marks the branches of a chain.
+         * Places to eat with a name around [near]: restaurants, cafés and bars, and also pastry
+         * shops and markets, where many people who live there eat. A place with a `brand` is left
+         * out: that tag marks the branches of a chain. A search by cuisine finds every pastry shop
+         * and market, which seldom have a cuisine, and a search by name or dish finds bakeries too.
          */
         internal fun query(near: Location, search: MapSearch, radius: Int): String {
-            val filter =
+            val around = "(around:$radius,${near.lat},${near.lon})"
+            val eat = "nwr[\"amenity\"~\"^(restaurant|cafe|fast_food|pub|bar|ice_cream)$\"][\"name\"][!\"brand\"]"
+            val sweet = "nwr[\"shop\"~\"^(pastry|confectionery)$\"][\"name\"][!\"brand\"]"
+            val shops = "nwr[\"shop\"~\"^(bakery|pastry|confectionery)$\"][\"name\"][!\"brand\"]"
+            val market = "nwr[\"amenity\"=\"marketplace\"][\"name\"]"
+            val statements =
                 when (search) {
-                    is MapSearch.Cuisine -> "[\"cuisine\"~\"${search.words.map(::word).filter { it.isNotEmpty() }.joinToString("|")}\",i]"
-                    is MapSearch.Name -> "[\"name\"~\"${word(search.word)}\",i]"
+                    is MapSearch.Cuisine -> listOf(eat + matching("cuisine", search.words), sweet, market)
+                    is MapSearch.Name -> listOf(eat, shops, market).map { it + matching("name", listOf(search.word)) }
+                    is MapSearch.Dishes -> listOf(eat, shops).flatMap { listOf(it + matching("name", search.words), it + matching("cuisine", search.words)) }
                 }
-            return "[out:json][timeout:25];" +
-                "nwr[\"amenity\"~\"^(restaurant|cafe|fast_food|pub|bar|ice_cream)$\"][\"name\"]$filter[!\"brand\"]" +
-                "(around:$radius,${near.lat},${near.lon});" +
-                "out tags center $LIMIT;"
+            return "[out:json][timeout:25];(" + statements.joinToString("") { "$it$around;" } + ");out tags center $LIMIT;"
         }
+
+        /**
+         * The big sights around [near]: the museums, monuments, viewpoints and squares that have a
+         * page in Wikipedia. The others are seldom where the visitors crowd.
+         */
+        internal fun sightsQuery(near: Location, radius: Int): String {
+            val around = "(around:$radius,${near.lat},${near.lon})"
+            val statements =
+                listOf(
+                    "nwr[\"tourism\"~\"^(attraction|museum|viewpoint)$\"]",
+                    "nwr[\"historic\"~\"^(monument|castle|palace|cathedral|city_gate)$\"]",
+                    "nwr[\"place\"=\"square\"]",
+                ).map { it + "[\"name\"][\"wikipedia\"]" }
+            return "[out:json][timeout:25];(" + statements.joinToString("") { "$it$around;" } + ");out tags center $SIGHTS;"
+        }
+
+        /** The most sights one question returns. */
+        private const val SIGHTS = 300
+
+        /** A filter of a query: the tag [key] has one of [words] in it. A space matches the underscore of a cuisine too. */
+        private fun matching(key: String, words: List<String>): String =
+            "[\"$key\"~\"${words.map(::word).filter { it.isNotEmpty() }.joinToString("|") { it.replace(" ", "[ _]") }}\",i]"
 
         /** [text] as it may stand in a regular expression inside a quoted string of a query: letters, digits, spaces and hyphens. */
         private fun word(text: String): String = text.trim().filter { it.isLetterOrDigit() || it == ' ' || it == '-' || it == '_' }
+
+        /**
+         * At most [limit] of these places, spread over the area. The map answers in the order the
+         * places were added to it, which favours the old centre, where the visitors are: the area
+         * is cut into cells, and each cell gives a place in turn.
+         */
+        internal fun List<Restaurant>.spread(limit: Int): List<Restaurant> {
+            if (size <= limit) return this
+            val cells = groupBy { floor(it.lat / CELL) to floor(it.lon / CELL) }.values.map { it.iterator() }
+            val kept = mutableListOf<Restaurant>()
+            while (kept.size < limit) cells.forEach { if (it.hasNext() && kept.size < limit) kept += it.next() }
+            return kept
+        }
+
+        /** The size of a cell of [spread], in degrees: about 400 metres. */
+        private const val CELL = 0.004
+
+        internal fun sights(stop: String, answer: JsonElement): List<Sight> {
+            val elements = (answer as? JsonObject)?.get("elements") as? JsonArray ?: throw SourceException("The street map sent no list of places.")
+            return elements.mapNotNull { element ->
+                val place = element as? JsonObject ?: return@mapNotNull null
+                val name = place.obj("tags")?.text("name").orEmpty()
+                val position = place.obj("center") ?: place
+                Sight(stop, name.ifBlank { return@mapNotNull null }, position.number("lat") ?: return@mapNotNull null, position.number("lon") ?: return@mapNotNull null)
+            }
+        }
 
         internal fun restaurants(stop: String, answer: JsonElement): List<Restaurant> {
             val elements = (answer as? JsonObject)?.get("elements") as? JsonArray ?: throw SourceException("The street map sent no list of places.")
@@ -111,6 +175,7 @@ class Overpass(
                     lat = lat,
                     lon = lon,
                     cuisine = tags.text("cuisine").replace(";", ", ").replace('_', ' '),
+                    kind = tags.text("amenity").ifBlank { tags.text("shop") },
                     address = listOf(tags.text("addr:street"), tags.text("addr:housenumber")).filter { it.isNotBlank() }.joinToString(" "),
                     website = tags.text("website").ifBlank { tags.text("contact:website") },
                     hours = tags.text("opening_hours"),

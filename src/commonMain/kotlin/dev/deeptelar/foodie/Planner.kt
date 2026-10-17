@@ -33,6 +33,7 @@ object Nodes {
     const val MAP = "map"
     const val REVIEWS = "reviews"
     const val DISHES = "dishes"
+    const val SPECIALISTS = "specialists"
     const val PLAN = "plan"
     const val TOOLS = "tools"
     const val ORDER = "order"
@@ -58,10 +59,10 @@ data class Named(
  * The graph that plans a trip:
  *
  * ```
- * START → interview ⟲ → brief → guide ┐
- *                            → map   ├→ dishes → plan ⇄ tools → order → review → END
- *                            → reviews ┘                 ↑                  │
- *                                                        └── a change ──────┘
+ * START → interview ⟲ → brief → guide   ┐
+ *                            → map     ├→ specialists → plan ⇄ tools → order → review → END
+ *                            → reviews │                  ↑                  │
+ *                            → dishes  ┘                  └── a change ──────┘
  * ```
  *
  * - `interview` asks the traveller what a planner who knows food asks, a few questions at a time,
@@ -70,8 +71,10 @@ data class Named(
  * - `brief` reads the places of the trip with the model and finds them on the map. When it cannot,
  *   it pauses the run with a question for the traveller.
  * - `guide`, `map` and `reviews` ask the three sources at the same time. `reviews` is only part of
- *   the graph when [sources] has a source of reviews.
- * - `dishes` asks the model what each stop is known for.
+ *   the graph when [sources] has a source of reviews. The map also gives the big sights, since a
+ *   place next to one lives off the visitors who pass.
+ * - `dishes` asks the model what each stop is known for, at the same time: it needs only the guide.
+ * - `specialists` searches the map, and the reviews, for the places known for each of those dishes.
  * - `plan` and `tools` are an agent: the model chooses restaurants with the tools of `Tools.kt`,
  *   which search the sources again and write the route into the state.
  * - `order` puts the meals in order and measures the walks between them.
@@ -149,7 +152,16 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                 work = { trip ->
                     gather(trip, trip.language.texts.theMap) { stop ->
                         reportProgress(Activity(trip.language.texts.lookingOnTheMap(stop.cuisines.firstOrNull() ?: "local", stop.title)))
-                        Found(effect("map ${stop.name}") { sources.map.restaurants(stop.name, stop.location, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) })
+                        val found = effect("map ${stop.name}") { sources.map.restaurants(stop.name, stop.location, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) }
+                        // The sights are a help, not a need: without them, or when they are slow, the restaurants are still candidates.
+                        val sights =
+                            try {
+                                withTimeoutOrNull(SIGHTS_PATIENCE) { effect("sights ${stop.name}") { sources.map.sights(stop.name, stop.location, MAP_RADIUS) } }.orEmpty()
+                            } catch (e: Throwable) {
+                                if (!e.isFailure()) throw e
+                                emptyList()
+                            }
+                        Found(found, sights = sights)
                     }
                 },
             ) { trip, found -> trip.with(found) }
@@ -188,6 +200,34 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                 },
             ) { trip, named -> trip.copy(dishes = named.dishes, tokens = trip.tokens + named.usage) }
 
+        // The places known for a dish of the stop: a planner who knows food goes to the one place for a francesinha.
+        val specialists =
+            node(
+                Nodes.SPECIALISTS,
+                work = { trip ->
+                    gather(trip, trip.language.texts.theMap) { stop ->
+                        val dishes = trip.dishes.filter { it.stop == stop.name && it.words.isNotEmpty() }
+                        if (dishes.isEmpty()) return@gather Found()
+                        reportProgress(Activity(trip.language.texts.lookingForSpecialists(stop.title)))
+                        val words = dishes.flatMap { it.words }.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+                        val onMap = effect("specialists ${stop.name} ${words.hashCode()}") { sources.map.restaurants(stop.name, stop.location, MapSearch.Dishes(words), MAP_RADIUS) }
+                        // Google bills each search: only the first few dishes of a stop, which a model names first, are searched there.
+                        val reviewed =
+                            sources.reviews?.let { reviews ->
+                                dishes.take(REVIEWED_DISHES).flatMap { dish ->
+                                    try {
+                                        effect("specialists ${stop.name} ${dish.name}") { reviews.search(stop.name, "best ${dish.name} in ${stop.name}", stop.location) }
+                                    } catch (e: Throwable) {
+                                        if (!e.isFailure()) throw e
+                                        emptyList()
+                                    }
+                                }
+                            }.orEmpty()
+                        Found(onMap + reviewed)
+                    }
+                },
+            ) { trip, found -> trip.with(found) }
+
         val order = node(Nodes.ORDER) { trip -> trip.copy(route = ordered(trip)) }
 
         // The place where the run waits for the traveller. It runs when the traveller answered, and a
@@ -216,7 +256,8 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
         conditionalEdge(interview, targets = setOf(interview, brief), labels = mapOf(interview to "a round of questions", brief to "checked")) {
             if (it.interview.stage == InterviewStage.DONE) brief else interview
         }
-        listOfNotNull(guide, map, reviews, dishes).forEach { node -> brief then node then plan }
+        listOfNotNull(guide, map, reviews, dishes).forEach { node -> brief then node then specialists }
+        specialists then plan
         order then review
         conditionalEdge(review, targets = setOf(plan, NodeRef.END), labels = mapOf(plan to "a change", NodeRef.END to "yes")) { if (it.approved) NodeRef.END else plan }
     }.compile()
@@ -254,6 +295,7 @@ internal data class Found(
     val restaurants: List<Restaurant> = emptyList(),
     val guideNotes: Map<String, String> = emptyMap(),
     val notes: List<String> = emptyList(),
+    val sights: List<Sight> = emptyList(),
 )
 
 /**
@@ -271,7 +313,7 @@ private suspend fun gather(trip: Trip, source: String, ask: suspend (Stop) -> Fo
                 if (!e.isFailure()) throw e
                 Found(notes = listOf(trip.language.texts.gaveNoAnswer(source, stop.name, e.message.orEmpty())))
             }
-        all = Found(all.restaurants + found.restaurants, all.guideNotes + found.guideNotes, all.notes + found.notes)
+        all = Found(all.restaurants + found.restaurants, all.guideNotes + found.guideNotes, all.notes + found.notes, all.sights + found.sights)
     }
     return all
 }
@@ -298,7 +340,7 @@ private suspend fun guideNotes(trip: Trip, pages: Shared<String, GuidePage>): Ma
     }
 
 private fun Trip.with(found: Found): Trip =
-    copy(restaurants = restaurants.merged(found.restaurants), guideNotes = guideNotes + found.guideNotes, notes = notes + found.notes)
+    copy(restaurants = restaurants.merged(found.restaurants), guideNotes = guideNotes + found.guideNotes, notes = notes + found.notes, sights = sights + found.sights)
 
 /** The meals in the order they are eaten, each with the walk from the meal before it on the same day, or from where the traveller sleeps. */
 internal fun ordered(trip: Trip): List<Meal> {
@@ -314,6 +356,9 @@ internal fun ordered(trip: Trip): List<Meal> {
 /** What the reviews are searched for at a stop before the agent asks for anything. */
 private fun reviewQuery(stop: Stop): String = "traditional ${stop.cuisines.firstOrNull().orEmpty()} restaurant where locals eat".replace("  ", " ")
 
+/** How many dishes of a stop are searched in the reviews, when there are reviews. */
+private const val REVIEWED_DISHES = 3
+
 /** Around the middle of a stop, in metres: what a traveller reaches on foot or with a short ride. */
 internal const val MAP_RADIUS = 3000
 
@@ -328,3 +373,6 @@ private const val MAX_DAYS = 10
 
 /** How long a source may take for one stop. */
 private val SOURCE_PATIENCE = 60.seconds
+
+/** How long the map may take for the sights of a stop, after its restaurants: together they stay within [SOURCE_PATIENCE]. */
+private val SIGHTS_PATIENCE = 15.seconds

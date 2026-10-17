@@ -34,6 +34,8 @@ data class Trip(
     val dishes: List<Dish> = emptyList(),
     /** Every restaurant the sources found. The route is chosen from these. */
     val restaurants: List<Restaurant> = emptyList(),
+    /** The big sights around each stop, from the street map: a restaurant next to one lives off the visitors who pass. */
+    val sights: List<Sight> = emptyList(),
     /** The route: where to eat, on which day and at which meal. */
     val route: List<Meal> = emptyList(),
     /** The conversation of the agent that chooses the route. */
@@ -135,6 +137,12 @@ data class Dish(
             "Only what is well known. Empty rather than a guess.",
     )
     val story: String = "",
+    @Description(
+        "Words that the name or the OpenStreetMap cuisine tag of a place known for it contains, in lower case, " +
+            "for example [\"francesinha\"] or [\"bifana\", \"bifanas\"]. Not a word that every place of a kind has, such as \"restaurante\". " +
+            "Empty when no place is known for it alone, as with a drink that every bar pours.",
+    )
+    val words: List<String> = emptyList(),
 )
 
 /** The typed answer of the `dishes` node. */
@@ -167,6 +175,8 @@ data class Restaurant(
     val lat: Double,
     val lon: Double,
     val cuisine: String = "",
+    /** What kind of place the street map says it is, as it tags it, for example "restaurant", "cafe", "pastry" or "marketplace". */
+    val kind: String = "",
     val address: String = "",
     val website: String = "",
     val hours: String = "",
@@ -177,6 +187,17 @@ data class Restaurant(
     val rating: Double? = null,
     val ratings: Int? = null,
     val sources: Set<Source> = emptySet(),
+) {
+    val location: Location get() = Location(lat, lon)
+}
+
+/** A big sight of a stop: a museum, a monument, a viewpoint or a famous square. */
+@Serializable
+data class Sight(
+    val stop: String,
+    val name: String,
+    val lat: Double,
+    val lon: Double,
 ) {
     val location: Location get() = Location(lat, lon)
 }

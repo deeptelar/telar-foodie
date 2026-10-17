@@ -203,12 +203,55 @@ class SourcesTest {
 
     @Test
     fun `the question to the map asks for a cuisine or a name, without chains and without what a model must not write into it`() {
+        val around = "(around:3000,38.7078,-9.1366)"
         assertEquals(
-            "[out:json][timeout:25];nwr[\"amenity\"~\"^(restaurant|cafe|fast_food|pub|bar|ice_cream)$\"][\"name\"]" +
-                "[\"cuisine\"~\"portuguese|regional\",i][!\"brand\"](around:3000,38.7078,-9.1366);out tags center 120;",
+            "[out:json][timeout:25];(" +
+                "nwr[\"amenity\"~\"^(restaurant|cafe|fast_food|pub|bar|ice_cream)$\"][\"name\"][!\"brand\"][\"cuisine\"~\"portuguese|regional\",i]$around;" +
+                "nwr[\"shop\"~\"^(pastry|confectionery)$\"][\"name\"][!\"brand\"]$around;" +
+                "nwr[\"amenity\"=\"marketplace\"][\"name\"]$around;" +
+                ");out tags center 1000;",
             Overpass.query(lisbon, MapSearch.Cuisine(listOf("portuguese", " regional ")), 3000),
         )
-        assertTrue("[\"name\"~\"tasca do chico\",i]" in Overpass.query(lisbon, MapSearch.Name("tasca \"];(do) chico"), 3000))
+        assertTrue("[\"name\"~\"tasca[ _]do[ _]chico\",i]" in Overpass.query(lisbon, MapSearch.Name("tasca \"];(do) chico"), 3000))
+    }
+
+    @Test
+    fun `a search for dishes looks in the names and the cuisines of restaurants and bakeries`() {
+        val query = Overpass.query(lisbon, MapSearch.Dishes(listOf("bifana", "pastel de nata")), 3000)
+        assertTrue("[\"name\"~\"bifana|pastel[ _]de[ _]nata\",i]" in query, query)
+        assertTrue("[\"cuisine\"~\"bifana|pastel[ _]de[ _]nata\",i]" in query, query)
+        assertTrue("bakery" in query, query)
+    }
+
+    @Test
+    fun `the places of a crowded centre are kept no more than those of the quieter streets`() {
+        with(Overpass) {
+            val centre = (1..10).map { Restaurant(stop = "Lisbon", name = "Centre $it", lat = 38.7101 + it * 0.0001, lon = -9.1401) }
+            val elsewhere = (1..3).map { Restaurant(stop = "Lisbon", name = "Elsewhere $it", lat = 38.7301 + it * 0.0001, lon = -9.1601) }
+
+            val kept = (centre + elsewhere).spread(6)
+
+            assertEquals(6, kept.size)
+            assertEquals(3, kept.count { it.name.startsWith("Elsewhere") })
+            assertEquals((centre + elsewhere).take(20), (centre + elsewhere).spread(20))
+        }
+    }
+
+    @Test
+    fun `the sights come from the map with their names and where they are`() {
+        val answer =
+            Json.parseToJsonElement(
+                """{"elements":[
+                    {"type":"node","lat":38.7076,"lon":-9.1365,"tags":{"name":"Praça do Comércio","place":"square","wikipedia":"pt:Praça do Comércio"}},
+                    {"type":"way","center":{"lat":38.7139,"lon":-9.1334},"tags":{"name":"Castelo de São Jorge"}},
+                    {"type":"node","lat":38.7,"lon":-9.1,"tags":{"tourism":"viewpoint"}}
+                ]}""",
+            )
+        assertEquals(
+            listOf(Sight("Lisbon", "Praça do Comércio", 38.7076, -9.1365), Sight("Lisbon", "Castelo de São Jorge", 38.7139, -9.1334)),
+            Overpass.sights("Lisbon", answer),
+        )
+        assertTrue("[\"wikipedia\"]" in Overpass.sightsQuery(lisbon, 3000))
     }
 
     @Test
@@ -245,6 +288,21 @@ class SourcesTest {
 
             assertEquals(listOf("first.example", "second.example"), asked)
             assertEquals(2, found.size)
+        }
+
+    @Test
+    fun `when no server answers for the sights, the restaurants are still searched`() =
+        runTest {
+            val client =
+                client { request ->
+                    val query = request.body.toByteArray().decodeToString()
+                    if ("wikipedia" in query) respond("Too busy", HttpStatusCode.TooManyRequests) else respond(mapAnswer)
+                }
+            val map = Overpass(client, servers = listOf("https://first.example/api"))
+
+            assertFailsWith<SourceException> { map.sights("Lisbon", lisbon, 3000) }
+
+            assertEquals(2, map.restaurants("Lisbon", lisbon, MapSearch.Cuisine(listOf("regional")), 3000).size)
         }
 
     @Test
@@ -356,7 +414,30 @@ class SourcesTest {
         assertEquals(guide.copy(id = "r1", cuisine = "portuguese", sources = setOf(Source.GUIDE, Source.MAP)), all[0])
         // The same name five kilometres away is another restaurant.
         assertEquals(other.copy(id = "r2"), all[1])
-        assertTrue(all[0].evidence() > all[1].evidence())
+        with(Trip("")) { assertTrue(evidence(all[0]) > evidence(all[1])) }
+    }
+
+    @Test
+    fun `a place known for a dish of its stop comes before a place of the guide, and a place next to a sight comes last`() {
+        val stop = Stop("Porto", 1, 1, 41.1496, -8.6109, cuisines = listOf("portuguese"))
+        val specialist = Restaurant(id = "r1", stop = "Porto", name = "Café Santiago", lat = 41.1460, lon = -8.6060, cuisine = "francesinha", sources = setOf(Source.MAP))
+        val guide = Restaurant(id = "r2", stop = "Porto", name = "Tasca do Guia", lat = 41.1500, lon = -8.6200, cuisine = "portuguese", note = "Popular.", sources = setOf(Source.GUIDE, Source.MAP))
+        val bySight = Restaurant(id = "r3", stop = "Porto", name = "Ribeira View", lat = 41.14050, lon = -8.61300, cuisine = "portuguese", sources = setOf(Source.GUIDE, Source.MAP))
+        val trip =
+            Trip(
+                "Porto",
+                stops = listOf(stop),
+                dishes = listOf(Dish("Porto", "Francesinha", "A sandwich under a beer sauce.", words = listOf("francesinha")), Dish("Porto", "Port wine", "A sweet wine.")),
+                restaurants = listOf(bySight, guide, specialist),
+                sights = listOf(Sight("Porto", "Praça da Ribeira", 41.14060, -8.61310)),
+            )
+
+        assertEquals("Francesinha", trip.speciality(specialist)?.name)
+        assertEquals(null, trip.speciality(guide))
+        assertEquals(listOf(specialist, guide, bySight), trip.restaurants.sortedByDescending { trip.evidence(it) })
+        assertEquals(listOf(specialist, guide), trip.best("Porto", 2))
+        assertTrue(" · known for: Francesinha" in trip.line(specialist), trip.line(specialist))
+        assertTrue(Regex(" · \\d+ m from Praça da Ribeira").containsMatchIn(trip.line(bySight)), trip.line(bySight))
     }
 
     @Test

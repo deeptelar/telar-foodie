@@ -2,6 +2,7 @@ package dev.deeptelar.foodie.sources
 
 import dev.deeptelar.foodie.Location
 import dev.deeptelar.foodie.Restaurant
+import dev.deeptelar.foodie.Sight
 import io.ktor.client.HttpClient
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
@@ -46,6 +47,14 @@ fun interface StreetMap {
      * @param stop the name of the stop the search is for. It is written into each result.
      */
     suspend fun restaurants(stop: String, near: Location, search: MapSearch, radius: Int): List<Restaurant>
+
+    /**
+     * The big sights within [radius] metres of [near]: museums, monuments, viewpoints and famous
+     * squares. A map that does not know them has none.
+     *
+     * @param stop the name of the stop the search is for. It is written into each result.
+     */
+    suspend fun sights(stop: String, near: Location, radius: Int): List<Sight> = emptyList()
 }
 
 /** What a [StreetMap] is asked for: a kind of food, or a word in the name of a restaurant. */
@@ -58,6 +67,11 @@ sealed interface MapSearch {
     /** Restaurants with [word] in their name. */
     data class Name(
         val word: String,
+    ) : MapSearch
+
+    /** Places known for a dish: one of [words] is in their name or their cuisine, such as "francesinha". */
+    data class Dishes(
+        val words: List<String>,
     ) : MapSearch
 }
 

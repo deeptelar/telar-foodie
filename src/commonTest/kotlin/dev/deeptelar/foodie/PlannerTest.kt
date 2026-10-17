@@ -83,7 +83,7 @@ class PlannerTest {
 
             // The sources that exist here and the dishes ran in one step, and the run stopped before the review.
             assertEquals(
-                listOf(setOf(Nodes.INTERVIEW), setOf(Nodes.BRIEF), setOf(Nodes.GUIDE, Nodes.MAP, Nodes.DISHES), setOf(Nodes.PLAN), setOf(Nodes.TOOLS), setOf(Nodes.PLAN), setOf(Nodes.ORDER)),
+                listOf(setOf(Nodes.INTERVIEW), setOf(Nodes.BRIEF), setOf(Nodes.GUIDE, Nodes.MAP, Nodes.DISHES), setOf(Nodes.SPECIALISTS), setOf(Nodes.PLAN), setOf(Nodes.TOOLS), setOf(Nodes.PLAN), setOf(Nodes.ORDER)),
                 run.steps.map { it.toSet() },
             )
             val paused = assertIs<GraphResult.Interrupted<Trip>>(run.result)
@@ -240,7 +240,7 @@ class PlannerTest {
                 expectNodes(Nodes.INTERVIEW, Nodes.BRIEF)
                 // The sources run in one step.
                 expectStep(Nodes.GUIDE, Nodes.MAP, Nodes.DISHES)
-                expectNodes(Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
+                expectNodes(Nodes.SPECIALISTS, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
                 expectInterruptBefore(Nodes.REVIEW) { trip -> assertEquals(listOf("r2"), trip.route.map { it.restaurantId }) }
 
                 resumeWith { it.copy(messages = it.messages + ChatMessage.User("I do not eat pork.")) }
@@ -392,6 +392,48 @@ class PlannerTest {
         }
 
     @Test
+    fun `the places known for a dish are searched once the dishes are named, and the agent reads them first`() =
+        runTest {
+            val searches = mutableListOf<MapSearch>()
+            val bifanas = Restaurant(stop = lisbon, name = "Casa das Bifanas", lat = 38.7135, lon = -9.1390, cuisine = "sandwich", sources = setOf(Source.MAP))
+            val castle = Sight(lisbon, "Castelo de São Jorge", 38.7139, -9.1334)
+            val map =
+                object : StreetMap {
+                    override suspend fun restaurants(stop: String, near: Location, search: MapSearch, radius: Int): List<Restaurant> {
+                        searches += search
+                        return if (search is MapSearch.Dishes) listOf(bifanas) else listOf(santaRitaOnMap, zeDaMouraria)
+                    }
+
+                    override suspend fun sights(stop: String, near: Location, radius: Int): List<Sight> = listOf(castle)
+                }
+            val queries = mutableListOf<String>()
+            val reviews = PlaceReviews { _, query, _ -> emptyList<Restaurant>().also { queries += query } }
+            val dishes =
+                Menu(
+                    listOf(
+                        Dish(lisbon, "Bifana", "A pork sandwich.", "lunch", words = listOf("bifana", "bifanas")),
+                        Dish(lisbon, "Ginjinha", "A cherry liqueur.", "snack"),
+                    ),
+                )
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(dishes)
+                    says("Planned.")
+                }
+
+            val run = planner(model, sources(map = map, reviews = reviews)).stream(interviewed("One day in Lisbon"), config()).record()
+
+            assertEquals(listOf(setOf(Nodes.SPECIALISTS)), run.steps.drop(3).take(1).map { it.toSet() })
+            assertEquals(MapSearch.Dishes(listOf("bifana", "bifanas")), searches.last())
+            // A drink that every bar pours has no words: only the sandwich is searched in the reviews.
+            assertEquals("best Bifana in $lisbon", queries.last())
+            assertEquals(listOf(castle), run.state.sights)
+            val prompt = model.requests[2].messages.first().text
+            assertTrue(Regex("""\[r\d+\] Casa das Bifanas · sandwich · known for: Bifana""").containsMatchIn(prompt), prompt)
+        }
+
+    @Test
     fun `with a source of reviews the graph has a node and a tool for it`() =
         runTest {
             val rated = Restaurant(stop = lisbon, name = "Zé da Mouraria", lat = 38.71551, lon = -9.13621, rating = 4.6, ratings = 3200, sources = setOf(Source.REVIEWS))
@@ -412,6 +454,7 @@ class PlannerTest {
             val run = planner(model, sources(reviews = reviews)).stream(interviewed("One day in Lisbon"), config()).record()
 
             assertEquals(setOf(Nodes.GUIDE, Nodes.MAP, Nodes.REVIEWS, Nodes.DISHES), run.steps[2].toSet())
+            // The salt cod of the menu has no words to search for: the specialists step searches nothing.
             assertEquals(listOf("traditional portuguese restaurant where locals eat", "best bacalhau"), queries)
             // The rating joined the entry of the map.
             val ze = run.state.restaurants.single { it.name == "Zé da Mouraria" }

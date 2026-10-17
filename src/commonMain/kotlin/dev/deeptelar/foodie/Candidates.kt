@@ -39,6 +39,7 @@ fun List<Restaurant>.merged(found: List<Restaurant>): List<Restaurant> {
             all[index] =
                 known.copy(
                     cuisine = known.cuisine.ifBlank { new.cuisine },
+                    kind = known.kind.ifBlank { new.kind },
                     address = known.address.ifBlank { new.address },
                     website = known.website.ifBlank { new.website },
                     hours = known.hours.ifBlank { new.hours },
@@ -81,36 +82,77 @@ private val ACCENTS: Map<Char, Char> =
     }
 
 /**
- * How much speaks for a restaurant before anyone has read about it: every source that knows it,
- * a description in the travel guide, and a rating that many people gave.
+ * What [restaurant] is known for: the first dish of its stop whose words are in its name or its
+ * cuisine, such as "francesinha" in "Café Santiago · francesinha". `null` for a place that is not
+ * known for one thing.
  */
-fun Restaurant.evidence(): Double {
-    var points = sources.size * 2.0
-    if (note.isNotBlank()) points += 1.5
-    val stars = rating
-    if (stars != null && (ratings ?: 0) >= MIN_RATINGS) points += (stars - 3.5).coerceIn(0.0, 1.5) * 2
-    if (cuisine.isNotBlank()) points += 0.5
+fun Trip.speciality(restaurant: Restaurant): Dish? {
+    val text = " " + "${restaurant.name} ${restaurant.cuisine}".simplified() + " "
+    return dishes.firstOrNull { dish ->
+        dish.stop == restaurant.stop && dish.words.map { it.simplified() }.any { it.length >= MIN_WORD && " $it" in text }
+    }
+}
+
+/** A word shorter than this matches too much: "pao" is in many names. */
+private const val MIN_WORD = 4
+
+/** The nearest big sight to [restaurant] within [SIGHT_METRES], and how far it is. */
+fun Trip.nextToASight(restaurant: Restaurant): Pair<Sight, Int>? =
+    sights.asSequence()
+        .filter { it.stop == restaurant.stop }
+        .map { it to metresBetween(it.location, restaurant.location) }
+        .filter { it.second <= SIGHT_METRES }
+        .minByOrNull { it.second }
+
+/** A place this close to a big sight lives off the visitors who pass, in metres. */
+internal const val SIGHT_METRES = 120
+
+/**
+ * How much speaks for [restaurant] before anyone has read about it. Being known for a dish of the
+ * stop counts most, then a good rating that many people gave, then the stop's own cuisine and each
+ * source that knows the place. Being in the travel guide is no more than being on the map: the
+ * guide writes for visitors. A place next to a big sight counts less.
+ */
+fun Trip.evidence(restaurant: Restaurant): Double {
+    var points = restaurant.sources.size.toDouble()
+    if (speciality(restaurant) != null) points += 2.5
+    val stars = restaurant.rating
+    if (stars != null && (restaurant.ratings ?: 0) >= MIN_RATINGS) points += (stars - 3.5).coerceIn(0.0, 1.5) * 2
+    val cuisines = stop(restaurant.stop)?.cuisines.orEmpty()
+    if (cuisines.any { it.isNotBlank() && it.replace('_', ' ') in restaurant.cuisine.lowercase() }) points += 1.0
+    if (nextToASight(restaurant) != null) points -= 1.5
     return points
 }
 
 /** A rating that fewer people gave says little. */
 private const val MIN_RATINGS = 50
 
-/** The restaurants of [stop], the ones with the most evidence first. */
-fun List<Restaurant>.best(stop: String, limit: Int): List<Restaurant> =
-    filter { it.stop.equals(stop, ignoreCase = true) }.sortedByDescending { it.evidence() }.take(limit)
+/**
+ * The restaurants of [stop] a model reads first: for each dish of the stop the two places known for
+ * it with the most evidence, and then the others with the most evidence, [limit] in all.
+ */
+fun Trip.best(stop: String, limit: Int): List<Restaurant> {
+    val here = restaurants.filter { it.stop.equals(stop, ignoreCase = true) }.sortedByDescending { evidence(it) }
+    val specialists = dishes.filter { it.stop.equals(stop, ignoreCase = true) }.flatMap { dish -> here.filter { speciality(it) == dish }.take(2) }
+    return (specialists + here).distinctBy { it.id }.take(limit)
+}
 
-/** A restaurant as one line for the model. */
-fun Restaurant.line(): String =
+/** [restaurant] as one line for the model. */
+fun Trip.line(restaurant: Restaurant): String =
     buildString {
-        append('[').append(id).append("] ").append(name)
-        if (cuisine.isNotBlank()) append(" · ").append(cuisine)
-        append(" · found in: ").append(sources.joinToString(", ") { it.label })
-        rating?.let { append(" · ").append(it).append(" stars") }
-        ratings?.let { append(" (").append(it).append(" ratings)") }
-        if (price.isNotBlank()) append(" · price: ").append(price)
-        if (address.isNotBlank()) append(" · ").append(address)
-        if (note.isNotBlank()) append(" · guide: \"").append(note.take(NOTE_LENGTH)).append('"')
+        with(restaurant) {
+            append('[').append(id).append("] ").append(name)
+            if (kind.isNotBlank() && kind != "restaurant") append(" · ").append(kind.replace('_', ' '))
+            if (cuisine.isNotBlank()) append(" · ").append(cuisine)
+            speciality(restaurant)?.let { append(" · known for: ").append(it.name) }
+            append(" · found in: ").append(sources.joinToString(", ") { it.label })
+            rating?.let { append(" · ").append(it).append(" stars") }
+            ratings?.let { append(" (").append(it).append(" ratings)") }
+            if (price.isNotBlank()) append(" · price: ").append(price)
+            if (address.isNotBlank()) append(" · ").append(address)
+            nextToASight(restaurant)?.let { (sight, metres) -> append(" · ").append(metres).append(" m from ").append(sight.name) }
+            if (note.isNotBlank()) append(" · guide: \"").append(note.take(NOTE_LENGTH)).append('"')
+        }
     }
 
 private const val NOTE_LENGTH = 220
