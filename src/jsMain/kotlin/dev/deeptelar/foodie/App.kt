@@ -82,6 +82,9 @@ private class Step(
     /** When the node started, and when it last said something, in milliseconds of `Date.now()`. */
     var started: Double = 0.0
     var heard: Double = 0.0
+
+    /** When the node was done, in milliseconds of `Date.now()`; 0 when it was not done in this run. */
+    var finished: Double = 0.0
 }
 
 /**
@@ -129,6 +132,9 @@ class App(
     private var dishShown = 0
     private var dishShownAt = 0.0
     private var dishDrawn = -1
+
+    /** The dishes as soon as the node named them: the trip has them only when the sources are done too. */
+    private var named = emptyList<Dish>()
 
     /** What the traveller tapped and wrote for each open question, by its text, so that drawing the page again keeps it. */
     private var drafts = emptyMap<String, Draft>()
@@ -213,6 +219,7 @@ class App(
         feed = emptyList()
         dishShown = 0
         dishDrawn = -1
+        named = emptyList()
         steps = steps(trip)
         render()
         job =
@@ -251,7 +258,10 @@ class App(
                     Nodes.PLAN -> writing = ""
                     // The calls the model just asked for are the last message of the state the tools node starts with.
                     Nodes.TOOLS -> feed = (feed + event.state.messages.pendingToolCalls().flatMap { describe(it, event.state) }).takeLast(FEED_LINES)
-                    Nodes.ORDER -> step(Nodes.PLAN)?.status = Status.DONE
+                    Nodes.ORDER -> step(Nodes.PLAN)?.let {
+                        it.status = Status.DONE
+                        it.finished = Date.now()
+                    }
                 }
                 renderRun()
             }
@@ -263,6 +273,7 @@ class App(
                             it.heard = Date.now()
                         }
                     is ChatEvent.TextDelta -> writing += value.text
+                    is Named -> named = value.dishes
                 }
                 renderRun()
             }
@@ -273,7 +284,10 @@ class App(
             is GraphEvent.NodeCompleted -> {
                 // The agent is done when the node after it starts, not when one of its rounds ends.
                 val step = step(event.node)
-                if (step != null && step.node != Nodes.PLAN) step.status = Status.DONE
+                if (step != null && step.node != Nodes.PLAN) {
+                    step.status = Status.DONE
+                    step.finished = Date.now()
+                }
                 step?.activity = ""
                 renderRun()
             }
@@ -665,9 +679,11 @@ class App(
                         add("div", "step-title", step.title)
                         val detail = step.activity.ifEmpty { result(step, trip) }
                         val running = step.status == Status.RUNNING
-                        val elapsed = ((Date.now() - step.started) / 1000).toInt()
-                        if (detail.isNotEmpty() || running) {
-                            add("div", "step-detail", listOf(detail, if (running) texts.seconds(elapsed) else "").filter { it.isNotEmpty() }.joinToString(" · "))
+                        // A step that ran in this run says how long it took, and a running one how long it has run.
+                        val took = ((if (running) Date.now() else step.finished) - step.started) / 1000
+                        val time = if (running || step.finished > 0) texts.seconds(took.toInt()) else ""
+                        if (detail.isNotEmpty() || time.isNotEmpty()) {
+                            add("div", "step-detail", listOf(detail, time).filter { it.isNotEmpty() }.joinToString(" · "))
                         }
                         // A model that thinks before it writes says nothing for a while: say that this is expected.
                         if (running && step.node in WAITS_FOR_A_MODEL && Date.now() - step.heard > QUIET_MILLIS) add("div", "step-detail quiet", texts.modelThinking)
@@ -675,9 +691,11 @@ class App(
                             if (feed.isNotEmpty()) add("ul", "feed") { feed.forEach { add("li", text = it) } }
                             if (writing.isNotBlank()) add("p", "writing", writing)
                         }
-                        // Choosing the restaurants takes longest: meanwhile the food of the trip is shown, one dish at a time.
-                        val dishes = trip?.whileYouWait().orEmpty()
-                        if (step.node == Nodes.PLAN && running && dishes.isNotEmpty()) whileYouWait(dishes)
+                        // Meanwhile the food of the trip is shown, one dish at a time: under the dishes while the sources are still read, then under the choosing.
+                        val dishes = trip?.let { if (it.dishes.isEmpty()) it.copy(dishes = named) else it }?.whileYouWait().orEmpty()
+                        val planning = step(Nodes.PLAN)?.status
+                        val here = if (step.node == Nodes.PLAN) running else step.node == Nodes.DISHES && step.status == Status.DONE && planning == Status.WAITING
+                        if (here && dishes.isNotEmpty()) whileYouWait(dishes)
                     }
                 }
             }
@@ -700,7 +718,7 @@ class App(
         // The panel is drawn again every second: only a dish that was not on it yet fades in.
         val first = dishDrawn < 0
         val card = add("aside", "tidbit" + if (dishShown != dishDrawn) " fresh" else "") {
-            add("p", "tidbit-label", texts.whileIChoose(trip?.stop(dish.stop)?.title ?: dish.stop))
+            add("p", "tidbit-label", texts.whileIPlan(trip?.stop(dish.stop)?.title ?: dish.stop))
             add("p", "tidbit-name", dish.name)
             add("p", text = dish.what)
             if (dish.story.isNotBlank()) add("p", "story", dish.story)

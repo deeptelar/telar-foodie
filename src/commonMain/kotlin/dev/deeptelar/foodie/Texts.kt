@@ -264,6 +264,9 @@ interface Texts {
     val findingYourPlaces: String
     val whereQuestion: String
     val findingDishes: String
+
+    /** The dishes wait for what the travel guide says about the places. */
+    val readingTheGuideFirst: String
     val notingWhatYouSaid: String
 
     /** How long a step has been running, shown after what it does. */
@@ -272,8 +275,8 @@ interface Texts {
     /** Under a step that has waited a while for a model that has not written anything yet. */
     val modelThinking: String
 
-    /** Over the dishes that are shown one by one while the agent chooses the restaurants. */
-    fun whileIChoose(stop: String): String
+    /** Over the dishes that are shown one by one while the route is planned. */
+    fun whileIPlan(stop: String): String
     val anotherDish: String
 
     fun asking(question: String): String

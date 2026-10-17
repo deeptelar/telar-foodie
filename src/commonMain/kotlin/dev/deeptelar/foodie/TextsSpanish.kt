@@ -287,6 +287,7 @@ object Spanish : Texts {
     override val findingYourPlaces = "Buscando los lugares de tu viaje"
     override val whereQuestion = "¿Adónde vas y cuántos días?"
     override val findingDishes = "Buscando los platos típicos de cada lugar"
+    override val readingTheGuideFirst = "Primero, lo que dice la guía de viaje de cada lugar"
 
     override val notingWhatYouSaid = "Anotando lo que me has dicho"
 
@@ -294,7 +295,7 @@ object Spanish : Texts {
 
     override val modelThinking = "El modelo piensa antes de escribir. Aquí puede tardar hasta un minuto."
 
-    override fun whileIChoose(stop: String) = "Mientras elijo los restaurantes · $stop"
+    override fun whileIPlan(stop: String) = "Mientras planifico tu ruta · $stop"
     override val anotherDish = "Otro"
 
     override fun asking(question: String) = "Escribiendo las preguntas: «$question»"

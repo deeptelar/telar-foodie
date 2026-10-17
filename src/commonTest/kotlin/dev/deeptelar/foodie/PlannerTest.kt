@@ -8,6 +8,7 @@ import dev.deeptelar.foodie.sources.Sources
 import dev.deeptelar.foodie.sources.StreetMap
 import dev.deeptelar.foodie.sources.TravelGuide
 import dev.deeptelar.telar.GraphConfig
+import dev.deeptelar.telar.GraphEvent
 import dev.deeptelar.telar.GraphResult
 import dev.deeptelar.telar.MemoryCheckpointer
 import dev.deeptelar.telar.agent.ChatMessage
@@ -16,6 +17,7 @@ import dev.deeptelar.telar.test.ScriptedChatModel
 import dev.deeptelar.telar.test.record
 import dev.deeptelar.telar.test.test
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
@@ -79,9 +81,9 @@ class PlannerTest {
 
             val run = planner(model, sources()).stream(interviewed("One day in Lisbon, no pork"), config()).record()
 
-            // The three sources that exist here ran in one step, and the run stopped before the review.
+            // The sources that exist here and the dishes ran in one step, and the run stopped before the review.
             assertEquals(
-                listOf(setOf(Nodes.INTERVIEW), setOf(Nodes.BRIEF), setOf(Nodes.GUIDE, Nodes.MAP), setOf(Nodes.DISHES), setOf(Nodes.PLAN), setOf(Nodes.TOOLS), setOf(Nodes.PLAN), setOf(Nodes.ORDER)),
+                listOf(setOf(Nodes.INTERVIEW), setOf(Nodes.BRIEF), setOf(Nodes.GUIDE, Nodes.MAP, Nodes.DISHES), setOf(Nodes.PLAN), setOf(Nodes.TOOLS), setOf(Nodes.PLAN), setOf(Nodes.ORDER)),
                 run.steps.map { it.toSet() },
             )
             val paused = assertIs<GraphResult.Interrupted<Trip>>(run.result)
@@ -167,6 +169,39 @@ class PlannerTest {
         }
 
     @Test
+    fun `the dishes are named while the map is still searched`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    says("Nothing to plan.")
+                }
+            val slowMap =
+                StreetMap { _, _, _, _ ->
+                    delay(30.seconds)
+                    listOf(zeDaMouraria)
+                }
+
+            var guideReads = 0
+            val guide =
+                TravelGuide {
+                    guideReads++
+                    GuidePage("Most restaurants are small and family-run.", listOf(santaRitaInGuide))
+                }
+
+            val events = planner(model, sources(map = slowMap, guide = guide)).stream(interviewed("One day in Lisbon"), config()).toList()
+
+            val named = events.indexOfFirst { it is GraphEvent.NodeProgress && it.value is Named }
+            val mapDone = events.indexOfFirst { it is GraphEvent.NodeCompleted && it.node == Nodes.MAP }
+            assertTrue(named in 0 until mapDone, "dishes at $named, map done at $mapDone")
+            assertEquals(menu.dishes, (events[named] as GraphEvent.NodeProgress).value.let { (it as Named).dishes })
+            // The guide was read once, for its node and for the dishes, and what it says reached the dishes.
+            assertTrue("small and family-run" in model.requests[1].messages.first().text)
+            assertEquals(1, guideReads)
+        }
+
+    @Test
     fun `the agent reads the request, the dishes and the candidates`() =
         runTest {
             val model =
@@ -204,8 +239,8 @@ class PlannerTest {
             planner(model, sources()).test(interviewed("One day in Lisbon"), config()) {
                 expectNodes(Nodes.INTERVIEW, Nodes.BRIEF)
                 // The sources run in one step.
-                expectStep(Nodes.GUIDE, Nodes.MAP)
-                expectNodes(Nodes.DISHES, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
+                expectStep(Nodes.GUIDE, Nodes.MAP, Nodes.DISHES)
+                expectNodes(Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
                 expectInterruptBefore(Nodes.REVIEW) { trip -> assertEquals(listOf("r2"), trip.route.map { it.restaurantId }) }
 
                 resumeWith { it.copy(messages = it.messages + ChatMessage.User("I do not eat pork.")) }
@@ -376,7 +411,7 @@ class PlannerTest {
 
             val run = planner(model, sources(reviews = reviews)).stream(interviewed("One day in Lisbon"), config()).record()
 
-            assertEquals(setOf(Nodes.GUIDE, Nodes.MAP, Nodes.REVIEWS), run.steps[2].toSet())
+            assertEquals(setOf(Nodes.GUIDE, Nodes.MAP, Nodes.REVIEWS, Nodes.DISHES), run.steps[2].toSet())
             assertEquals(listOf("traditional portuguese restaurant where locals eat", "best bacalhau"), queries)
             // The rating joined the entry of the map.
             val ze = run.state.restaurants.single { it.name == "Zé da Mouraria" }

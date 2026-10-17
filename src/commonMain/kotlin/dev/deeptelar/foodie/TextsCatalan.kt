@@ -287,6 +287,7 @@ object Catalan : Texts {
     override val findingYourPlaces = "Buscant els llocs del teu viatge"
     override val whereQuestion = "On vas, i quants dies?"
     override val findingDishes = "Buscant els plats típics de cada lloc"
+    override val readingTheGuideFirst = "Primer, el que diu la guia de viatge de cada lloc"
 
     override val notingWhatYouSaid = "Anotant el que m'has dit"
 
@@ -294,7 +295,7 @@ object Catalan : Texts {
 
     override val modelThinking = "El model pensa abans d'escriure. Aquí pot trigar fins a un minut."
 
-    override fun whileIChoose(stop: String) = "Mentre trio els restaurants · $stop"
+    override fun whileIPlan(stop: String) = "Mentre planifico la teva ruta · $stop"
     override val anotherDish = "Un altre"
 
     override fun asking(question: String) = "Escrivint les preguntes: «$question»"

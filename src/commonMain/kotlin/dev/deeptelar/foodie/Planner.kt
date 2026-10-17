@@ -1,5 +1,6 @@
 package dev.deeptelar.foodie
 
+import dev.deeptelar.foodie.sources.GuidePage
 import dev.deeptelar.foodie.sources.MapSearch
 import dev.deeptelar.foodie.sources.Sources
 import dev.deeptelar.foodie.sources.isFailure
@@ -10,13 +11,18 @@ import dev.deeptelar.telar.START
 import dev.deeptelar.telar.StateGraph
 import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.ChatModel
+import dev.deeptelar.telar.agent.TokenUsage
 import dev.deeptelar.telar.agent.ChatRequest
 import dev.deeptelar.telar.agent.ask
 import dev.deeptelar.telar.agent.toolLoop
 import dev.deeptelar.telar.interrupt
 import dev.deeptelar.telar.reportProgress
 import dev.deeptelar.telar.serialization.effect
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.serialization.Serializable
 import kotlin.time.Duration.Companion.seconds
 
 /** The names of the nodes of the [planner], for the code that shows a run. */
@@ -36,6 +42,16 @@ object Nodes {
 /** What a node or a tool is doing right now, in words for the traveller. A stream gets it as progress of the node. */
 data class Activity(
     val text: String,
+)
+
+/**
+ * The dishes the `dishes` node named, with the tokens that took. A stream gets them as progress as
+ * soon as they are named: the state has them only when the sources are done too.
+ */
+@Serializable
+data class Named(
+    val dishes: List<Dish>,
+    val usage: TokenUsage = TokenUsage(),
 )
 
 /**
@@ -107,18 +123,21 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                 read.copy(stops = stops)
             }
 
-        // The three sources. Each is a node with a `work`, the slow part that runs for all of them at
-        // the same time, and an update that adds what it found to the state, one node after the other.
-        // What a source answers for a stop is saved as an effect: when the step runs again, after a
-        // reload of the page or a failure, it is not asked again. The street map is slow, and Google
-        // bills each search.
+        // The three sources and the dishes. Each is a node with a `work`, the slow part that runs for
+        // all of them at the same time, and an update that adds what it found to the state, one node
+        // after the other. What a source answers for a stop is saved as an effect: when the step runs
+        // again, after a reload of the page or a failure, it is not asked again. The street map is
+        // slow, and Google bills each search.
+        // The dishes need what the guide says, and not the map: the guide is read once for both, so
+        // the dishes are named while the map is still searched.
+        val pages = Shared(sources.guide::read)
         val guide =
             node(
                 Nodes.GUIDE,
                 work = { trip ->
                     gather(trip, trip.language.texts.theGuide) { stop ->
                         reportProgress(Activity(trip.language.texts.readingTheGuide(stop.title)))
-                        val page = effect("guide ${stop.name}") { sources.guide.read(stop.name) }
+                        val page = effect("guide ${stop.name}") { pages.get(stop.name) }
                         Found(page.restaurants, guideNotes = if (page.text.isBlank()) emptyMap() else mapOf(stop.name to page.text))
                     }
                 },
@@ -149,15 +168,25 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
             }
 
         val dishes =
-            node(Nodes.DISHES, retry = again) { trip ->
-                val texts = trip.language.texts
-                reportProgress(Activity(texts.findingDishes))
-                val writing = model.watched { written -> finishedValues(written, "name").takeIf { it.isNotEmpty() }?.let { texts.namingDishes(it.takeLast(4)) } }
-                val answer = writing.ask<Menu>(ChatRequest(listOf(ChatMessage.User(dishesPrompt(trip))), DISHES_SYSTEM))
-                // A dish is kept under the name the stop has in the state, however the model wrote it.
-                val known = answer.value.dishes.mapNotNull { dish -> (trip.stop(dish.stop) ?: trip.stops.singleOrNull())?.let { dish.copy(stop = it.name) } }
-                trip.copy(dishes = known, tokens = trip.tokens + answer.usage)
-            }
+            node(
+                Nodes.DISHES,
+                retry = again,
+                work = { trip ->
+                    val texts = trip.language.texts
+                    reportProgress(Activity(texts.readingTheGuideFirst))
+                    val notes = guideNotes(trip, pages)
+                    reportProgress(Activity(texts.findingDishes))
+                    val prompt = dishesPrompt(trip.copy(guideNotes = notes))
+                    // Saved, as the sources are: a step that runs again does not ask the model again. A changed profile is a new prompt, and asks.
+                    effect("dishes ${prompt.hashCode()}") {
+                        val writing = model.watched { written -> finishedValues(written, "name").takeIf { it.isNotEmpty() }?.let { texts.namingDishes(it.takeLast(4)) } }
+                        val answer = writing.ask<Menu>(ChatRequest(listOf(ChatMessage.User(prompt)), DISHES_SYSTEM))
+                        // A dish is kept under the name the stop has in the state, however the model wrote it.
+                        val known = answer.value.dishes.mapNotNull { dish -> (trip.stop(dish.stop) ?: trip.stops.singleOrNull())?.let { dish.copy(stop = it.name) } }
+                        Named(known, answer.usage ?: TokenUsage())
+                    }.also { reportProgress(Named(it.dishes)) }
+                },
+            ) { trip, named -> trip.copy(dishes = named.dishes, tokens = trip.tokens + named.usage) }
 
         val order = node(Nodes.ORDER) { trip -> trip.copy(route = ordered(trip)) }
 
@@ -187,8 +216,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
         conditionalEdge(interview, targets = setOf(interview, brief), labels = mapOf(interview to "a round of questions", brief to "checked")) {
             if (it.interview.stage == InterviewStage.DONE) brief else interview
         }
-        listOfNotNull(guide, map, reviews).forEach { source -> brief then source then dishes }
-        dishes then plan
+        listOfNotNull(guide, map, reviews, dishes).forEach { node -> brief then node then plan }
         order then review
         conditionalEdge(review, targets = setOf(plan, NodeRef.END), labels = mapOf(plan to "a change", NodeRef.END to "yes")) { if (it.approved) NodeRef.END else plan }
     }.compile()
@@ -247,6 +275,27 @@ private suspend fun gather(trip: Trip, source: String, ask: suspend (Stop) -> Fo
     }
     return all
 }
+
+/**
+ * What the guide says about eating at each stop, for the dishes. The guide's node reads the same
+ * pages, and [pages] reads each once. A stop the guide has nothing for, or no answer within the
+ * patience of a source, has no notes: the dishes are named without them.
+ */
+private suspend fun guideNotes(trip: Trip, pages: Shared<String, GuidePage>): Map<String, String> =
+    coroutineScope {
+        trip.stops.map { stop ->
+            async {
+                val text =
+                    try {
+                        withTimeoutOrNull(SOURCE_PATIENCE) { pages.get(stop.name) }?.text.orEmpty()
+                    } catch (e: Throwable) {
+                        if (!e.isFailure()) throw e
+                        ""
+                    }
+                stop.name to text
+            }
+        }.awaitAll().filter { it.second.isNotBlank() }.toMap()
+    }
 
 private fun Trip.with(found: Found): Trip =
     copy(restaurants = restaurants.merged(found.restaurants), guideNotes = guideNotes + found.guideNotes, notes = notes + found.notes)
