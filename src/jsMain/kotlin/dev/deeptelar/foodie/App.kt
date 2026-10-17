@@ -61,6 +61,9 @@ private enum class Phase {
 
 private enum class Status { WAITING, RUNNING, DONE, SKIPPED }
 
+/** The two tabs of the page: the conversation with the planner, and what it knows about the traveller. */
+private enum class Tab { PLAN, DETAILS }
+
 /** A line of the list that shows a run: one node of the graph, or the two nodes of the agent as one. */
 private class Step(
     val node: String,
@@ -107,6 +110,10 @@ class App(
     /** The texts of the page, in its language. */
     private val texts: Texts get() = language.texts
     private var settingsOpen = false
+    private var tab = Tab.PLAN
+
+    /** Whether the details were just saved, for a word under them. */
+    private var detailsSaved = false
     private var phase = Phase.START
     private var trip: Trip? = null
     private var request = ""
@@ -156,6 +163,7 @@ class App(
         this.request = request
         val trip = Trip(request, language = language)
         this.trip = trip
+        tab = Tab.PLAN
         run { planner().stream(trip, config) }
     }
 
@@ -284,6 +292,8 @@ class App(
             }
         steps = steps(trip)
         render()
+        // The planner's new words are under the conversation: the traveller is taken to them.
+        if (tab == Tab.PLAN) (root.querySelector(".turn") as? HTMLElement)?.let { turn -> window.requestAnimationFrame { turn.asDynamic().scrollIntoView(js("({ block: 'start', behavior: 'smooth' })")) } }
     }
 
     private fun startOver() {
@@ -296,6 +306,7 @@ class App(
             }
             trip = null
             editing = null
+            tab = Tab.PLAN
             request = ""
             sample = false
             phase = Phase.START
@@ -421,13 +432,42 @@ class App(
         if (settingsOpen) root.settingsPanel()
 
         val trip = trip
+        // Before a trip there is nothing to keep apart from the conversation.
+        if (phase != Phase.START) root.tabs()
+        if (phase != Phase.START && tab == Tab.DETAILS) {
+            root.detailsTab(trip)
+        } else {
+            plan(trip)
+        }
+        root.credits()
+    }
+
+    private fun HTMLElement.tabs() {
+        add("nav", "tabs") {
+            setAttribute("role", "tablist")
+            // The planner waits for the traveller: the tab of the conversation says so.
+            val waiting = phase in setOf(Phase.QUESTION, Phase.CHECKING, Phase.REVIEW, Phase.PAUSED)
+            listOf(Tab.PLAN to texts.planTab + if (tab != Tab.PLAN && waiting) " •" else "", Tab.DETAILS to texts.detailsTab).forEach { (it, label) ->
+                button(label, "tab" + if (it == tab) " current" else "") {
+                    tab = it
+                    detailsSaved = false
+                    render()
+                }.setAttribute("aria-selected", (it == tab).toString())
+            }
+        }
+    }
+
+    /** The tab of the conversation: what was said, and what the planner does or asks now. */
+    private fun plan(trip: Trip?) {
+        // The route is what the traveller came for: it stands alone, without the conversation above it.
+        if (trip != null && phase !in setOf(Phase.START, Phase.REVIEW, Phase.DONE)) root.thread(trip)
         when (phase) {
             Phase.START -> root.startForm()
             Phase.RUNNING -> runPanel = root.add("section", "card run").also { fillRun(it) }
-            Phase.QUESTION -> if (trip != null) root.questionCard(trip)
-            Phase.CHECKING -> if (trip != null) root.profileCard(trip)
+            Phase.QUESTION -> if (trip != null) root.questionTurn(trip)
+            Phase.CHECKING -> if (trip != null) root.checkingTurn(trip)
             Phase.REVIEW, Phase.DONE -> if (trip != null) root.route(trip)
-            Phase.PAUSED, Phase.STOPPED -> if (trip != null) root.pausedCard(trip)
+            Phase.PAUSED, Phase.STOPPED -> if (trip != null) root.pausedTurn(trip)
             Phase.FAILED ->
                 root.add("section", "card failed") {
                     add("h2", text = texts.gotStuck)
@@ -445,8 +485,10 @@ class App(
                     }
                 }
         }
+    }
 
-        root.add("footer", "credits") {
+    private fun HTMLElement.credits() {
+        add("footer", "credits") {
             add("p") {
                 add("span", text = texts.restaurantsFrom)
                 link("Wikivoyage", "https://en.wikivoyage.org/")
@@ -583,7 +625,6 @@ class App(
 
     private fun fillRun(panel: HTMLElement) {
         panel.add("h2", text = texts.planningYourRoute)
-        panel.add("p", "hint", "\"${request.trim()}\"")
         panel.add("ul", "steps") {
             steps.forEach { step ->
                 add("li", "step ${step.status.name.lowercase()}") {
@@ -613,19 +654,42 @@ class App(
         }
     }
 
-    /** A run that does not run: the traveller paused it, or the page was closed while it ran. Words written here go with it when it goes on. */
-    private fun HTMLElement.pausedCard(trip: Trip) {
-        add("section", "card") {
-            if (phase == Phase.PAUSED) {
-                add("h2", text = texts.paused)
-            } else {
-                add("h2", text = texts.stoppedHalfway)
-                add("p", text = texts.closedWhileWorking(request.trim()))
+    /** What was said so far, as a conversation: the request, each question and its answer, and what the traveller added. */
+    private fun HTMLElement.thread(trip: Trip) {
+        add("div", "thread") {
+            bubble("them", texts.whereAreYouGoing)
+            bubble("me", trip.request.trim())
+            trip.answers.forEach { answer ->
+                when (answer.aside) {
+                    Aside.EDITED -> add("p", "note", texts.youEditedDetails)
+                    Aside.ERASED -> add("p", "note", texts.youErasedDetails)
+                    Aside.CORRECTION, Aside.ADDED -> bubble("me", answer.text.trim())
+                    null -> {
+                        bubble("them", answer.question)
+                        if (answer.text.isBlank()) bubble("me skipped", texts.skipped) else bubble("me", answer.text.trim())
+                    }
+                }
             }
-            add("p", "hint", texts.pausedHint)
+        }
+    }
+
+    private fun Element.bubble(who: String, text: String? = null, build: HTMLElement.() -> Unit = {}): HTMLElement = add("div", "bubble $who", text, build)
+
+    /** A run that does not run: the traveller paused it, or the page was closed while it ran. Words written here go with it when it goes on. */
+    private fun HTMLElement.pausedTurn(trip: Trip) {
+        add("section", "turn") {
+            bubble("them") {
+                if (phase == Phase.PAUSED) {
+                    add("p", text = texts.paused)
+                } else {
+                    add("p", text = texts.stoppedHalfway)
+                    add("p", text = texts.closedWhileWorking(request.trim()))
+                }
+                add("p", text = texts.pausedHint)
+            }
             val aside =
                 (add("textarea") as HTMLTextAreaElement).apply {
-                    rows = 3
+                    rows = 2
                     placeholder = texts.asidePlaceholder
                 }
             speakRow(read = { aside.value }) { aside.value = it }
@@ -636,42 +700,162 @@ class App(
         }
     }
 
-    private fun HTMLElement.questionCard(trip: Trip) {
+    /** The planner's questions, as its next words in the conversation. */
+    private fun HTMLElement.questionTurn(trip: Trip) {
         val interviewing = trip.interview.stage != InterviewStage.DONE
-        add("section", "card") {
-            add("h2", text = if (trip.questions.size == 1) texts.oneQuestion else texts.aFewQuestions)
+        add("section", "turn") {
             val left = Topic.entries.count { it !in trip.interview.covered }
             // What the request already said, so the traveller sees that it was heard, and why these are the questions.
             val asked = trip.answers.mapNotNull { it.topic } + trip.questions.map { it.topic }
             val told = Topic.entries.filter { it in trip.interview.covered && it !in asked }
-            if (interviewing && trip.interview.rounds == 1 && told.isNotEmpty()) {
-                add("p", "told", texts.youAlreadyToldMe(told.map { texts.topic(it) }))
-            }
+            if (interviewing && trip.interview.rounds == 1 && told.isNotEmpty()) bubble("them", texts.youAlreadyToldMe(told.map { texts.topic(it) }))
+            trip.questions.forEach { question(it) }
             add(
                 "p",
-                "hint",
+                "hint small",
                 when {
                     !interviewing -> texts.oneMoreThing
                     left == 0 -> texts.lastQuestions
                     else -> texts.moreQuestions(left)
                 },
             )
-            trip.questions.forEach { question(it) }
             fun answers() = trip.questions.map { Answer(it.topic, it.text, (drafts[it.text] ?: Draft()).text) }
             add("div", "actions") {
-                // The answers join the trip, and the node that asked reads them.
-                button(texts.continueAnswers, "primary") { resume { it.answered(answers()) } }
+                // The answers join the trip, and the node that asked reads them. They are taken now: a run starts with no drafts.
+                button(texts.continueAnswers, "primary") {
+                    val answers = answers()
+                    resume { it.answered(answers) }
+                }
                 // The questions of the brief come after the interview, and it cannot go on without them.
-                if (interviewing) button(texts.planNow, "ghost") { resume { it.planNow(answers()) } }
-                button(texts.startOver, "ghost") { startOver() }
+                if (interviewing) {
+                    button(texts.planNow, "ghost") {
+                        val answers = answers()
+                        resume { it.planNow(answers) }
+                    }
+                }
             }
+            quietActions()
             if (sample) add("p", "hint small", texts.sampleAsks)
         }
     }
 
+    /** What the planner understood, in a few lines, and the question whether to plan: the traveller says yes, or what to change. */
+    private fun HTMLElement.checkingTurn(trip: Trip) {
+        add("section", "turn") {
+            bubble("them") {
+                add("p", text = texts.hereIsWhatIHave)
+                add("ul", "understood") {
+                    profileRows(trip.profile).forEach { (label, value) ->
+                        add("li") {
+                            add("strong", text = "$label: ")
+                            add("span", text = value)
+                        }
+                    }
+                }
+                add("p", text = texts.shallIPlan)
+            }
+            val correction =
+                (add("textarea") as HTMLTextAreaElement).apply {
+                    rows = 2
+                    placeholder = texts.correctionPlaceholder
+                }
+            speakRow(read = { correction.value }) { correction.value = it }
+            add("div", "actions") {
+                button(texts.yesPlanIt, "primary") { resume { it.confirmed() } }
+                button(texts.send, "ghost") {
+                    val text = correction.value.trim()
+                    if (text.isEmpty()) correction.focus() else resume { it.corrected(text) }
+                }
+            }
+            quietActions()
+            if (sample) add("p", "hint small", texts.sampleDidNotRead)
+        }
+    }
+
+    /** What the traveller may want now and then, but not at every turn: the details, and starting again. */
+    private fun HTMLElement.quietActions() {
+        add("div", "quiet-actions") {
+            button(texts.seeYourDetails, "link") { openDetails() }
+            button(texts.startOver, "link") { startOver() }
+        }
+    }
+
+    private fun openDetails() {
+        tab = Tab.DETAILS
+        detailsSaved = false
+        render()
+        window.scrollTo(0.0, 0.0)
+    }
+
+    /**
+     * The tab of what the planner knows about the traveller. It can be changed while the run waits,
+     * and only read while the planner works with it or when the trip is planned.
+     */
+    private fun HTMLElement.detailsTab(trip: Trip?) {
+        add("section", "card") {
+            add("h2", text = texts.detailsTab)
+            if (trip == null || trip.interview.read < 0) {
+                add("p", "hint", texts.noDetailsYet)
+                return@add
+            }
+            if (phase == Phase.RUNNING || phase == Phase.DONE) {
+                add("p", "hint", if (phase == Phase.RUNNING) texts.detailsWhileWorking else texts.detailsReadOnly)
+                add("dl", "profile") {
+                    profileRows(trip.profile).forEach { (label, value) ->
+                        add("dt", text = label)
+                        add("dd", text = value)
+                    }
+                }
+            } else {
+                add("p", "hint", texts.profileHint)
+                profileEditor(trip)
+                add("div", "actions") { button(if (phase == Phase.REVIEW) texts.updateForTheseDetails else texts.save, "primary") { saveDetails() } }
+                if (detailsSaved) add("p", "saved", texts.saved)
+            }
+            add("p", "hint small", texts.keptInThisBrowser)
+        }
+    }
+
+    /** Puts the traveller's edit of the details into the trip, as fits where the run is. */
+    private fun saveDetails() {
+        val draft = editing ?: return
+        val now = trip ?: return
+        if (now.edited(draft.profile, draft.erase) == now) return
+        when (phase) {
+            // The route is planned: the agent changes it for the new details.
+            Phase.REVIEW -> {
+                tab = Tab.PLAN
+                resume { it.replannedFor(draft.profile, draft.erase) }
+            }
+            // A paused run goes on from the trip the page holds, which can be newer than the saved one.
+            Phase.PAUSED -> saved(now.edited(draft.profile, draft.erase))
+            // The run waits, so its checkpoint takes the edit: nothing runs, and a reload keeps it.
+            else ->
+                scope.launch {
+                    val edited =
+                        try {
+                            checkpointer.load(config.threadId)?.let { checkpoint ->
+                                checkpoint.state.edited(draft.profile, draft.erase).also { checkpointer.save(config.threadId, checkpoint.copy(state = it)) }
+                            }
+                        } catch (_: Throwable) {
+                            // The browser blocks its storage: the edit holds until the page is closed.
+                            null
+                        }
+                    saved(edited ?: now.edited(draft.profile, draft.erase))
+                }
+        }
+    }
+
+    private fun saved(edited: Trip) {
+        trip = edited
+        editing = ProfileDraft(edited.profile)
+        detailsSaved = true
+        render()
+    }
+
     /** One question: its answers to tap, and a line for the traveller's own words. */
     private fun HTMLElement.question(question: Question) {
-        add("div", "ask") {
+        add("div", "ask bubble them") {
             add("p", "question", question.text)
             if (question.options.isNotEmpty()) add("div", "chips") { question.options.forEach { chip(question, it) } }
             when (question.topic) {
@@ -732,40 +916,9 @@ class App(
         }
     }
 
-    private fun HTMLElement.profileCard(trip: Trip) {
-        add("section", "card") {
-            add("h2", text = texts.hereIsWhatIHave)
-            add("p", "hint", texts.profileHint)
-            profileEditor(trip)
-            val correction =
-                (add("textarea") as HTMLTextAreaElement).apply {
-                    rows = 2
-                    placeholder = texts.correctionPlaceholder
-                }
-            speakRow(read = { correction.value }) { correction.value = it }
-            add("div", "actions") {
-                // The edits are taken now: a run starts with no draft.
-                button(texts.planMyRoute, "primary") {
-                    val draft = editing
-                    resume { it.withEdits(draft).confirmed() }
-                }
-                button(texts.correctIt, "ghost") {
-                    val text = correction.value.trim()
-                    val draft = editing
-                    if (text.isEmpty()) correction.focus() else resume { it.withEdits(draft).corrected(text) }
-                }
-                button(texts.startOver, "ghost") { startOver() }
-            }
-            if (sample) add("p", "hint small", texts.sampleDidNotRead)
-        }
-    }
-
-    /** The trip with the profile the traveller edited in [draft], if they did. */
-    private fun Trip.withEdits(draft: ProfileDraft?): Trip = draft?.let { edited(it.profile, it.erase) } ?: this
-
     /**
      * The profile as fields the traveller can change or empty. A change goes into [editing], and
-     * nothing is sent until a button under the fields is tapped.
+     * nothing is saved until the button under the fields is tapped.
      */
     private fun HTMLElement.profileEditor(trip: Trip) {
         if (editing == null) editing = ProfileDraft(trip.profile)
@@ -836,7 +989,6 @@ class App(
                 redraw()
             }
         }
-        add("p", "hint small", texts.keptInThisBrowser)
     }
 
     /** A thing of the profile: its name, and what changes it. */
@@ -959,23 +1111,14 @@ class App(
             }
             add("details", "known") {
                 add("summary", text = texts.plannedForYou)
-                // While the route waits for the traveller, the profile can still change, and the agent changes the route for it.
-                if (phase == Phase.REVIEW) {
-                    profileEditor(trip)
-                    add("div", "actions") {
-                        button(texts.updateForTheseDetails, "primary") {
-                            val draft = editing ?: return@button
-                            if (trip.edited(draft.profile, draft.erase) != trip) resume { it.replannedFor(draft.profile, draft.erase) }
-                        }
-                    }
-                } else {
-                    add("dl", "profile") {
-                        profileRows(trip.profile).forEach { (label, value) ->
-                            add("dt", text = label)
-                            add("dd", text = value)
-                        }
+                add("dl", "profile") {
+                    profileRows(trip.profile).forEach { (label, value) ->
+                        add("dt", text = label)
+                        add("dd", text = value)
                     }
                 }
+                // While the route waits for the traveller, the details can still change, and the agent changes the route for them.
+                if (phase == Phase.REVIEW) add("div", "quiet-actions") { button(texts.seeYourDetails, "link") { openDetails() } }
             }
             if (trip.notes.isNotEmpty()) {
                 add("details", "known") {

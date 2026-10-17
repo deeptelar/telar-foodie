@@ -43,4 +43,4 @@ fun Trip.redirected(text: String): Trip {
     return copy(messages = kept + ChatMessage.User(message), turnStart = tokens.total)
 }
 
-private const val ADDED = "The traveller added, while the planner worked:"
+internal const val ADDED = "The traveller added, while the planner worked:"

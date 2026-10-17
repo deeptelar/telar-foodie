@@ -151,8 +151,23 @@ object Spanish : Texts {
             Topic.DRINKS -> Question(topic, "¿Qué quieres beber en la ruta?", listOf("Vino", "Cerveza", "Café", "Cócteles", "Sin alcohol"))
         }
 
+    override val planTab = "Plan"
+    override val detailsTab = "Tus datos"
+    override val skipped = "Sin respuesta"
+    override val youEditedDetails = "Has cambiado tus datos."
+    override val youErasedDetails = "Has borrado tus datos."
+    override val shallIPlan = "¿Planifico la ruta?"
+    override val yesPlanIt = "Sí, planifícala"
+    override val send = "Enviar"
+    override val seeYourDetails = "Ver o cambiar tus datos"
+    override val noDetailsYet = "Aún nada. Aquí aparece lo que le cuentes al planificador sobre ti."
+    override val detailsWhileWorking = "El planificador está trabajando con esto. Ponlo en pausa para cambiarlo."
+    override val detailsReadOnly = "La ruta se ha planificado para esto. «Empezar de nuevo» lo borra."
+    override val save = "Guardar"
+    override val saved = "Guardado."
+
     override val hereIsWhatIHave = "Esto es lo que tengo"
-    override val profileHint = "Para esto se planificará la ruta. Cambia o borra lo que quieras, o cuéntamelo abajo con tus palabras."
+    override val profileHint = "Para esto se planifica la ruta. Cambia o borra lo que quieras y guárdalo."
     override val correctionPlaceholder = "¿Algo que corregir? Por ejemplo: somos tres, no dos."
     override val correctIt = "Corregir"
     override val sampleDidNotRead = "Esto es el ejemplo: el guion no ha leído tus respuestas."

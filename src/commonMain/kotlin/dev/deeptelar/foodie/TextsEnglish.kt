@@ -150,8 +150,23 @@ object English : Texts {
             Topic.DRINKS -> Question(topic, "What should the route have to drink?", listOf("Wine", "Beer", "Coffee", "Cocktails", "No alcohol"))
         }
 
+    override val planTab = "Plan"
+    override val detailsTab = "Your details"
+    override val skipped = "Skipped"
+    override val youEditedDetails = "You changed your details."
+    override val youErasedDetails = "You erased your details."
+    override val shallIPlan = "Shall I plan the route?"
+    override val yesPlanIt = "Yes, plan it"
+    override val send = "Send"
+    override val seeYourDetails = "See or change your details"
+    override val noDetailsYet = "Nothing yet. What you tell the planner about yourself shows up here."
+    override val detailsWhileWorking = "The planner is working with these. Pause it to change them."
+    override val detailsReadOnly = "The route was planned for these. Start over erases them."
+    override val save = "Save"
+    override val saved = "Saved."
+
     override val hereIsWhatIHave = "Here is what I have"
-    override val profileHint = "This is what the route will be planned for. Change or erase anything, or tell me below in your words."
+    override val profileHint = "This is what the route is planned for. Change or erase anything, then save."
     override val correctionPlaceholder = "Anything to correct? For example: we are three, not two."
     override val correctIt = "Correct it"
     override val sampleDidNotRead = "This is the sample: the script did not read your answers."

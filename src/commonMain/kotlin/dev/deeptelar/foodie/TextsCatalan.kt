@@ -151,8 +151,23 @@ object Catalan : Texts {
             Topic.DRINKS -> Question(topic, "Què vols beure a la ruta?", listOf("Vi", "Cervesa", "Cafè", "Còctels", "Sense alcohol"))
         }
 
+    override val planTab = "Pla"
+    override val detailsTab = "Les teves dades"
+    override val skipped = "Sense resposta"
+    override val youEditedDetails = "Has canviat les teves dades."
+    override val youErasedDetails = "Has esborrat les teves dades."
+    override val shallIPlan = "Planifico la ruta?"
+    override val yesPlanIt = "Sí, planifica-la"
+    override val send = "Envia"
+    override val seeYourDetails = "Mira o canvia les teves dades"
+    override val noDetailsYet = "Encara res. Aquí apareix el que expliquis al planificador sobre tu."
+    override val detailsWhileWorking = "El planificador hi està treballant. Posa'l en pausa per canviar-ho."
+    override val detailsReadOnly = "La ruta s'ha planificat per a això. «Torna a començar» ho esborra."
+    override val save = "Desa"
+    override val saved = "Desat."
+
     override val hereIsWhatIHave = "Això és el que tinc"
-    override val profileHint = "Per a això es planificarà la ruta. Canvia o esborra el que vulguis, o explica-m'ho a sota amb les teves paraules."
+    override val profileHint = "Per a això es planifica la ruta. Canvia o esborra el que vulguis i desa-ho."
     override val correctionPlaceholder = "Alguna cosa a corregir? Per exemple: som tres, no dos."
     override val correctIt = "Corregeix"
     override val sampleDidNotRead = "Això és l'exemple: el guió no ha llegit les teves respostes."

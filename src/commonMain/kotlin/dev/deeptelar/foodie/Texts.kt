@@ -130,6 +130,28 @@ interface Texts {
     /** The plain question of a topic, for when the model wrote none. */
     fun question(topic: Topic): Question
 
+    // The two tabs, and the conversation
+
+    val planTab: String
+    val detailsTab: String
+
+    /** The answer of a question the traveller skipped, in the conversation. */
+    val skipped: String
+    val youEditedDetails: String
+    val youErasedDetails: String
+    val shallIPlan: String
+    val yesPlanIt: String
+    val send: String
+    val seeYourDetails: String
+
+    // The tab of the traveller's details
+
+    val noDetailsYet: String
+    val detailsWhileWorking: String
+    val detailsReadOnly: String
+    val save: String
+    val saved: String
+
     // The profile
 
     val hereIsWhatIHave: String

@@ -76,8 +76,11 @@ Around the graph:
   ([`Pause.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Pause.kt)): before the route, they
   join the answers and the run starts again from the interview; once the agent plans, they are its
   next message, through `resume` with an update.
-- **The profile is the traveller's.** Every field of it can be changed or erased, before the route
-  and on it. It is kept only in the browser, with the trip.
+- **Planning is a conversation.** The page shows the request, the planner's questions and the
+  answers as a chat, and the planner's next words below them.
+- **The profile is the traveller's.** It has a tab of its own, apart from the conversation: every
+  field can be changed or erased while the planner waits, and on a planned route a change goes to
+  the agent. It is kept only in the browser, with the trip.
 - **The page shows the run live.** [`App.kt`](src/jsMain/kotlin/dev/deeptelar/foodie/App.kt)
   collects `stream()`: a node that starts, what it reports with `reportProgress`, the text of the
   model as it is written, and the tool calls of the agent.

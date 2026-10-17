@@ -464,13 +464,129 @@ h3.day6 { border-color: var(--day6); }
     }
 }
 
+/* The two tabs */
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+button.tab {
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--soft);
+}
+
+button.tab.current {
+    border-bottom-color: var(--accent);
+    color: var(--ink);
+}
+
+/* The conversation */
+
+.thread, .turn {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.turn {
+    gap: 10px;
+}
+
+.bubble {
+    max-width: 88%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+}
+
+.bubble.them {
+    align-self: flex-start;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-bottom-left-radius: 6px;
+}
+
+.bubble.me {
+    align-self: flex-end;
+    background: var(--accent);
+    color: #fff;
+    border-bottom-right-radius: 6px;
+}
+
+.bubble.me.skipped {
+    background: transparent;
+    border: 1px dashed var(--line);
+    color: var(--soft);
+}
+
+.bubble p + p {
+    margin-top: 6px;
+}
+
+.thread .note {
+    align-self: center;
+    color: var(--soft);
+    font-size: 13px;
+}
+
+.turn .bubble.them {
+    max-width: 100%;
+    white-space: normal;
+}
+
+.turn > .hint {
+    margin: 0;
+}
+
+ul.understood {
+    margin: 6px 0;
+    padding-left: 18px;
+}
+
+ul.understood li + li {
+    margin-top: 2px;
+}
+
+.quiet-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+}
+
+button.link {
+    min-height: 32px;
+    padding: 4px 0;
+    border: 0;
+    background: transparent;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+p.saved {
+    color: var(--ok);
+    font-weight: 600;
+}
+
 /* The interview */
 
 .ask {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding-top: 4px;
 }
 
 .ask .question {

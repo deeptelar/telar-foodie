@@ -199,7 +199,7 @@ fun Trip.confirmed(): Trip = copy(interview = interview.copy(stage = InterviewSt
 
 /** The trip with a [correction] of the profile in the traveller's words. The planner reads it and shows the profile again. */
 fun Trip.corrected(correction: String): Trip =
-    copy(answers = answers + Answer(null, "Is there anything to correct?", correction), interview = interview.copy(stage = InterviewStage.ASKING))
+    copy(answers = answers + Answer(null, CORRECTION, correction), interview = interview.copy(stage = InterviewStage.ASKING))
 
 /**
  * The trip with the [profile] the traveller edited themselves, after erasing everything first when
@@ -248,5 +248,20 @@ private fun Profile.tidied(): Profile =
         wishes = wishes.trim(),
     )
 
+/** What an answer without a topic is, by its question: the page shows each in the traveller's own words. */
+internal enum class Aside { CORRECTION, EDITED, ERASED, ADDED }
+
+internal val Answer.aside: Aside?
+    get() =
+        when {
+            topic != null -> null
+            question == CORRECTION -> Aside.CORRECTION
+            question == EDITED -> Aside.EDITED
+            question == ERASED -> Aside.ERASED
+            question == ADDED -> Aside.ADDED
+            else -> null
+        }
+
+private const val CORRECTION = "Is there anything to correct?"
 private const val EDITED = "The traveller corrected the profile by hand. It is now:"
 private const val ERASED = "The traveller erased what the planner knew about them."
