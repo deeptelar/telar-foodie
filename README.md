@@ -21,21 +21,38 @@ workflows, and is meant as an example of a complete app on it.
 ## The workflow
 
 The planner is one graph over one state, [`Trip`](src/commonMain/kotlin/dev/deeptelar/foodie/Trip.kt).
-All of it is in [`Planner.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Planner.kt):
+All of it is in [`Planner.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Planner.kt), and Telar draws it with `topology.toMermaid()`; the run pauses at ⏸:
 
 ```mermaid
-flowchart LR
-    START([START]) --> interview
-    interview -- a round of questions --> interview
-    interview -- checked --> brief
-    brief --> guide & map & reviews
-    guide & map & reviews --> dishes
-    dishes --> plan
-    plan <--> tools
-    plan --> order
-    order --> review
-    review -- a change --> plan
-    review -- yes --> END([END])
+stateDiagram-v2
+    state "interview" as n0
+    state "brief" as n1
+    state "guide" as n2
+    state "map" as n3
+    state "reviews" as n4
+    state "dishes" as n5
+    state "order" as n6
+    state "⏸ review" as n7
+    state "plan" as n8
+    state "tools" as n9
+    [*] --> n0
+    n0 --> n0 : a round of questions
+    n0 --> n1 : checked
+    n1 --> n2
+    n1 --> n3
+    n1 --> n4
+    n2 --> n5
+    n3 --> n5
+    n4 --> n5
+    n5 --> n8
+    n6 --> n7
+    n7 --> n8 : a change
+    n7 --> [*] : yes
+    n8 --> n9 : tool calls
+    n8 --> n6 : done
+    n9 --> n8
+    classDef interrupt fill:#fff4e5,stroke:#e8590c,stroke-width:2px,stroke-dasharray:4 3
+    class n7 interrupt
 ```
 
 | Node | What it does | What of Telar it shows |

@@ -181,11 +181,13 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
 
         START then interview
         // Each round of questions is a step of its own, and a checkpoint: a reload in the middle of the interview keeps the answers.
-        conditionalEdge(interview, targets = setOf(interview, brief)) { if (it.interview.stage == InterviewStage.DONE) brief else interview }
+        conditionalEdge(interview, targets = setOf(interview, brief), labels = mapOf(interview to "a round of questions", brief to "checked")) {
+            if (it.interview.stage == InterviewStage.DONE) brief else interview
+        }
         listOfNotNull(guide, map, reviews).forEach { source -> brief then source then dishes }
         dishes then plan
         order then review
-        conditionalEdge(review, targets = setOf(plan, NodeRef.END)) { if (it.approved) NodeRef.END else plan }
+        conditionalEdge(review, targets = setOf(plan, NodeRef.END), labels = mapOf(plan to "a change", NodeRef.END to "yes")) { if (it.approved) NodeRef.END else plan }
     }.compile()
 
 /** The trip with a question about where it goes, the one thing the planner cannot go on without. */
