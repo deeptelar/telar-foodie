@@ -10,28 +10,24 @@ import kotlinx.serialization.Serializable
  * The model reads the traveller's words and writes the questions for the places of the trip.
  */
 
-/** What the planner asks about, in the order it asks. The question and its answers are the plain ones, for when the model wrote none. */
+/**
+ * What the planner asks about, in the order it asks. [label] is the topic's name for a model; the
+ * traveller reads it, and its plain question, from the [Texts] of the trip's language.
+ */
 @Serializable
 enum class Topic(
     val label: String,
-    private val text: String,
-    private val options: List<String> = emptyList(),
-    private val several: Boolean = false,
 ) {
-    WHERE("Where and how long", "Where are you going, and for how many days in each place?"),
-    ALLERGIES("Allergies", "Do you have a food allergy? If you do, do you need to avoid even traces?", listOf("None", "Nuts", "Shellfish", "Gluten", "Dairy"), several = true),
-    DIET("Diet", "Is there anything you do not eat?", listOf("I eat everything", "Vegetarian", "Pescatarian", "Halal", "No pork")),
-    DATES("When", "When are you going?", listOf("Spring", "Summer", "Autumn", "Winter")),
-    PARTY("Who is coming", "Who is eating with you?", listOf("Just me", "Two of us", "Family with children", "Group of friends")),
-    STAY("Where you stay", "Where are you staying in each place? A neighbourhood or the name of the hotel is enough."),
-    MEALS("Which meals", "Which meals should the route plan?", listOf("Breakfast", "Lunch", "Snack", "Dinner"), several = true),
-    BUDGET("Budget", "What would you like to spend on a meal?", listOf("As little as possible", "Mid-range", "Mid-range, and one special dinner", "Money is no object")),
-    TASTE("Taste", "How adventurous are you with food, and is there anything you do not like?", listOf("The classics", "Curious", "Anything the locals eat")),
-    DRINKS("Drinks", "What should the route have to drink?", listOf("Wine", "Beer", "Coffee", "Cocktails", "No alcohol"), several = true),
-    ;
-
-    /** The plain question of this topic. */
-    val question: Question get() = Question(this, text, options, several)
+    WHERE("Where and how long"),
+    ALLERGIES("Allergies"),
+    DIET("Diet"),
+    DATES("When"),
+    PARTY("Who is coming"),
+    STAY("Where you stay"),
+    MEALS("Which meals"),
+    BUDGET("Budget"),
+    TASTE("Taste"),
+    DRINKS("Drinks"),
 }
 
 /** A question to the traveller. The descriptions are what the model sees. */
@@ -134,11 +130,11 @@ internal const val MAX_ROUNDS = 4
 
 /**
  * The questions of the next round: the first topics in [Topic] order that are not [covered], each
- * in the words the model [wrote] for it, or in its plain words when the model wrote none.
+ * in the words the model [wrote] for it, or in its plain words of [texts] when the model wrote none.
  */
-internal fun nextQuestions(covered: Set<Topic>, wrote: List<Question>): List<Question> =
+internal fun nextQuestions(covered: Set<Topic>, wrote: List<Question>, texts: Texts): List<Question> =
     Topic.entries.filter { it !in covered }.take(PER_ROUND).map { topic ->
-        wrote.firstOrNull { it.topic == topic && it.text.isNotBlank() }?.tidied() ?: topic.question
+        wrote.firstOrNull { it.topic == topic && it.text.isNotBlank() }?.tidied() ?: texts.question(topic)
     }
 
 private fun Question.tidied(): Question = copy(text = text.trim(), options = options.map { it.trim() }.filter { it.isNotEmpty() }.distinct().take(6))
@@ -156,7 +152,7 @@ internal fun Trip.read(reading: Reading): Trip {
     val covered = interview.covered + reading.answered.filter { it != Topic.ALLERGIES }
     val read = copy(profile = reading.profile, interview = interview.copy(covered = covered, read = answers.size))
     if (interview.stage == InterviewStage.DONE) return read
-    val next = if (interview.rounds < MAX_ROUNDS) nextQuestions(covered, reading.questions) else emptyList()
+    val next = if (interview.rounds < MAX_ROUNDS) nextQuestions(covered, reading.questions, language.texts) else emptyList()
     return if (next.isEmpty()) {
         read.copy(interview = read.interview.copy(stage = InterviewStage.CHECKING))
     } else {

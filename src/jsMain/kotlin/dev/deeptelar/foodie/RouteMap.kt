@@ -12,6 +12,7 @@ import kotlin.js.json
 class RouteMap(
     container: HTMLElement,
     trip: Trip,
+    texts: Texts,
 ) {
     private val leaflet: dynamic = window.asDynamic().L
     private val map: dynamic = leaflet.map(container, json("scrollWheelZoom" to false))
@@ -30,7 +31,7 @@ class RouteMap(
             points.getOrPut(meal.day) { mutableListOf() } += point
             val icon = leaflet.divIcon(json("className" to "pin ${dayClass(meal.day)}", "html" to "${index + 1}", "iconSize" to arrayOf(28, 28)))
             // The popup is an element with text in it, so a name cannot be read as HTML.
-            val popup = (document.createElement("div") as HTMLElement).apply { textContent = "${meal.time.label}: ${restaurant.name}" }
+            val popup = (document.createElement("div") as HTMLElement).apply { textContent = "${texts.meal(meal.time)}: ${restaurant.name}" }
             leaflet.marker(point, json("icon" to icon)).addTo(map).bindPopup(popup)
         }
         points.forEach { (day, line) ->

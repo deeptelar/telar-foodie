@@ -102,12 +102,12 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
                     lookup.cuisine.isNotBlank() -> MapSearch.Cuisine(listOf(lookup.cuisine))
                     else -> throw IllegalArgumentException("Give a cuisine or a name to search for.")
                 }
-            reportProgress(Activity("Searching the map of ${stop.name} for ${lookup.name.ifBlank { lookup.cuisine }}"))
+            reportProgress(Activity(trip.language.texts.searchingTheMap(stop.name, lookup.name.ifBlank { lookup.cuisine })))
             trip.found(sources.map.restaurants(stop.name, stop.location, search, MAP_RADIUS), "The map has no such place in ${stop.name}.")
         },
         StateTool<Trip, GuideLookup>("read_guide", "Reads another page of the travel guide. Returns what it says about the food, and adds the restaurants it lists to the candidates of the stop.") { trip, lookup ->
             val stop = trip.knownStop(lookup.stop)
-            reportProgress(Activity("Reading the travel guide of ${lookup.page}"))
+            reportProgress(Activity(trip.language.texts.readingTheGuide(lookup.page)))
             val page = sources.guide.read(lookup.page)
             // The page is read for the stop, so its restaurants are candidates of the stop, as long as they are within reach of it.
             val near = page.restaurants.map { it.copy(stop = stop.name) }.filter { metresBetween(it.location, stop.location) <= GUIDE_REACH }
@@ -117,7 +117,7 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
         sources.reviews?.let { reviews ->
             StateTool<Trip, ReviewSearch>("search_reviews", "Searches Google for places at a stop, with their ratings. What it finds joins the candidates.") { trip, search ->
                 val stop = trip.knownStop(search.stop)
-                reportProgress(Activity("Searching reviews in ${stop.name} for ${search.query}"))
+                reportProgress(Activity(trip.language.texts.searchingReviews(stop.name, search.query)))
                 trip.found(reviews.search(stop.name, search.query, stop.location), "Google found nothing for \"${search.query}\".")
             }
         },

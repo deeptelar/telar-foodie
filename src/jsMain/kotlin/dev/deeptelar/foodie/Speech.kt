@@ -17,6 +17,7 @@ private class Dictation(
     /** The button that started it. */
     val owner: Any,
     private val language: Language,
+    private val texts: Texts,
     private val onText: (settled: String, guess: String) -> Unit,
     private val onEnd: (problem: String?) -> Unit,
 ) {
@@ -42,9 +43,9 @@ private class Dictation(
         recognition.onerror = { event: dynamic ->
             problem =
                 when (event.error as String) {
-                    "not-allowed", "service-not-allowed" -> "The browser may not use the microphone. Allow it in the site settings, or type."
-                    "network" -> "The browser could not reach its speech service. Type instead."
-                    "audio-capture" -> "No microphone was found."
+                    "not-allowed", "service-not-allowed" -> texts.micNotAllowed
+                    "network" -> texts.micNoNetwork
+                    "audio-capture" -> texts.micMissing
                     // Silence, or a stop by the traveller, is no problem.
                     else -> null
                 }
@@ -81,13 +82,13 @@ fun stopSpeaking() = Dictation.stopAll()
  * added to what [read] gives, and [write] gets the text while it is heard. Nothing is added when
  * the browser cannot hear.
  */
-fun Element.speakButton(language: Language, read: () -> String, write: (String) -> Unit) {
+fun Element.speakButton(language: Language, texts: Texts, read: () -> String, write: (String) -> Unit) {
     if (!speechSupported) return
     val row = this
     var note: HTMLElement? = null
     lateinit var button: HTMLButtonElement
     button =
-        button(SPEAK, "ghost speak") {
+        button(texts.speak, "ghost speak") {
             // A second tap on the same button stops it; a tap on another one stops that one and starts here.
             val mine = Dictation.current?.owner == button
             Dictation.stopAll()
@@ -101,6 +102,7 @@ fun Element.speakButton(language: Language, read: () -> String, write: (String) 
                 Dictation(
                     owner = button,
                     language = language,
+                    texts = texts,
                     onText = { heard, guess ->
                         settled = heard
                         write(joined("$heard $guess"))
@@ -108,24 +110,22 @@ fun Element.speakButton(language: Language, read: () -> String, write: (String) 
                     onEnd = { problem ->
                         // A guess that never settled is dropped.
                         write(joined(settled))
-                        button.textContent = SPEAK
+                        button.textContent = texts.speak
                         button.classList.remove("listening")
                         if (Dictation.current?.owner == button) Dictation.current = null
                         if (problem != null) note = row.add("p", "hint small", problem)
                     },
                 )
             Dictation.current = dictation
-            button.textContent = "■ Stop"
+            button.textContent = texts.stopListening
             button.classList.add("listening")
             try {
                 dictation.start()
             } catch (e: Throwable) {
-                button.textContent = SPEAK
+                button.textContent = texts.speak
                 button.classList.remove("listening")
                 Dictation.current = null
-                note = row.add("p", "hint small", "The browser could not start listening: ${e.message}")
+                note = row.add("p", "hint small", texts.micFailed(e.message.orEmpty()))
             }
         }
 }
-
-private const val SPEAK = "🎤 Speak"

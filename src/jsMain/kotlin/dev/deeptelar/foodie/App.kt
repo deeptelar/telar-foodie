@@ -94,6 +94,9 @@ class App(
 
     /** The language of the page, and of the next trip. */
     private val language: Language get() = settings.language ?: Language.of(window.navigator.language)
+
+    /** The texts of the page, in its language. */
+    private val texts: Texts get() = language.texts
     private var settingsOpen = false
     private var phase = Phase.START
     private var trip: Trip? = null
@@ -123,7 +126,7 @@ class App(
                 }
             when {
                 saved != null -> show(saved)
-                "sample" in window.location.search -> start(SampleModel.REQUEST, sample = true)
+                "sample" in window.location.search -> start(texts.sampleRequest, sample = true)
             }
         }
     }
@@ -163,7 +166,7 @@ class App(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Throwable) {
-                    failure = e.message ?: "Something went wrong."
+                    failure = e.message ?: texts.somethingWentWrong
                     phase = Phase.FAILED
                     render()
                 }
@@ -190,7 +193,7 @@ class App(
                 renderRun()
             }
             is GraphEvent.NodeRetry -> {
-                step(event.node)?.activity = "That did not work (${event.cause.message}). Trying again."
+                step(event.node)?.activity = texts.retrying(event.cause.message.orEmpty())
                 renderRun()
             }
             is GraphEvent.NodeCompleted -> {
@@ -261,14 +264,14 @@ class App(
     private fun steps(trip: Trip?): List<Step> {
         val steps =
             listOf(
-                Step(Nodes.INTERVIEW, "Getting to know your trip"),
-                Step(Nodes.BRIEF, "Finding your stops on the map"),
-                Step(Nodes.GUIDE, "Travel guide · Wikivoyage"),
-                Step(Nodes.MAP, "Street map · OpenStreetMap"),
-                Step(Nodes.REVIEWS, "Reviews · Google"),
-                Step(Nodes.DISHES, "What each place is known for"),
-                Step(Nodes.PLAN, "Choosing where to eat"),
-                Step(Nodes.ORDER, "Putting the days in order"),
+                Step(Nodes.INTERVIEW, texts.stepInterview),
+                Step(Nodes.BRIEF, texts.stepBrief),
+                Step(Nodes.GUIDE, texts.stepGuide),
+                Step(Nodes.MAP, texts.stepMap),
+                Step(Nodes.REVIEWS, texts.stepReviews),
+                Step(Nodes.DISHES, texts.stepDishes),
+                Step(Nodes.PLAN, texts.stepPlan),
+                Step(Nodes.ORDER, texts.stepOrder),
             )
         // What a saved trip already has was done by a run before this one.
         if (trip != null) {
@@ -292,18 +295,18 @@ class App(
 
     /** What a finished step found, read from the trip. */
     private fun result(step: Step, trip: Trip?): String {
-        if (step.status == Status.SKIPPED) return "Not used. Add a Google key under Settings for ratings."
+        if (step.status == Status.SKIPPED) return texts.reviewsNotUsed
         // The agent writes the route step by step, so its count is shown while it works.
         if (trip == null || step.status == Status.WAITING || (!step.settled && step.node != Nodes.PLAN)) return ""
-        fun from(source: Source) = trip.restaurants.count { source in it.sources }.let { "$it ${if (it == 1) "place" else "places"}" }
+        fun from(source: Source) = texts.places(trip.restaurants.count { source in it.sources })
         return when (step.node) {
             Nodes.INTERVIEW -> profileRows(trip.profile).joinToString(" · ") { it.second }
-            Nodes.BRIEF -> trip.stops.joinToString(" · ") { "${it.days} ${if (it.days == 1) "day" else "days"} in ${it.name}" }
+            Nodes.BRIEF -> trip.stops.joinToString(" · ") { texts.daysIn(it.days, it.title) }
             Nodes.GUIDE -> from(Source.GUIDE)
             Nodes.MAP -> from(Source.MAP)
             Nodes.REVIEWS -> from(Source.REVIEWS)
             Nodes.DISHES -> trip.dishes.joinToString(", ") { it.name }
-            Nodes.PLAN -> if (trip.route.isEmpty()) "" else "${trip.route.size} ${if (trip.route.size == 1) "meal" else "meals"} on the route"
+            Nodes.PLAN -> if (trip.route.isEmpty()) "" else texts.mealsOnTheRoute(trip.route.size)
             else -> ""
         }
     }
@@ -311,13 +314,15 @@ class App(
     /** A tool call of the agent, in words for the traveller. */
     private fun describe(call: ToolCall, trip: Trip): String {
         fun input(key: String) = (call.input[key] as? JsonPrimitive)?.contentOrNull.orEmpty()
+        // The model names a meal in English; the traveller reads it in the page's language.
+        fun meal() = MealTime.of(input("meal"))?.let { texts.meal(it).lowercase() } ?: input("meal")
         return when (call.name) {
-            "set_meal" -> "Day ${input("day")}, ${input("meal")}: ${trip.restaurant(input("restaurant"))?.name ?: input("restaurant")}"
-            "remove_meal" -> "Took the ${input("meal")} of day ${input("day")} off the route"
-            "search_map" -> "Searched the map of ${input("stop")} for ${input("name").ifBlank { input("cuisine") }}"
-            "read_guide" -> "Read the travel guide of ${input("page")}"
-            "search_reviews" -> "Searched the reviews for \"${input("query")}\""
-            "candidates" -> "Looked through the places in ${input("stop")}" + input("words").let { if (it.isBlank()) "" else " for $it" }
+            "set_meal" -> texts.didSetMeal(input("day"), meal(), trip.restaurant(input("restaurant"))?.name ?: input("restaurant"))
+            "remove_meal" -> texts.didRemoveMeal(input("day"), meal())
+            "search_map" -> texts.didSearchMap(input("stop"), input("name").ifBlank { input("cuisine") })
+            "read_guide" -> texts.didReadGuide(input("page"))
+            "search_reviews" -> texts.didSearchReviews(input("query"))
+            "candidates" -> texts.didLookThrough(input("stop"), input("words"))
             else -> call.name
         }
     }
@@ -333,13 +338,10 @@ class App(
         root.clear()
 
         root.add("header", "top") {
-            add("div", "brand") {
-                add("h1", text = "Foodie Route")
-                add("p", "tagline", "Eat where the locals eat. Planned by an agent that runs in your browser.")
-            }
+            add("h1", text = "Foodie Route")
             add("div", "top-actions") {
                 (add("select", "language") as HTMLSelectElement).apply {
-                    setAttribute("aria-label", "Language")
+                    setAttribute("aria-label", texts.languageLabel)
                     Language.entries.forEach { option ->
                         add("option", text = option.own) {
                             setAttribute("value", option.name)
@@ -351,12 +353,14 @@ class App(
                         render()
                     }
                 }
-                button(if (settingsOpen) "Close" else "Settings", "ghost") {
+                button(if (settingsOpen) texts.close else texts.settings, "ghost") {
                     settingsOpen = !settingsOpen
                     render()
                 }
             }
         }
+        // Below the buttons, across the page: next to them it has no room on a phone.
+        root.add("p", "tagline", texts.tagline)
         if (settingsOpen) root.settingsPanel()
 
         val trip = trip
@@ -368,58 +372,53 @@ class App(
             Phase.REVIEW, Phase.DONE -> if (trip != null) root.route(trip)
             Phase.STOPPED ->
                 root.add("section", "card") {
-                    add("h2", text = "Your plan stopped halfway")
-                    add("p", text = "The page was closed while the planner worked on \"${request.trim()}\". Everything it had found is saved.")
+                    add("h2", text = texts.stoppedHalfway)
+                    add("p", text = texts.closedWhileWorking(request.trim()))
                     add("div", "actions") {
-                        button("Continue", "primary") { resume() }
-                        button("Start over", "ghost") { startOver() }
+                        button(texts.continueRun, "primary") { resume() }
+                        button(texts.startOver, "ghost") { startOver() }
                     }
                 }
             Phase.FAILED ->
                 root.add("section", "card failed") {
-                    add("h2", text = "The planner got stuck")
+                    add("h2", text = texts.gotStuck)
                     add("p", "failure", failure)
-                    add("p", text = "What it found before that is saved. You can try the step again.")
+                    add("p", text = texts.foundIsSaved)
                     add("div", "actions") {
-                        button("Try again", "primary") { tryAgain() }
-                        button("Settings", "ghost") {
+                        button(texts.tryAgain, "primary") { tryAgain() }
+                        button(texts.settings, "ghost") {
                             settingsOpen = true
                             render()
                         }
-                        button("Start over", "ghost") { startOver() }
+                        button(texts.startOver, "ghost") { startOver() }
                     }
                 }
         }
 
         root.add("footer", "credits") {
             add("p") {
-                add("span", text = "Restaurants from ")
+                add("span", text = texts.restaurantsFrom)
                 link("Wikivoyage", "https://en.wikivoyage.org/")
-                add("span", text = " (CC BY-SA) and ")
+                add("span", text = texts.ccBySaAnd)
                 link("OpenStreetMap", "https://www.openstreetmap.org/copyright")
-                add("span", text = " contributors. Check opening hours before you go: a source can be out of date.")
+                add("span", text = texts.contributorsCheckHours)
             }
             add("p") {
-                add("span", text = "The workflow is a graph of ")
+                add("span", text = texts.workflowIsAGraphOf)
                 link("Telar", "https://github.com/deeptelar/telar")
-                add("span", text = ", a Kotlin library for AI agents and workflows.")
+                add("span", text = texts.kotlinLibrary)
             }
         }
     }
 
     private fun HTMLElement.startForm() {
         add("section", "card") {
-            add("h2", text = "Where are you going?")
-            add(
-                "p",
-                "hint",
-                "Tell me about it, in writing or out loud: where, for how long, who comes along, what you love and what you cannot eat. " +
-                    "I ask about whatever is missing.",
-            )
+            add("h2", text = texts.whereAreYouGoing)
+            add("p", "hint", texts.startHint)
             val text =
                 (add("textarea") as HTMLTextAreaElement).apply {
                     rows = 4
-                    placeholder = "3 days in Lisbon and 2 in Porto. No pork, and I love pastries."
+                    placeholder = texts.requestPlaceholder
                     value = request
                     oninput = { request = value }
                 }
@@ -428,7 +427,7 @@ class App(
                 text.value = it
             }
             add("div", "chips") {
-                EXAMPLES.forEach { example ->
+                texts.examples.forEach { example ->
                     button(example, "chip") {
                         request = example
                         text.value = example
@@ -436,7 +435,7 @@ class App(
                 }
             }
             add("div", "actions") {
-                button("Plan my route", "primary") {
+                button(texts.planMyRoute, "primary") {
                     when {
                         request.isBlank() -> text.focus()
                         // Without a key there is no model to ask: the settings say where to put one.
@@ -447,37 +446,30 @@ class App(
                         else -> start(request.trim(), sample = false)
                     }
                 }
-                button("Try the sample, no key needed", "ghost") { start(SampleModel.REQUEST, sample = true) }
+                button(texts.trySample, "ghost") { start(texts.sampleRequest, sample = true) }
             }
             if (speechSupported) {
-                add("p", "hint small", "Speaking: your browser turns your voice into text. Most browsers do that on their maker's servers, so the recording goes there; this page only gets the text.")
+                add("p", "hint small", texts.speechPrivacy)
             }
             if (!settings.hasModel) {
-                add("p", "hint", "To plan a trip of your own, add the key of a model under Settings. The sample plans two days in Lisbon with a script in place of the model.")
+                add("p", "hint", texts.needAKey)
             }
         }
         add("section", "how") {
-            add("h2", text = "How it works")
-            add("ol") {
-                add("li", text = "A model reads your request and asks what a food planner would: allergies, budget, who is coming, how adventurous you are.")
-                add("li", text = "It finds your stops on the map. If it cannot, it asks you.")
-                add("li", text = "A travel guide, a street map and, with a Google key, reviews are searched at the same time.")
-                add("li", text = "The model names what each place is known for.")
-                add("li", text = "An agent chooses a restaurant for each meal. It can search the sources again for a dish.")
-                add("li", text = "You get the route on a map, and can ask for changes until you like it.")
-            }
+            add("h2", text = texts.howItWorks)
+            add("ol") { texts.howItWorksSteps.forEach { add("li", text = it) } }
         }
     }
 
     private fun HTMLElement.settingsPanel() {
         add("section", "card settings") {
-            add("h2", text = "Settings")
-            add("p", "hint", "Keys are stored in this browser only and are sent to nobody but their provider.")
+            add("h2", text = texts.settings)
+            add("p", "hint", texts.keysStayHere)
             add("label", "field") {
-                add("span", "field-label", "Model")
+                add("span", "field-label", texts.model)
                 (add("select") as HTMLSelectElement).apply {
                     Provider.entries.forEach { provider ->
-                        add("option", text = provider.label) {
+                        add("option", text = if (provider == Provider.OPENAI) texts.openAiProvider else provider.label) {
                             setAttribute("value", provider.name)
                             if (provider == settings.provider) setAttribute("selected", "selected")
                         }
@@ -490,9 +482,9 @@ class App(
             }
             when (settings.provider) {
                 Provider.CLAUDE -> {
-                    field("Anthropic API key", settings.claudeKey, type = "password", placeholder = "sk-ant-...") { change(settings.copy(claudeKey = it)) }
+                    field(texts.anthropicKey, settings.claudeKey, type = "password", placeholder = "sk-ant-...") { change(settings.copy(claudeKey = it)) }
                     add("label", "field") {
-                        add("span", "field-label", "Claude model")
+                        add("span", "field-label", texts.claudeModel)
                         (add("select") as HTMLSelectElement).apply {
                             Settings.CLAUDE_MODELS.forEach { (id, name) ->
                                 add("option", text = name) {
@@ -505,15 +497,15 @@ class App(
                     }
                 }
                 Provider.OPENAI -> {
-                    field("Address of the API", settings.openAiUrl, placeholder = "https://api.openai.com/v1") { change(settings.copy(openAiUrl = it)) }
-                    field("Model", settings.openAiModel, placeholder = "gpt-5") { change(settings.copy(openAiModel = it)) }
-                    field("API key", settings.openAiKey, type = "password", placeholder = "Leave empty for a local server") { change(settings.copy(openAiKey = it)) }
+                    field(texts.apiAddress, settings.openAiUrl, placeholder = "https://api.openai.com/v1") { change(settings.copy(openAiUrl = it)) }
+                    field(texts.model, settings.openAiModel, placeholder = "gpt-5") { change(settings.copy(openAiModel = it)) }
+                    field(texts.apiKey, settings.openAiKey, type = "password", placeholder = texts.emptyForLocalServer) { change(settings.copy(openAiKey = it)) }
                 }
             }
-            field("Google Places key, for ratings (optional)", settings.googleKey, type = "password", placeholder = "AIza...") { change(settings.copy(googleKey = it)) }
-            add("p", "hint", "Google bills the owner of the key for each search. Without it, the planner works with the travel guide and the street map.")
+            field(texts.googleKey, settings.googleKey, type = "password", placeholder = "AIza...") { change(settings.copy(googleKey = it)) }
+            add("p", "hint", texts.googleBills)
             add("div", "actions") {
-                button("Done", "primary") {
+                button(texts.done, "primary") {
                     settingsOpen = false
                     render()
                 }
@@ -539,7 +531,7 @@ class App(
     }
 
     private fun fillRun(panel: HTMLElement) {
-        panel.add("h2", text = "Planning your route")
+        panel.add("h2", text = texts.planningYourRoute)
         panel.add("p", "hint", "\"${request.trim()}\"")
         panel.add("ul", "steps") {
             steps.forEach { step ->
@@ -557,40 +549,40 @@ class App(
                 }
             }
         }
-        if (sample) panel.add("p", "hint", "This is the sample: a script stands in for the model. The sources it searches are real.")
-        panel.add("div", "actions") { button("Cancel", "ghost") { startOver() } }
+        if (sample) panel.add("p", "hint", texts.sampleRunning)
+        panel.add("div", "actions") { button(texts.cancel, "ghost") { startOver() } }
     }
 
     private fun HTMLElement.questionCard(trip: Trip) {
         val interviewing = trip.interview.stage != InterviewStage.DONE
         add("section", "card") {
-            add("h2", text = if (trip.questions.size == 1) "One question" else "A few questions")
+            add("h2", text = if (trip.questions.size == 1) texts.oneQuestion else texts.aFewQuestions)
             val left = Topic.entries.count { it !in trip.interview.covered }
             // What the request already said, so the traveller sees that it was heard, and why these are the questions.
             val asked = trip.answers.mapNotNull { it.topic } + trip.questions.map { it.topic }
             val told = Topic.entries.filter { it in trip.interview.covered && it !in asked }
             if (interviewing && trip.interview.rounds == 1 && told.isNotEmpty()) {
-                add("p", "told", "You already told me: ${told.joinToString { it.label.lowercase() }}.")
+                add("p", "told", texts.youAlreadyToldMe(told.map { texts.topic(it) }))
             }
             add(
                 "p",
                 "hint",
                 when {
-                    !interviewing -> "One more thing before I plan."
-                    left == 0 -> "The last ones. Tap what fits, write what does not, or skip a question."
-                    else -> "About $left more after these. Tap what fits, write what does not, or skip a question."
+                    !interviewing -> texts.oneMoreThing
+                    left == 0 -> texts.lastQuestions
+                    else -> texts.moreQuestions(left)
                 },
             )
             trip.questions.forEach { question(it) }
             fun answers() = trip.questions.map { Answer(it.topic, it.text, (drafts[it.text] ?: Draft()).text) }
             add("div", "actions") {
                 // The answers join the trip, and the node that asked reads them.
-                button("Continue", "primary") { resume { it.answered(answers()) } }
+                button(texts.continueAnswers, "primary") { resume { it.answered(answers()) } }
                 // The questions of the brief come after the interview, and it cannot go on without them.
-                if (interviewing) button("That's enough, plan it", "ghost") { resume { it.planNow(answers()) } }
-                button("Start over", "ghost") { startOver() }
+                if (interviewing) button(texts.planNow, "ghost") { resume { it.planNow(answers()) } }
+                button(texts.startOver, "ghost") { startOver() }
             }
-            if (sample) add("p", "hint small", "This is the sample: a script asks the questions, and it does not read the answers.")
+            if (sample) add("p", "hint small", texts.sampleAsks)
         }
     }
 
@@ -600,7 +592,7 @@ class App(
             add("p", "question", question.text)
             if (question.options.isNotEmpty()) add("div", "chips") { question.options.forEach { chip(question, it) } }
             if (question.topic == Topic.ALLERGIES) {
-                add("p", "hint small", "The planner leaves out what you name and says what to tell the staff. It cannot know what a kitchen puts in a dish: always tell the waiter.")
+                add("p", "hint small", texts.allergyNote)
             }
             val own = drafts[question.text]?.own.orEmpty()
             fun write(text: String) {
@@ -610,13 +602,13 @@ class App(
                 if (question.options.isEmpty()) {
                     (add("textarea") as HTMLTextAreaElement).apply {
                         rows = 2
-                        placeholder = "Your answer"
+                        placeholder = texts.yourAnswer
                         value = own
                         oninput = { write(value) }
                     }
                 } else {
                     (add("input") as HTMLInputElement).apply {
-                        placeholder = "Something else, or more about it"
+                        placeholder = texts.somethingElse
                         value = own
                         oninput = { write(value) }
                     }
@@ -631,7 +623,7 @@ class App(
     /** A microphone button under a text field, where the browser can turn speech into text. */
     private fun HTMLElement.speakRow(read: () -> String, write: (String) -> Unit) {
         // A trip that is under way keeps the language it was started in.
-        if (speechSupported) add("div", "speak-row") { speakButton(trip?.language ?: language, read, write) }
+        if (speechSupported) add("div", "speak-row") { speakButton(trip?.language ?: language, texts, read, write) }
     }
 
     /** An answer to tap. A question with one answer keeps the last one tapped; tapping it again takes it back. */
@@ -654,8 +646,8 @@ class App(
 
     private fun HTMLElement.profileCard(trip: Trip) {
         add("section", "card") {
-            add("h2", text = "Here is what I have")
-            add("p", "hint", "This is what the route will be planned for. Tell me if something is wrong.")
+            add("h2", text = texts.hereIsWhatIHave)
+            add("p", "hint", texts.profileHint)
             add("dl", "profile") {
                 profileRows(trip.profile).forEach { (label, value) ->
                     add("dt", text = label)
@@ -665,63 +657,63 @@ class App(
             val correction =
                 (add("textarea") as HTMLTextAreaElement).apply {
                     rows = 2
-                    placeholder = "Anything to correct? For example: we are three, not two."
+                    placeholder = texts.correctionPlaceholder
                 }
             speakRow(read = { correction.value }) { correction.value = it }
             add("div", "actions") {
-                button("Plan my route", "primary") { resume { it.confirmed() } }
-                button("Correct it", "ghost") {
+                button(texts.planMyRoute, "primary") { resume { it.confirmed() } }
+                button(texts.correctIt, "ghost") {
                     val text = correction.value.trim()
                     if (text.isEmpty()) correction.focus() else resume { it.corrected(text) }
                 }
-                button("Start over", "ghost") { startOver() }
+                button(texts.startOver, "ghost") { startOver() }
             }
-            if (sample) add("p", "hint small", "This is the sample: the script did not read your answers.")
+            if (sample) add("p", "hint small", texts.sampleDidNotRead)
         }
     }
 
     /** The profile in words for the traveller: a label and a value for each thing that is known. */
     private fun profileRows(profile: Profile): List<Pair<String, String>> =
         listOfNotNull(
-            "Allergies" to if (profile.allergies.isEmpty()) "None" else profile.allergies.joinToString { if (it.severe) "${it.food}, even traces" else it.food },
-            "Diet" to profile.diet.ifBlank { "Eats everything" },
-            profile.season.takeIf { it.isNotBlank() }?.let { "When" to it },
-            profile.party.takeIf { it.isNotBlank() }?.let { "Who" to it },
-            profile.meals.takeIf { it.isNotEmpty() }?.let { meals -> "Meals" to meals.sorted().joinToString { it.label.lowercase() } },
-            "Budget" to profile.budget + if (profile.splurge) ", with one special meal" else "",
-            profile.taste.takeIf { it.isNotBlank() }?.let { "Taste" to it },
-            profile.drinks.takeIf { it.isNotBlank() }?.let { "Drinks" to it },
-            profile.wishes.takeIf { it.isNotBlank() }?.let { "Wishes" to it },
+            texts.allergies to if (profile.allergies.isEmpty()) texts.noAllergies else profile.allergies.joinToString { if (it.severe) texts.evenTraces(it.food) else it.food },
+            texts.diet to profile.diet.ifBlank { texts.eatsEverything },
+            profile.season.takeIf { it.isNotBlank() }?.let { texts.whenLabel to it },
+            profile.party.takeIf { it.isNotBlank() }?.let { texts.who to it },
+            profile.meals.takeIf { it.isNotEmpty() }?.let { meals -> texts.meals to meals.sorted().joinToString { texts.meal(it).lowercase() } },
+            texts.budget to texts.budget(profile.budget) + if (profile.splurge) texts.withASpecialMeal else "",
+            profile.taste.takeIf { it.isNotBlank() }?.let { texts.taste to it },
+            profile.drinks.takeIf { it.isNotBlank() }?.let { texts.drinks to it },
+            profile.wishes.takeIf { it.isNotBlank() }?.let { texts.wishes to it },
         )
 
     private fun HTMLElement.route(trip: Trip) {
         add("section", "route") {
-            add("h2", text = if (phase == Phase.DONE) "Your foodie route" else "Here is your route")
-            add("p", "hint", trip.stops.joinToString(" · ") { "${it.days} ${if (it.days == 1) "day" else "days"} in ${it.name}" })
+            add("h2", text = if (phase == Phase.DONE) texts.yourFoodieRoute else texts.hereIsYourRoute)
+            add("p", "hint", trip.stops.joinToString(" · ") { texts.daysIn(it.days, it.title) })
             if (trip.summary.isNotBlank()) add("p", "summary", trip.summary)
 
             if (trip.route.isEmpty()) {
-                add("p", "failure", "The planner put no meal on the route. Tell it below what you are looking for, or start over.")
+                add("p", "failure", texts.noMealPlanned)
             } else {
                 val container = add("div", "map")
                 val days = trip.route.map { it.day }.distinct()
                 if (days.size > 1) {
                     add("div", "chips") {
-                        button("Whole trip", "chip") { map?.show(null) }
-                        days.forEach { day -> button("Day $day", "chip ${RouteMap.dayClass(day)}") { map?.show(day) } }
+                        button(texts.wholeTrip, "chip") { map?.show(null) }
+                        days.forEach { day -> button(texts.day(day), "chip ${RouteMap.dayClass(day)}") { map?.show(day) } }
                     }
                 }
-                map = RouteMap(container, trip)
+                map = RouteMap(container, trip, texts)
             }
 
             var number = 0
             (1..trip.days).forEach { day ->
                 val meals = trip.route.filter { it.day == day }
-                add("h3", "day ${RouteMap.dayClass(day)}", "Day $day · ${trip.stopOn(day)?.name.orEmpty()}")
-                if (meals.isEmpty()) add("p", "hint", "Nothing planned for this day.")
+                add("h3", "day ${RouteMap.dayClass(day)}", texts.dayAt(day, trip.stopOn(day)?.title.orEmpty()))
+                if (meals.isEmpty()) add("p", "hint", texts.nothingPlannedThisDay)
                 meals.forEachIndexed { index, meal ->
                     number++
-                    meal.walk?.let { add("p", "walk", "↓ about ${distance(it)} from " + if (index == 0) "where you stay" else "there") }
+                    meal.walk?.let { add("p", "walk", texts.walk(texts.distance(it), fromStay = index == 0)) }
                     meal(trip, meal, number)
                 }
             }
@@ -730,13 +722,13 @@ class App(
                 val dishes = trip.dishes.filter { it.stop == stop.name }
                 if (dishes.isNotEmpty()) {
                     add("details", "known") {
-                        add("summary", text = "What ${stop.name} is known for")
+                        add("summary", text = texts.knownFor(stop.title))
                         add("ul") { dishes.forEach { dish -> add("li") { add("strong", text = dish.name); add("span", text = ": ${dish.what}") } } }
                     }
                 }
             }
             add("details", "known") {
-                add("summary", text = "Planned for you")
+                add("summary", text = texts.plannedForYou)
                 add("dl", "profile") {
                     profileRows(trip.profile).forEach { (label, value) ->
                         add("dt", text = label)
@@ -746,37 +738,37 @@ class App(
             }
             if (trip.notes.isNotEmpty()) {
                 add("details", "known") {
-                    add("summary", text = "What could not be read")
+                    add("summary", text = texts.couldNotBeRead)
                     add("ul") { trip.notes.forEach { add("li", text = it) } }
                 }
             }
             // The sample asks no model, so it has no tokens to show.
-            add("p", "hint small", "${trip.restaurants.size} places compared" + if (trip.tokens.total > 0) " · ${trip.tokens.total} tokens used" else "")
+            add("p", "hint small", texts.placesCompared(trip.restaurants.size) + if (trip.tokens.total > 0) " · " + texts.tokensUsed(trip.tokens.total) else "")
         }
 
         add("section", "card") {
             if (phase == Phase.DONE) {
-                add("h2", text = "Enjoy your trip")
+                add("h2", text = texts.enjoyYourTrip)
                 add("div", "actions") {
-                    button("Print or save as PDF", "primary") { window.print() }
-                    button("Plan another trip", "ghost") { startOver() }
+                    button(texts.printOrSave, "primary") { window.print() }
+                    button(texts.planAnotherTrip, "ghost") { startOver() }
                 }
             } else {
-                add("h2", text = "Want something different?")
+                add("h2", text = texts.wantSomethingDifferent)
                 val wish =
                     (add("textarea") as HTMLTextAreaElement).apply {
                         rows = 2
-                        placeholder = "A vegetarian dinner on day 2, and somewhere cheaper for the first lunch."
+                        placeholder = texts.changePlaceholder
                     }
                 speakRow(read = { wish.value }) { wish.value = it }
                 add("div", "actions") {
-                    button("Update the route", "primary") {
+                    button(texts.updateTheRoute, "primary") {
                         val text = wish.value.trim()
                         // The wish goes to the agent as the traveller's next message, and the graph loops back to it.
                         if (text.isEmpty()) wish.focus() else resume { it.copy(messages = it.messages + ChatMessage.User(text)) }
                     }
-                    button("I'm happy with it", "ghost") { resume { it.copy(approved = true) } }
-                    button("Start over", "ghost") { startOver() }
+                    button(texts.happyWithIt, "ghost") { resume { it.copy(approved = true) } }
+                    button(texts.startOver, "ghost") { startOver() }
                 }
             }
         }
@@ -787,43 +779,33 @@ class App(
         add("article", "meal") {
             add("div", "pin ${RouteMap.dayClass(meal.day)}", "$number")
             add("div", "meal-text") {
-                add("div", "meal-time", meal.time.label)
+                add("div", "meal-time", texts.meal(meal.time))
                 add("h4", text = restaurant.name)
-                restaurant.rating?.let { stars -> add("div", "rating", "★ $stars" + restaurant.ratings?.let { " · $it ratings" }.orEmpty()) }
+                restaurant.rating?.let { stars -> add("div", "rating", "★ $stars" + restaurant.ratings?.let { " · " + texts.ratings(it) }.orEmpty()) }
                 add("p", "order") {
-                    add("strong", text = "Order: ")
+                    add("strong", text = texts.order)
                     add("span", text = meal.dish)
                     trip.dishes.firstOrNull { it.name.equals(meal.dish, ignoreCase = true) }?.let { add("span", "what", " · ${it.what}") }
                 }
                 add("p", "why", meal.why)
                 if (meal.caution.isNotBlank()) add("p", "caution", "⚠ ${meal.caution}")
-                add("div", "badges") { restaurant.sources.forEach { add("span", "badge", it.label) } }
+                add("div", "badges") { restaurant.sources.forEach { add("span", "badge", texts.source(it)) } }
                 val facts = listOf(restaurant.cuisine, restaurant.address, restaurant.price, restaurant.hours).filter { it.isNotBlank() }
                 if (facts.isNotEmpty()) add("p", "facts", facts.joinToString(" · "))
                 add("div", "links") {
-                    if (restaurant.website.isNotBlank()) link("Website", restaurant.website)
-                    link("Open in Google Maps", "https://www.google.com/maps/search/?api=1&query=${encode("${restaurant.name}, ${restaurant.stop}")}")
+                    if (restaurant.website.isNotBlank()) link(texts.website, restaurant.website)
+                    link(texts.openInGoogleMaps, "https://www.google.com/maps/search/?api=1&query=${encode("${restaurant.name}, ${restaurant.stop}")}")
                     link("OpenStreetMap", "https://www.openstreetmap.org/?mlat=${restaurant.lat}&mlon=${restaurant.lon}#map=18/${restaurant.lat}/${restaurant.lon}")
                 }
             }
         }
     }
 
-    private fun distance(metres: Int): String = if (metres < 1000) "${(metres + 25) / 50 * 50} m" else "${(metres + 50) / 100 / 10.0} km"
-
     private fun encode(text: String): String = js("encodeURIComponent")(text).unsafeCast<String>()
 
     private companion object {
         /** How many of the agent's last actions a run shows. */
         const val FEED_LINES = 8
-
-        val EXAMPLES =
-            listOf(
-                "3 days in Lisbon and 2 in Porto. No pork, and I love pastries.",
-                "A weekend in Naples: pizza and street food on a low budget.",
-                "4 days in Oaxaca, vegetarian.",
-                "Two days in Bologna and one in Modena. I want the classics.",
-            )
     }
 }
 

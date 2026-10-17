@@ -473,7 +473,7 @@ class PlannerTest {
             // What the request said is not asked. The model's words are used where it wrote some.
             assertIs<GraphResult.Interrupted<Trip>>(asked)
             assertEquals(listOf(Nodes.INTERVIEW), asked.nextNodes)
-            assertEquals(listOf("Lisbon cooks a lot of shellfish. Any allergy?", Topic.DIET.question.text, Topic.DATES.question.text), asked.state.questions.map { it.text })
+            assertEquals(listOf("Lisbon cooks a lot of shellfish. Any allergy?", English.question(Topic.DIET).text, English.question(Topic.DATES).text), asked.state.questions.map { it.text })
             assertTrue("- WHERE: Where and how long\n" in model.requests[0].messages.first().text)
 
             val checking = planner.resume(config) { trip -> trip.answered(trip.questions.map { Answer(it.topic, it.text, if (it.topic == Topic.ALLERGIES) "Shellfish, even traces" else "") }) }
@@ -484,7 +484,7 @@ class PlannerTest {
             assertEquals(listOf(Allergy("shellfish", severe = true)), checking.state.profile.allergies)
             val second = model.requests[1].messages.first().text
             assertTrue("- Lisbon cooks a lot of shellfish. Any allergy? Shellfish, even traces" in second, second)
-            assertTrue("- ${Topic.DIET.question.text} (no answer)" in second, second)
+            assertTrue("- ${English.question(Topic.DIET).text} (no answer)" in second, second)
             assertTrue("- ALLERGIES: Allergies (done)" in second, second)
 
             val planned = planner.resume(config) { it.confirmed() }

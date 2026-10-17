@@ -79,7 +79,8 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                 // A yes to the profile: nothing new to read.
                 if (trip.profileIsCurrent) return@node trip
 
-                reportProgress(Activity(if (trip.answers.isEmpty()) "Reading your request" else "Reading your answers"))
+                val texts = trip.language.texts
+                reportProgress(Activity(if (trip.answers.isEmpty()) texts.readingYourRequest else texts.readingYourAnswers))
                 val answer = model.ask<Reading>(ChatRequest(listOf(ChatMessage.User(interviewPrompt(trip))), INTERVIEW_SYSTEM))
                 trip.copy(tokens = trip.tokens + answer.usage).read(answer.value)
             }
@@ -89,16 +90,15 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                 // The run waits here while a question is open. `resume` adds the answer and clears the question.
                 if (trip.questions.isNotEmpty()) interrupt(trip)
 
-                reportProgress(Activity("Finding the places of your trip"))
+                val texts = trip.language.texts
+                reportProgress(Activity(texts.findingYourPlaces))
                 val answer = model.ask<Brief>(ChatRequest(listOf(ChatMessage.User(briefPrompt(trip))), BRIEF_SYSTEM))
                 val read = trip.copy(brief = answer.value, tokens = trip.tokens + answer.usage)
                 val brief = answer.value
-                if (brief.stops.isEmpty()) interrupt(read.asking(brief.question.ifBlank { "Where are you going, and for how many days?" }))
+                if (brief.stops.isEmpty()) interrupt(read.asking(brief.question.ifBlank { texts.whereQuestion }))
 
-                val (stops, unknown) = located(brief, sources)
-                if (unknown.isNotEmpty()) {
-                    interrupt(read.asking("I could not find ${unknown.joinToString(" or ")} on the map. Which place do you mean?"))
-                }
+                val (stops, unknown) = located(brief, sources, texts)
+                if (unknown.isNotEmpty()) interrupt(read.asking(texts.notOnTheMap(unknown)))
                 read.copy(stops = stops)
             }
 
@@ -111,8 +111,8 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
             node(
                 Nodes.GUIDE,
                 work = { trip ->
-                    gather(trip, "The travel guide") { stop ->
-                        reportProgress(Activity("Reading the travel guide of ${stop.name}"))
+                    gather(trip, trip.language.texts.theGuide) { stop ->
+                        reportProgress(Activity(trip.language.texts.readingTheGuide(stop.name)))
                         val page = effect("guide ${stop.name}") { sources.guide.read(stop.name) }
                         Found(page.restaurants, guideNotes = if (page.text.isBlank()) emptyMap() else mapOf(stop.name to page.text))
                     }
@@ -123,8 +123,8 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
             node(
                 Nodes.MAP,
                 work = { trip ->
-                    gather(trip, "The street map") { stop ->
-                        reportProgress(Activity("Looking for ${stop.cuisines.firstOrNull() ?: "local"} restaurants on the map of ${stop.name}"))
+                    gather(trip, trip.language.texts.theMap) { stop ->
+                        reportProgress(Activity(trip.language.texts.lookingOnTheMap(stop.cuisines.firstOrNull() ?: "local", stop.name)))
                         Found(effect("map ${stop.name}") { sources.map.restaurants(stop.name, stop.location, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) })
                     }
                 },
@@ -135,8 +135,8 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                 node(
                     Nodes.REVIEWS,
                     work = { trip ->
-                        gather(trip, "Google reviews") { stop ->
-                            reportProgress(Activity("Reading reviews in ${stop.name}"))
+                        gather(trip, trip.language.texts.theReviews) { stop ->
+                            reportProgress(Activity(trip.language.texts.readingReviews(stop.name)))
                             Found(effect("reviews ${stop.name}") { reviews.search(stop.name, reviewQuery(stop), stop.location) })
                         }
                     },
@@ -145,7 +145,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
 
         val dishes =
             node(Nodes.DISHES, retry = again) { trip ->
-                reportProgress(Activity("Finding out what each place is known for"))
+                reportProgress(Activity(trip.language.texts.findingDishes))
                 val answer = model.ask<Menu>(ChatRequest(listOf(ChatMessage.User(dishesPrompt(trip))), DISHES_SYSTEM))
                 // A dish is kept under the name the stop has in the state, however the model wrote it.
                 val known = answer.value.dishes.mapNotNull { dish -> (trip.stop(dish.stop) ?: trip.stops.singleOrNull())?.let { dish.copy(stop = it.name) } }
@@ -187,12 +187,12 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
 private fun Trip.asking(question: String): Trip = copy(questions = listOf(Question(Topic.WHERE, question)))
 
 /** The stops of [brief] that the map knows, with their days counted from the first day of the trip, and the places it does not know. */
-private suspend fun located(brief: Brief, sources: Sources): Pair<List<Stop>, List<String>> {
+private suspend fun located(brief: Brief, sources: Sources, texts: Texts): Pair<List<Stop>, List<String>> {
     val stops = mutableListOf<Stop>()
     val unknown = mutableListOf<String>()
     var day = 1
     for (stop in brief.stops) {
-        reportProgress(Activity("Finding ${stop.place} on the map"))
+        reportProgress(Activity(texts.findingOnTheMap(stop.place)))
         val location = sources.geocoder.locate(stop.place)
         if (location == null) {
             unknown += stop.place
@@ -201,10 +201,10 @@ private suspend fun located(brief: Brief, sources: Sources): Pair<List<Stop>, Li
             // Where the traveller sleeps is a help, not a need: a place the map does not know is left out.
             val stay =
                 stop.stay.trim().takeIf { it.isNotEmpty() }?.let { stay ->
-                    reportProgress(Activity("Finding $stay on the map"))
+                    reportProgress(Activity(texts.findingOnTheMap(stay)))
                     sources.geocoder.locate("$stay, ${stop.place}")?.takeIf { metresBetween(it, location) <= STAY_REACH }
                 }
-            stops += Stop(stop.place, days, firstDay = day, lat = location.lat, lon = location.lon, cuisines = stop.cuisines, stay = stay)
+            stops += Stop(stop.place, days, firstDay = day, lat = location.lat, lon = location.lon, cuisines = stop.cuisines, stay = stay, shown = stop.shown.trim())
             day += days
         }
     }
@@ -228,10 +228,10 @@ private suspend fun gather(trip: Trip, source: String, ask: suspend (Stop) -> Fo
     for (stop in trip.stops) {
         val found =
             try {
-                withTimeoutOrNull(SOURCE_PATIENCE) { ask(stop) } ?: Found(notes = listOf("$source took too long for ${stop.name}."))
+                withTimeoutOrNull(SOURCE_PATIENCE) { ask(stop) } ?: Found(notes = listOf(trip.language.texts.tookTooLong(source, stop.name)))
             } catch (e: Throwable) {
                 if (!e.isFailure()) throw e
-                Found(notes = listOf("$source gave no answer for ${stop.name}: ${e.message}"))
+                Found(notes = listOf(trip.language.texts.gaveNoAnswer(source, stop.name, e.message.orEmpty())))
             }
         all = Found(all.restaurants + found.restaurants, all.guideNotes + found.guideNotes, all.notes + found.notes)
     }

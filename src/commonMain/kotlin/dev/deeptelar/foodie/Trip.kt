@@ -74,6 +74,8 @@ data class Brief(
 data class BriefStop(
     @Description("The city, town or island, with its country, in English as the English Wikipedia names them, for example \"Porto, Portugal\".")
     val place: String,
+    @Description("The same place as the traveller's language names it, without the country, for example \"Oporto\" in Spanish. Empty if it is the same.")
+    val shown: String = "",
     @Description("How many days the traveller eats there. 1 if the request does not say.")
     val days: Int = 1,
     @Description(
@@ -88,6 +90,7 @@ data class BriefStop(
 /** A place of the itinerary that was found on the map. */
 @Serializable
 data class Stop(
+    /** The place in English, as the travel guide names it. The planner knows the stop by it. */
     val name: String,
     val days: Int,
     /** The first day of the trip spent here, counted from 1. */
@@ -98,7 +101,12 @@ data class Stop(
     val cuisines: List<String> = emptyList(),
     /** Where the traveller sleeps here, when the map found it. The first walk of each day starts there. */
     val stay: Location? = null,
+    /** The place as the traveller's language names it. Empty when it is [name]. */
+    val shown: String = "",
 ) {
+    /** The place as the traveller reads it. */
+    val title: String get() = shown.ifBlank { name }
+
     val location: Location get() = Location(lat, lon)
 }
 

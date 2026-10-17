@@ -52,10 +52,15 @@ a {
 
 .top {
     display: flex;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 8px 0 16px;
+    gap: 8px 12px;
+    padding: 8px 0 4px;
+}
+
+p.tagline {
+    margin-bottom: 16px;
 }
 
 .tagline, .hint {

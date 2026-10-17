@@ -9,20 +9,20 @@ class InterviewTest {
 
     @Test
     fun `the next round asks the first open topics, in the model's words where it wrote some`() {
-        val next = nextQuestions(covered = setOf(Topic.WHERE, Topic.ALLERGIES, Topic.DIET, Topic.DATES, Topic.PARTY, Topic.STAY, Topic.MEALS), wrote = listOf(naples))
+        val next = nextQuestions(covered = setOf(Topic.WHERE, Topic.ALLERGIES, Topic.DIET, Topic.DATES, Topic.PARTY, Topic.STAY, Topic.MEALS), wrote = listOf(naples), texts = English)
 
         assertEquals(listOf(Topic.BUDGET, Topic.TASTE, Topic.DRINKS), next.map { it.topic })
-        assertEquals(Topic.BUDGET.question, next[0])
+        assertEquals(English.question(Topic.BUDGET), next[0])
         // The model's answers are tidied: no blanks, no repeats.
         assertEquals(listOf("Yes", "Only the classics"), next[1].options)
     }
 
     @Test
     fun `a question the model wrote for a topic that is not next waits for its round`() {
-        val next = nextQuestions(covered = emptySet(), wrote = listOf(naples))
+        val next = nextQuestions(covered = emptySet(), wrote = listOf(naples), texts = English)
 
         assertEquals(listOf(Topic.WHERE, Topic.ALLERGIES, Topic.DIET), next.map { it.topic })
-        assertEquals(listOf(Topic.WHERE.question, Topic.ALLERGIES.question, Topic.DIET.question), next)
+        assertEquals(listOf(English.question(Topic.WHERE), English.question(Topic.ALLERGIES), English.question(Topic.DIET)), next)
     }
 
     @Test
