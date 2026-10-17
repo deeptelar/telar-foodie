@@ -93,6 +93,9 @@ object English : Texts {
     override val tryAgain = "Try again"
     override val somethingWentWrong = "Something went wrong."
 
+    override val refusedLooksUnreachable =
+        "If the address is right, the provider probably refused the request: browsers hide why. Check the key, the name of the model and the credit of the account under Settings."
+
     override fun closedWhileWorking(request: String) = "The page was closed while the planner worked on \"$request\". Everything it had found is saved."
 
     override val oneQuestion = "One question"
@@ -218,6 +221,18 @@ object English : Texts {
     override val findingYourPlaces = "Finding the places of your trip"
     override val whereQuestion = "Where are you going, and for how many days?"
     override val findingDishes = "Finding out what each place is known for"
+
+    override val notingWhatYouSaid = "Noting what you told me"
+
+    override fun seconds(count: Int) = "$count s"
+
+    override val modelThinking = "The model thinks before it writes. That can take up to a minute here."
+
+    override fun asking(question: String) = "Writing the questions: \u201c$question\u201d"
+
+    override fun foundPlaces(places: List<String>) = "Found: ${places.joinToString(" · ")}"
+
+    override fun namingDishes(dishes: List<String>) = "Naming dishes: ${dishes.joinToString(", ")}…"
 
     override fun notOnTheMap(places: List<String>) = "I could not find ${places.joinToString(" or ")} on the map. Which place do you mean?"
 

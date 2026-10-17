@@ -81,7 +81,9 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
 
                 val texts = trip.language.texts
                 reportProgress(Activity(if (trip.answers.isEmpty()) texts.readingYourRequest else texts.readingYourAnswers))
-                val answer = model.ask<Reading>(ChatRequest(listOf(ChatMessage.User(interviewPrompt(trip))), INTERVIEW_SYSTEM))
+                // The profile comes first in the answer, then the questions: each is shown when it is written.
+                val writing = model.watched { written -> finishedValues(written, "text").lastOrNull()?.let(texts::asking) ?: texts.notingWhatYouSaid }
+                val answer = writing.ask<Reading>(ChatRequest(listOf(ChatMessage.User(interviewPrompt(trip))), INTERVIEW_SYSTEM))
                 trip.copy(tokens = trip.tokens + answer.usage).read(answer.value)
             }
 
@@ -92,7 +94,8 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
 
                 val texts = trip.language.texts
                 reportProgress(Activity(texts.findingYourPlaces))
-                val answer = model.ask<Brief>(ChatRequest(listOf(ChatMessage.User(briefPrompt(trip))), BRIEF_SYSTEM))
+                val writing = model.watched { written -> finishedValues(written, "place").takeIf { it.isNotEmpty() }?.let(texts::foundPlaces) }
+                val answer = writing.ask<Brief>(ChatRequest(listOf(ChatMessage.User(briefPrompt(trip))), BRIEF_SYSTEM))
                 val read = trip.copy(brief = answer.value, tokens = trip.tokens + answer.usage)
                 val brief = answer.value
                 if (brief.stops.isEmpty()) interrupt(read.asking(brief.question.ifBlank { texts.whereQuestion }))
@@ -112,7 +115,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                 Nodes.GUIDE,
                 work = { trip ->
                     gather(trip, trip.language.texts.theGuide) { stop ->
-                        reportProgress(Activity(trip.language.texts.readingTheGuide(stop.name)))
+                        reportProgress(Activity(trip.language.texts.readingTheGuide(stop.title)))
                         val page = effect("guide ${stop.name}") { sources.guide.read(stop.name) }
                         Found(page.restaurants, guideNotes = if (page.text.isBlank()) emptyMap() else mapOf(stop.name to page.text))
                     }
@@ -124,7 +127,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                 Nodes.MAP,
                 work = { trip ->
                     gather(trip, trip.language.texts.theMap) { stop ->
-                        reportProgress(Activity(trip.language.texts.lookingOnTheMap(stop.cuisines.firstOrNull() ?: "local", stop.name)))
+                        reportProgress(Activity(trip.language.texts.lookingOnTheMap(stop.cuisines.firstOrNull() ?: "local", stop.title)))
                         Found(effect("map ${stop.name}") { sources.map.restaurants(stop.name, stop.location, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) })
                     }
                 },
@@ -136,7 +139,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
                     Nodes.REVIEWS,
                     work = { trip ->
                         gather(trip, trip.language.texts.theReviews) { stop ->
-                            reportProgress(Activity(trip.language.texts.readingReviews(stop.name)))
+                            reportProgress(Activity(trip.language.texts.readingReviews(stop.title)))
                             Found(effect("reviews ${stop.name}") { reviews.search(stop.name, reviewQuery(stop), stop.location) })
                         }
                     },
@@ -145,8 +148,10 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000): Com
 
         val dishes =
             node(Nodes.DISHES, retry = again) { trip ->
-                reportProgress(Activity(trip.language.texts.findingDishes))
-                val answer = model.ask<Menu>(ChatRequest(listOf(ChatMessage.User(dishesPrompt(trip))), DISHES_SYSTEM))
+                val texts = trip.language.texts
+                reportProgress(Activity(texts.findingDishes))
+                val writing = model.watched { written -> finishedValues(written, "name").takeIf { it.isNotEmpty() }?.let { texts.namingDishes(it.takeLast(4)) } }
+                val answer = writing.ask<Menu>(ChatRequest(listOf(ChatMessage.User(dishesPrompt(trip))), DISHES_SYSTEM))
                 // A dish is kept under the name the stop has in the state, however the model wrote it.
                 val known = answer.value.dishes.mapNotNull { dish -> (trip.stop(dish.stop) ?: trip.stops.singleOrNull())?.let { dish.copy(stop = it.name) } }
                 trip.copy(dishes = known, tokens = trip.tokens + answer.usage)
@@ -192,7 +197,7 @@ private suspend fun located(brief: Brief, sources: Sources, texts: Texts): Pair<
     val unknown = mutableListOf<String>()
     var day = 1
     for (stop in brief.stops) {
-        reportProgress(Activity(texts.findingOnTheMap(stop.place)))
+        reportProgress(Activity(texts.findingOnTheMap(stop.shown.ifBlank { stop.place })))
         val location = sources.geocoder.locate(stop.place)
         if (location == null) {
             unknown += stop.place

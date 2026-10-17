@@ -95,6 +95,9 @@ interface Texts {
     val tryAgain: String
     val somethingWentWrong: String
 
+    /** Under a failure that says the browser could not reach a provider. */
+    val refusedLooksUnreachable: String
+
     fun closedWhileWorking(request: String): String
 
     // The questions
@@ -205,6 +208,19 @@ interface Texts {
     val findingYourPlaces: String
     val whereQuestion: String
     val findingDishes: String
+    val notingWhatYouSaid: String
+
+    /** How long a step has been running, shown after what it does. */
+    fun seconds(count: Int): String
+
+    /** Under a step that has waited a while for a model that has not written anything yet. */
+    val modelThinking: String
+
+    fun asking(question: String): String
+
+    fun foundPlaces(places: List<String>): String
+
+    fun namingDishes(dishes: List<String>): String
 
     fun notOnTheMap(places: List<String>): String
 

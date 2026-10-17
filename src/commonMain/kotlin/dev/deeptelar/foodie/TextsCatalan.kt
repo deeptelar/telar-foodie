@@ -93,6 +93,9 @@ object Catalan : Texts {
     override val tryAgain = "Torna-ho a provar"
     override val somethingWentWrong = "Alguna cosa ha anat malament."
 
+    override val refusedLooksUnreachable =
+        "Si l'adreça és correcta, el més probable és que el proveïdor hagi rebutjat la petició: els navegadors n'amaguen el motiu. Revisa a Configuració la clau, el nom del model i el saldo del compte."
+
     override fun closedWhileWorking(request: String) = "La pàgina es va tancar mentre el planificador treballava en «$request». Tot el que havia trobat està desat."
 
     override val oneQuestion = "Una pregunta"
@@ -236,6 +239,18 @@ object Catalan : Texts {
     override val findingYourPlaces = "Buscant els llocs del teu viatge"
     override val whereQuestion = "On vas, i quants dies?"
     override val findingDishes = "Buscant els plats típics de cada lloc"
+
+    override val notingWhatYouSaid = "Anotant el que m'has dit"
+
+    override fun seconds(count: Int) = "$count s"
+
+    override val modelThinking = "El model pensa abans d'escriure. Aquí pot trigar fins a un minut."
+
+    override fun asking(question: String) = "Escrivint les preguntes: «$question»"
+
+    override fun foundPlaces(places: List<String>) = "Trobat: ${places.joinToString(" · ")}"
+
+    override fun namingDishes(dishes: List<String>) = "Plats: ${dishes.joinToString(", ")}…"
 
     override fun notOnTheMap(places: List<String>) = "No he trobat ${places.joinToString(" ni ")} al mapa. Quin lloc vols dir?"
 

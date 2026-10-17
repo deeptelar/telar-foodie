@@ -12,11 +12,13 @@ import dev.deeptelar.telar.agent.pendingToolCalls
 import dev.deeptelar.telar.checkpoint.browser.LocalStorageCheckpointer
 import dev.deeptelar.telar.serialization.KotlinxStateSerializer
 import io.ktor.client.HttpClient
+import kotlin.js.Date
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonPrimitive
@@ -68,6 +70,10 @@ private class Step(
 
     /** Whether what the node found is in the trip. A node is done before its step is, and only a finished step changes the trip. */
     var settled: Boolean = false
+
+    /** When the node started, and when it last said something, in milliseconds of `Date.now()`. */
+    var started: Double = 0.0
+    var heard: Double = 0.0
 }
 
 /**
@@ -161,6 +167,13 @@ class App(
         render()
         job =
             scope.launch {
+                // A step that waits for a model shows how long it has waited, so that a slow model does not look like a stuck page.
+                val clock = launch {
+                    while (true) {
+                        delay(1000)
+                        if (steps.any { it.status == Status.RUNNING }) renderRun()
+                    }
+                }
                 try {
                     events().collect(::on)
                 } catch (e: CancellationException) {
@@ -169,6 +182,8 @@ class App(
                     failure = e.message ?: texts.somethingWentWrong
                     phase = Phase.FAILED
                     render()
+                } finally {
+                    clock.cancel()
                 }
             }
     }
@@ -176,7 +191,12 @@ class App(
     private fun on(event: GraphEvent<Trip>) {
         when (event) {
             is GraphEvent.NodeStarted -> {
-                step(event.node)?.status = Status.RUNNING
+                step(event.node)?.let {
+                    // The agent's two nodes are one step of the list: it keeps the time of its first round.
+                    if (it.status != Status.RUNNING) it.started = Date.now()
+                    it.heard = Date.now()
+                    it.status = Status.RUNNING
+                }
                 when (event.node) {
                     Nodes.PLAN -> writing = ""
                     // The calls the model just asked for are the last message of the state the tools node starts with.
@@ -187,7 +207,11 @@ class App(
             }
             is GraphEvent.NodeProgress -> {
                 when (val value = event.value) {
-                    is Activity -> step(event.node)?.activity = value.text
+                    is Activity ->
+                        step(event.node)?.let {
+                            it.activity = value.text
+                            it.heard = Date.now()
+                        }
                     is ChatEvent.TextDelta -> writing += value.text
                 }
                 renderRun()
@@ -383,6 +407,8 @@ class App(
                 root.add("section", "card failed") {
                     add("h2", text = texts.gotStuck)
                     add("p", "failure", failure)
+                    // A provider that refuses a request often sends no header that lets the page read why: the browser then reports that it could not reach it.
+                    if ("Fail to fetch" in failure || "Failed to fetch" in failure) add("p", "hint", texts.refusedLooksUnreachable)
                     add("p", text = texts.foundIsSaved)
                     add("div", "actions") {
                         button(texts.tryAgain, "primary") { tryAgain() }
@@ -540,7 +566,13 @@ class App(
                     add("div", "step-text") {
                         add("div", "step-title", step.title)
                         val detail = step.activity.ifEmpty { result(step, trip) }
-                        if (detail.isNotEmpty()) add("div", "step-detail", detail)
+                        val running = step.status == Status.RUNNING
+                        val elapsed = ((Date.now() - step.started) / 1000).toInt()
+                        if (detail.isNotEmpty() || running) {
+                            add("div", "step-detail", listOf(detail, if (running) texts.seconds(elapsed) else "").filter { it.isNotEmpty() }.joinToString(" · "))
+                        }
+                        // A model that thinks before it writes says nothing for a while: say that this is expected.
+                        if (running && step.node in WAITS_FOR_A_MODEL && Date.now() - step.heard > QUIET_MILLIS) add("div", "step-detail quiet", texts.modelThinking)
                         if (step.node == Nodes.PLAN && step.status != Status.WAITING) {
                             if (feed.isNotEmpty()) add("ul", "feed") { feed.forEach { add("li", text = it) } }
                             if (writing.isNotBlank()) add("p", "writing", writing)
@@ -812,6 +844,12 @@ class App(
     private companion object {
         /** How many of the agent's last actions a run shows. */
         const val FEED_LINES = 8
+
+        /** The steps whose node asks a model and waits for its whole answer. */
+        val WAITS_FOR_A_MODEL = setOf(Nodes.INTERVIEW, Nodes.BRIEF, Nodes.DISHES, Nodes.PLAN)
+
+        /** How long a step may say nothing before the page explains why. */
+        const val QUIET_MILLIS = 12_000.0
     }
 }
 

@@ -567,3 +567,7 @@ select.language {
     min-height: 44px;
     padding: 8px 10px;
 }
+
+.step-detail.quiet {
+    font-style: italic;
+}

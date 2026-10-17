@@ -93,6 +93,9 @@ object Spanish : Texts {
     override val tryAgain = "Volver a intentarlo"
     override val somethingWentWrong = "Algo ha ido mal."
 
+    override val refusedLooksUnreachable =
+        "Si la dirección es correcta, lo más probable es que el proveedor haya rechazado la petición: los navegadores ocultan el motivo. Revisa en Ajustes la clave, el nombre del modelo y el saldo de la cuenta."
+
     override fun closedWhileWorking(request: String) = "La página se cerró mientras el planificador trabajaba en «$request». Todo lo que había encontrado está guardado."
 
     override val oneQuestion = "Una pregunta"
@@ -236,6 +239,18 @@ object Spanish : Texts {
     override val findingYourPlaces = "Buscando los lugares de tu viaje"
     override val whereQuestion = "¿Adónde vas y cuántos días?"
     override val findingDishes = "Buscando los platos típicos de cada lugar"
+
+    override val notingWhatYouSaid = "Anotando lo que me has dicho"
+
+    override fun seconds(count: Int) = "$count s"
+
+    override val modelThinking = "El modelo piensa antes de escribir. Aquí puede tardar hasta un minuto."
+
+    override fun asking(question: String) = "Escribiendo las preguntas: «$question»"
+
+    override fun foundPlaces(places: List<String>) = "Encontrado: ${places.joinToString(" · ")}"
+
+    override fun namingDishes(dishes: List<String>) = "Platos: ${dishes.joinToString(", ")}…"
 
     override fun notOnTheMap(places: List<String>) = "No he encontrado ${places.joinToString(" ni ")} en el mapa. ¿A qué lugar te refieres?"
 
