@@ -138,9 +138,8 @@ class PlannerTest {
                 }
 
             planner(model, sources()).test(interviewed("One day in Lisbon"), config()) {
-                // Steps, not nodes: in Telar 0.1.0-alpha10, expectStep after expectNode stops at the end of the node's step.
-                expectStep(Nodes.INTERVIEW)
-                expectStep(Nodes.BRIEF)
+                expectNodes(Nodes.INTERVIEW, Nodes.BRIEF)
+                // The sources run in one step.
                 expectStep(Nodes.GUIDE, Nodes.MAP)
                 expectNodes(Nodes.DISHES, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
                 expectInterruptBefore(Nodes.REVIEW) { trip -> assertEquals(listOf("r2"), trip.route.map { it.restaurantId }) }

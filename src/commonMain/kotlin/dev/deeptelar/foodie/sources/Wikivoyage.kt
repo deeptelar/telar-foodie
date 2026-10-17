@@ -73,7 +73,7 @@ class Wikivoyage(
             }.jsonFrom("The travel guide") as? JsonObject ?: throw SourceException("The travel guide sent no object.")
 
     companion object {
-        private const val USER_AGENT = "FoodieRoute/0.1 (an example app of Telar; https://github.com/deeptelar/telar)"
+        private const val USER_AGENT = "FoodieRoute/0.1 (an example app of Telar; https://github.com/deeptelar/telar-foodie)"
 
         /** The most district pages that are read for one place. */
         private const val DISTRICTS = 8
