@@ -75,6 +75,11 @@ Around the graph:
   page while the planner works, and it continues where it stopped. A source that had answered
   before the page was closed is not asked again: the street map is slow, and Google bills each
   search.
+- **A plan goes into a file and back.** "Save the plan as a file" downloads the run's checkpoint
+  with the trip as readable JSON: the request, the profile, the dishes, every candidate, the route
+  and the agent's whole conversation, but no key. "Open a saved plan" puts the checkpoint back, and
+  the run goes on from where it was saved
+  ([`SavedPlan.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/SavedPlan.kt)).
 - **The traveller can pause the planner.** Pause cancels the run's job; what was saved stays.
   Words written then go with the run when it goes on
   ([`Pause.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Pause.kt)): before the route, they

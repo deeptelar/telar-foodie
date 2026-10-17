@@ -372,4 +372,11 @@ object Spanish : Texts {
     override val stepSpecialists = "Los sitios conocidos por cada plato"
     override fun lookingForSpecialists(stop: String) = "Buscando los sitios conocidos por los platos de $stop"
     override fun knownForDish(dish: String) = "Conocido por: $dish"
+    override val saveToFile = "Guardar el plan en un archivo"
+    override val openAFile = "Abrir un plan guardado"
+    override val savedFileHint =
+        "El archivo tiene tu viaje, lo que le dijiste al planificador y todo lo que encontró, pero ninguna de tus claves. " +
+            "Puedes volver a abrirlo aquí más tarde, o compartirlo para mostrar cómo eligió el planificador."
+    override val notAPlanFile = "Este archivo no es un plan de Foodie Route."
+    override val planFromANewerPage = "Una versión más nueva de la página guardó este plan. Recarga la página y vuelve a abrirlo."
 }

@@ -354,4 +354,11 @@ object English : Texts {
     override val stepSpecialists = "The places known for each dish"
     override fun lookingForSpecialists(stop: String) = "Looking for the places known for the dishes of $stop"
     override fun knownForDish(dish: String) = "Known for: $dish"
+    override val saveToFile = "Save the plan as a file"
+    override val openAFile = "Open a saved plan"
+    override val savedFileHint =
+        "The file has your trip, what you told the planner and everything it found, but none of your keys. " +
+            "Open it here again later, or share it to show how the planner chose."
+    override val notAPlanFile = "This file is not a plan of Foodie Route."
+    override val planFromANewerPage = "A newer version of the page saved this plan. Reload the page and open it again."
 }

@@ -1,11 +1,16 @@
 package dev.deeptelar.foodie
 
 import kotlinx.browser.document
+import kotlinx.browser.window
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.url.URL
+import org.w3c.files.Blob
+import org.w3c.files.BlobPropertyBag
+import org.w3c.files.File
 
 /*
  * The page is built with the DOM directly. Everything that comes from a source or from a model
@@ -53,4 +58,26 @@ fun Element.field(label: String, value: String, type: String = "text", placehold
 
 fun Element.clear() {
     while (firstChild != null) removeChild(firstChild!!)
+}
+
+/** Gives the browser [text] to save as a file called [name]. */
+fun download(name: String, text: String, type: String = "application/json") {
+    val address = URL.createObjectURL(Blob(arrayOf(text), BlobPropertyBag(type = type)))
+    val anchor = document.createElement("a") as HTMLAnchorElement
+    anchor.href = address
+    anchor.download = name
+    document.body?.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    // The browser has read the address once the click is handled.
+    window.setTimeout({ URL.revokeObjectURL(address) }, 1000)
+}
+
+/** Asks the traveller for a file of one of the [types], and gives it to [onPicked]. Nothing happens when they pick none. */
+fun pickFile(types: String, onPicked: (File) -> Unit) {
+    val input = document.createElement("input") as HTMLInputElement
+    input.type = "file"
+    input.accept = types
+    input.onchange = { input.files?.item(0)?.let(onPicked) }
+    input.click()
 }

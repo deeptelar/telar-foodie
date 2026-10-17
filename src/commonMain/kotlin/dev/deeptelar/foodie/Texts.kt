@@ -335,6 +335,15 @@ interface Texts {
     /** On the card of a meal at a place known for a dish of its stop. */
     fun knownForDish(dish: String): String
 
+    // A plan in a file
+
+    val saveToFile: String
+    val openAFile: String
+
+    /** What a saved file holds, and what it does not. */
+    val savedFileHint: String
+    val notAPlanFile: String
+    val planFromANewerPage: String
 }
 
 /** A step of a how-to, with a [link] to where it is done when there is one. */

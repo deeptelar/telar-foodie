@@ -372,4 +372,11 @@ object Catalan : Texts {
     override val stepSpecialists = "Els llocs coneguts per cada plat"
     override fun lookingForSpecialists(stop: String) = "Buscant els llocs coneguts pels plats de $stop"
     override fun knownForDish(dish: String) = "Conegut per: $dish"
+    override val saveToFile = "Desa el pla en un fitxer"
+    override val openAFile = "Obre un pla desat"
+    override val savedFileHint =
+        "El fitxer té el teu viatge, el que li vas dir al planificador i tot el que va trobar, però cap de les teves claus. " +
+            "El pots tornar a obrir aquí més endavant, o compartir-lo per mostrar com va triar el planificador."
+    override val notAPlanFile = "Aquest fitxer no és un pla de Foodie Route."
+    override val planFromANewerPage = "Una versió més nova de la pàgina va desar aquest pla. Torna a carregar la pàgina i obre'l de nou."
 }

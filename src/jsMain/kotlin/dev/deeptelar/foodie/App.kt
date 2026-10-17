@@ -1,6 +1,7 @@
 package dev.deeptelar.foodie
 
 import dev.deeptelar.foodie.sources.Sources
+import dev.deeptelar.telar.Checkpoint
 import dev.deeptelar.telar.CompiledGraph
 import dev.deeptelar.telar.GraphConfig
 import dev.deeptelar.telar.GraphEvent
@@ -13,11 +14,13 @@ import dev.deeptelar.telar.checkpoint.browser.LocalStorageCheckpointer
 import dev.deeptelar.telar.serialization.KotlinxStateSerializer
 import io.ktor.client.HttpClient
 import kotlin.js.Date
+import kotlin.js.Promise
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.await
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -124,6 +127,9 @@ class App(
     private var request = ""
     private var sample = false
     private var failure = ""
+
+    /** Why the file the traveller opened is no plan, for a word under the start. */
+    private var fileFailure = ""
     private var steps = emptyList<Step>()
     private var feed = emptyList<String>()
     private var writing = ""
@@ -351,6 +357,52 @@ class App(
         }
     }
 
+    // A plan in a file
+
+    /** Gives the traveller the saved run as a file: the checkpoint, so that opening the file goes on from where it is. */
+    private fun saveFile() {
+        scope.launch {
+            val saved =
+                try {
+                    checkpointer.load(config.threadId)
+                } catch (_: Throwable) {
+                    null
+                }
+            // The browser blocks its storage: the trip on the page is saved, as a run that is over.
+            val checkpoint = saved ?: trip?.let { Checkpoint(it, emptyList()) } ?: return@launch
+            val now = Date().toISOString()
+            download(fileName(checkpoint.state, now.take(10)), checkpoint.toFile(if (sample) "sample" else settings.modelName, now))
+        }
+    }
+
+    /** Opens a plan the traveller saved as a file: its checkpoint becomes the saved run, and the page shows it. */
+    private fun openFile() {
+        pickFile(".json,application/json") { file ->
+            scope.launch {
+                try {
+                    val checkpoint = planFromFile(file.asDynamic().text().unsafeCast<Promise<String>>().await())
+                    job?.cancel()
+                    // A run saved before would keep its earlier steps in the history of the thread.
+                    checkpointer.delete(config.threadId)
+                    checkpointer.save(config.threadId, checkpoint)
+                    sample = false
+                    fileFailure = ""
+                    tab = Tab.PLAN
+                    show(if (checkpoint.isComplete) GraphResult.Completed(checkpoint.state) else GraphResult.Interrupted(checkpoint.state, checkpoint.nextNodes))
+                } catch (e: NotAPlanException) {
+                    fileFailure = if (e.newer) texts.planFromANewerPage else texts.notAPlanFile
+                    render()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    // The plan was read, but the browser blocks its storage.
+                    fileFailure = e.message ?: texts.somethingWentWrong
+                    render()
+                }
+            }
+        }
+    }
+
     // What a run shows
 
     private fun steps(trip: Trip?): List<Step> {
@@ -510,6 +562,7 @@ class App(
                             settingsOpen = true
                             render()
                         }
+                        button(texts.saveToFile, "ghost") { saveFile() }
                         button(texts.startOver, "ghost") { startOver() }
                     }
                 }
@@ -569,7 +622,9 @@ class App(
                     }
                 }
                 button(texts.trySample, "ghost") { start(texts.sampleRequest, sample = true) }
+                button(texts.openAFile, "ghost") { openFile() }
             }
+            if (fileFailure.isNotEmpty()) add("p", "failure", fileFailure)
             if (speechSupported) {
                 add("p", "hint small", texts.speechPrivacy)
             }
@@ -864,6 +919,7 @@ class App(
     private fun HTMLElement.quietActions() {
         add("div", "quiet-actions") {
             button(texts.seeYourDetails, "link") { openDetails() }
+            button(texts.saveToFile, "link") { saveFile() }
             button(texts.startOver, "link") { startOver() }
         }
     }
@@ -1224,6 +1280,8 @@ class App(
             }
             // The sample asks no model, so it has no tokens to show.
             add("p", "hint small", texts.placesCompared(trip.restaurants.size) + if (trip.tokens.total > 0) " · " + texts.tokensUsed(trip.tokens.total) else "")
+            add("div", "quiet-actions") { button(texts.saveToFile, "link") { saveFile() } }
+            add("p", "hint small", texts.savedFileHint)
         }
 
         add("section", "card") {

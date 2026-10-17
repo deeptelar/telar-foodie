@@ -35,6 +35,14 @@ data class Settings(
                 Provider.OPENAI -> openAiKey.isNotBlank() || openAiUrl.trim() != OpenAiChatModel.OPENAI_BASE_URL
             }
 
+    /** The name of the model of these settings, without its key: a saved plan says which model planned it. */
+    val modelName: String
+        get() =
+            when (provider) {
+                Provider.CLAUDE -> claudeModel
+                Provider.OPENAI -> openAiModel.trim()
+            }
+
     /** The model of these settings, or `null` when it has no key yet. */
     fun model(client: HttpClient): ChatModel? =
         when {
