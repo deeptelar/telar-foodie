@@ -123,6 +123,11 @@ class App(
     private var feed = emptyList<String>()
     private var writing = ""
 
+    /** Which of the dishes shown while the agent chooses is up, since when, and which one was drawn last: -1 before the first. */
+    private var dishShown = 0
+    private var dishShownAt = 0.0
+    private var dishDrawn = -1
+
     /** What the traveller tapped and wrote for each open question, by its text, so that drawing the page again keeps it. */
     private var drafts = emptyMap<String, Draft>()
 
@@ -203,6 +208,8 @@ class App(
         failure = ""
         writing = ""
         feed = emptyList()
+        dishShown = 0
+        dishDrawn = -1
         steps = steps(trip)
         render()
         job =
@@ -597,6 +604,26 @@ class App(
             }
             field(texts.googleKey, settings.googleKey, type = "password", placeholder = "AIza...") { change(settings.copy(googleKey = it)) }
             add("p", "hint", texts.googleBills)
+            add("details", "how-to") {
+                add("summary", text = texts.howToGetAGoogleKey)
+                add("ol") {
+                    // The browser tells Google only the site a request comes from, not the page: the key is restricted to the site.
+                    texts.googleKeySteps(window.location.origin + "/*").forEach { step ->
+                        add("li") {
+                            add("span", text = step.text)
+                            if (step.url.isNotEmpty()) {
+                                add("br")
+                                link(step.link, step.url)
+                            }
+                        }
+                    }
+                }
+                add("p", "hint small") {
+                    link(texts.googlePrices, GoogleConsole.PRICES)
+                    add("span", text = " · ")
+                    link(texts.googleGuide, GoogleConsole.GUIDE)
+                }
+            }
             add("div", "actions") {
                 button(texts.done, "primary") {
                     settingsOpen = false
@@ -643,6 +670,9 @@ class App(
                             if (feed.isNotEmpty()) add("ul", "feed") { feed.forEach { add("li", text = it) } }
                             if (writing.isNotBlank()) add("p", "writing", writing)
                         }
+                        // Choosing the restaurants takes longest: meanwhile the food of the trip is shown, one dish at a time.
+                        val dishes = trip?.whileYouWait().orEmpty()
+                        if (step.node == Nodes.PLAN && running && dishes.isNotEmpty()) whileYouWait(dishes)
                     }
                 }
             }
@@ -652,6 +682,38 @@ class App(
             button(texts.pause, "ghost") { pause() }
             button(texts.cancel, "ghost") { startOver() }
         }
+    }
+
+    /** One of [dishes]: the next one comes after a while, or when the traveller asks for it. */
+    private fun HTMLElement.whileYouWait(dishes: List<Dish>) {
+        if (dishDrawn < 0) {
+            dishShownAt = Date.now()
+        } else if (Date.now() - dishShownAt > DISH_MILLIS) {
+            nextDish()
+        }
+        val dish = dishes[dishShown % dishes.size]
+        // The panel is drawn again every second: only a dish that was not on it yet fades in.
+        val first = dishDrawn < 0
+        val card = add("aside", "tidbit" + if (dishShown != dishDrawn) " fresh" else "") {
+            add("p", "tidbit-label", texts.whileIChoose(trip?.stop(dish.stop)?.title ?: dish.stop))
+            add("p", "tidbit-name", dish.name)
+            add("p", text = dish.what)
+            if (dish.story.isNotBlank()) add("p", "story", dish.story)
+            if (dishes.size > 1) {
+                button(texts.anotherDish, "link") {
+                    nextDish()
+                    renderRun()
+                }
+            }
+        }
+        dishDrawn = dishShown
+        // The steps above fill a phone's screen: the first dish is brought into view once.
+        if (first) window.requestAnimationFrame { card.asDynamic().scrollIntoView(js("({ block: 'nearest', behavior: 'smooth' })")) }
+    }
+
+    private fun nextDish() {
+        dishShown++
+        dishShownAt = Date.now()
     }
 
     /** What was said so far, as a conversation: the request, each question and its answer, and what the traveller added. */
@@ -1105,7 +1167,15 @@ class App(
                 if (dishes.isNotEmpty()) {
                     add("details", "known") {
                         add("summary", text = texts.knownFor(stop.title))
-                        add("ul") { dishes.forEach { dish -> add("li") { add("strong", text = dish.name); add("span", text = ": ${dish.what}") } } }
+                        add("ul") {
+                            dishes.forEach { dish ->
+                                add("li") {
+                                    add("strong", text = dish.name)
+                                    add("span", text = ": ${dish.what}")
+                                    if (dish.story.isNotBlank()) add("span", "story", " ${dish.story}")
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1196,6 +1266,9 @@ class App(
 
         /** How long a step may say nothing before the page explains why. */
         const val QUIET_MILLIS = 12_000.0
+
+        /** How long a dish is shown while the agent chooses: long enough to read three sentences. */
+        const val DISH_MILLIS = 12_000.0
 
         /** The budgets a profile can have, as a model writes them. */
         val BUDGETS = listOf("low", "medium", "high")

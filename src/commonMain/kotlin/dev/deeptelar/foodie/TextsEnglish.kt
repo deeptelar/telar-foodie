@@ -49,7 +49,25 @@ object English : Texts {
     override val apiKey = "API key"
     override val emptyForLocalServer = "Leave empty for a local server"
     override val googleKey = "Google Places key, for ratings (optional)"
-    override val googleBills = "Google bills the owner of the key for each search. Without it, the planner works with the travel guide and the street map."
+    override val googleBills =
+        "Google gives a free amount of searches each month and bills the owner of the key for the rest. " +
+            "A trip takes a search for each stop, and a few more when the planner looks for a place. " +
+            "Without a key, the planner works with the travel guide and the street map."
+    override val howToGetAGoogleKey = "How to get a Google key"
+
+    override fun googleKeySteps(site: String) =
+        listOf(
+            KeyStep("Create a project in the Google Cloud console. Google asks for a billing account, with a card.", "Create a project", GoogleConsole.NEW_PROJECT),
+            KeyStep("Open the Places API (New) and press Enable.", "Places API (New)", GoogleConsole.PLACES_API),
+            KeyStep("Under Credentials, press Create credentials, then API key.", "Credentials", GoogleConsole.CREDENTIALS),
+            KeyStep(
+                "Restrict the key, so that only this page can use it: under Application restrictions choose Websites and add $site, " +
+                    "and under API restrictions choose Places API (New).",
+            ),
+            KeyStep("Copy the key and paste it above."),
+        )
+    override val googlePrices = "Google's prices"
+    override val googleGuide = "Google's own guide"
     override val done = "Done"
 
     override val planningYourRoute = "Planning your route"
@@ -258,6 +276,9 @@ object English : Texts {
 
     override val modelThinking = "The model thinks before it writes. That can take up to a minute here."
 
+    override fun whileIChoose(stop: String) = "While I choose the restaurants · $stop"
+    override val anotherDish = "Another one"
+
     override fun asking(question: String) = "Writing the questions: \u201c$question\u201d"
 
     override fun foundPlaces(places: List<String>) = "Found: ${places.joinToString(" · ")}"
@@ -309,6 +330,16 @@ object English : Texts {
             "A roll with thin pork that simmered in garlic and white wine.",
             "A small custard tart with a burnt top, eaten warm with cinnamon.",
             "A sour cherry liqueur, drunk from a small glass at a counter.",
+        )
+    override val sampleStories =
+        listOf(
+            "The story goes that it is named after Brás, who kept a tavern in the Bairro Alto.",
+            "It comes to the table in its pot, made for two or more to share, and is eaten with a spoon.",
+            "In June, for the feast of Saint Anthony, the whole city grills them in the street.",
+            "A lagareiro worked the olive press, which is why the octopus swims in olive oil.",
+            "People in Lisbon add yellow mustard and have it standing at the counter, with a small draught beer.",
+            "Monks of the Jerónimos Monastery in Belém made them first. When the monasteries closed in 1834, a bakery next door bought the recipe.",
+            "Order it com elas, with the cherries in the glass, or sem elas, without them.",
         )
     override val sampleFirstSearch = "First, a place for pastéis de nata."
     override val sampleWhy = "Sample: taken for the evidence the sources have for it, not for this dish."

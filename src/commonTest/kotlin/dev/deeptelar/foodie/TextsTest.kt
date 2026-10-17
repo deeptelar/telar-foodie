@@ -24,6 +24,8 @@ class TextsTest {
         Language.entries.map { it.texts }.forEach { texts ->
             assertEquals(English.sampleQuestions.map { it.topic }, texts.sampleQuestions.map { it.topic }, "$texts")
             assertEquals(English.sampleDishes.size, texts.sampleDishes.size, "$texts")
+            assertEquals(English.sampleDishes.size, texts.sampleStories.size, "$texts")
+            assertEquals(English.googleKeySteps("x").size, texts.googleKeySteps("x").size, "$texts")
             assertEquals(English.howItWorksSteps.size, texts.howItWorksSteps.size, "$texts")
             assertTrue(texts.examples.isNotEmpty())
         }

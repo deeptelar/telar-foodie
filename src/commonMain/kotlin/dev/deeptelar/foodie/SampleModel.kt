@@ -91,12 +91,13 @@ class SampleModel(
 
     private fun brief(texts: Texts): Brief = Brief(listOf(BriefStop(STOP, shown = texts.sampleStop, days = 2, cuisines = listOf("portuguese", "regional", "seafood"))))
 
-    private fun dishes(texts: Texts): List<Dish> = DISHES.zip(texts.sampleDishes) { (name, meal), what -> Dish(STOP, name, what, meal) }
+    private fun dishes(texts: Texts): List<Dish> =
+        DISHES.zip(texts.sampleDishes.zip(texts.sampleStories)) { (name, meal), (what, story) -> Dish(STOP, name, what, meal, story) }
 
     companion object {
         private const val STOP = "Lisbon, Portugal"
 
-        /** The sample's dishes by their local names, with when they are eaten. What each is comes from [Texts.sampleDishes]. */
+        /** The sample's dishes by their local names, with when they are eaten. What each is comes from [Texts.sampleDishes], and its story from [Texts.sampleStories]. */
         private val DISHES =
             listOf(
                 "bacalhau à brás" to "lunch",

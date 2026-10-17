@@ -49,7 +49,25 @@ object Spanish : Texts {
     override val apiKey = "Clave de la API"
     override val emptyForLocalServer = "Déjala vacía para un servidor local"
     override val googleKey = "Clave de Google Places, para las valoraciones (opcional)"
-    override val googleBills = "Google cobra cada búsqueda al titular de la clave. Sin ella, el planificador usa la guía de viaje y el mapa de calles."
+    override val googleBills =
+        "Google da una cantidad de búsquedas gratis al mes y cobra el resto al titular de la clave. " +
+            "Un viaje hace una búsqueda por parada, y unas pocas más cuando el planificador busca un sitio. " +
+            "Sin clave, el planificador usa la guía de viaje y el mapa de calles."
+    override val howToGetAGoogleKey = "Cómo conseguir una clave de Google"
+
+    override fun googleKeySteps(site: String) =
+        listOf(
+            KeyStep("Crea un proyecto en la consola de Google Cloud. Google pide una cuenta de facturación, con una tarjeta.", "Crear un proyecto", GoogleConsole.NEW_PROJECT),
+            KeyStep("Abre Places API (New) y pulsa Habilitar.", "Places API (New)", GoogleConsole.PLACES_API),
+            KeyStep("En Credenciales, pulsa Crear credenciales y luego Clave de API.", "Credenciales", GoogleConsole.CREDENTIALS),
+            KeyStep(
+                "Restringe la clave, para que solo esta página pueda usarla: en Restricciones de aplicaciones elige Sitios web y añade $site, " +
+                    "y en Restricciones de API elige Places API (New).",
+            ),
+            KeyStep("Copia la clave y pégala arriba."),
+        )
+    override val googlePrices = "Los precios de Google"
+    override val googleGuide = "La guía de Google"
     override val done = "Hecho"
 
     override val planningYourRoute = "Planificando tu ruta"
@@ -276,6 +294,9 @@ object Spanish : Texts {
 
     override val modelThinking = "El modelo piensa antes de escribir. Aquí puede tardar hasta un minuto."
 
+    override fun whileIChoose(stop: String) = "Mientras elijo los restaurantes · $stop"
+    override val anotherDish = "Otro"
+
     override fun asking(question: String) = "Escribiendo las preguntas: «$question»"
 
     override fun foundPlaces(places: List<String>) = "Encontrado: ${places.joinToString(" · ")}"
@@ -327,6 +348,16 @@ object Spanish : Texts {
             "Un panecillo con cerdo en filetes finos cocido en ajo y vino blanco.",
             "Una tartaleta de crema con la superficie tostada, que se come caliente y con canela.",
             "Un licor de guinda que se toma en vasito, de pie en la barra.",
+        )
+    override val sampleStories =
+        listOf(
+            "Dicen que lleva el nombre de Brás, que tenía una taberna en el Bairro Alto.",
+            "Llega a la mesa en su olla, para compartir entre dos o más, y se come con cuchara.",
+            "En junio, por las fiestas de San Antonio, toda la ciudad las asa en la calle.",
+            "El lagareiro trabajaba en la almazara: por eso el pulpo nada en aceite de oliva.",
+            "En Lisboa le ponen mostaza y se toma de pie en la barra, con una caña pequeña.",
+            "Los primeros los hicieron los monjes del Monasterio de los Jerónimos, en Belém. Cuando cerraron los monasterios, en 1834, una pastelería de al lado compró la receta.",
+            "Pídela com elas, con las guindas en el vaso, o sem elas, sin ellas.",
         )
     override val sampleFirstSearch = "Primero, un sitio para los pastéis de nata."
     override val sampleWhy = "Ejemplo: elegido por lo que dicen de él las fuentes, no por este plato."

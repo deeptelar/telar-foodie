@@ -46,6 +46,12 @@ interface Texts {
     val emptyForLocalServer: String
     val googleKey: String
     val googleBills: String
+    val howToGetAGoogleKey: String
+
+    /** How to make a Google key that only [site] can use, one step at a time. */
+    fun googleKeySteps(site: String): List<KeyStep>
+    val googlePrices: String
+    val googleGuide: String
     val done: String
 
     // A run
@@ -266,6 +272,10 @@ interface Texts {
     /** Under a step that has waited a while for a model that has not written anything yet. */
     val modelThinking: String
 
+    /** Over the dishes that are shown one by one while the agent chooses the restaurants. */
+    fun whileIChoose(stop: String): String
+    val anotherDish: String
+
     fun asking(question: String): String
 
     fun foundPlaces(places: List<String>): String
@@ -305,11 +315,30 @@ interface Texts {
 
     /** What each of the sample's dishes is, in the order of `SampleModel`. */
     val sampleDishes: List<String>
+
+    /** A story of each of the sample's dishes, in the same order. */
+    val sampleStories: List<String>
     val sampleFirstSearch: String
     val sampleWhy: String
     val sampleWhyPastry: String
     val sampleSummary: String
     val sampleNoChanges: String
+}
+
+/** A step of a how-to, with a [link] to where it is done when there is one. */
+data class KeyStep(
+    val text: String,
+    val link: String = "",
+    val url: String = "",
+)
+
+/** Where a Google key is made. */
+internal object GoogleConsole {
+    const val NEW_PROJECT = "https://console.cloud.google.com/projectcreate"
+    const val PLACES_API = "https://console.cloud.google.com/apis/library/places.googleapis.com"
+    const val CREDENTIALS = "https://console.cloud.google.com/apis/credentials"
+    const val PRICES = "https://developers.google.com/maps/billing-and-pricing/pricing"
+    const val GUIDE = "https://developers.google.com/maps/documentation/places/web-service/get-api-key"
 }
 
 /** The texts of this language. */

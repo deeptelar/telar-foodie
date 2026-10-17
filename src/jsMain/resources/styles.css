@@ -245,6 +245,71 @@ button.chip {
     overflow-wrap: anywhere;
 }
 
+/* The food of the trip, while the agent chooses the restaurants */
+
+.tidbit {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+}
+
+.tidbit.fresh {
+    animation: fade-in 0.5s ease-out;
+}
+
+.tidbit p {
+    margin: 0 0 6px;
+}
+
+.tidbit-label {
+    color: var(--soft);
+    font-size: 13px;
+}
+
+.tidbit-name {
+    font-weight: 600;
+    color: var(--accent-dark);
+}
+
+.story {
+    font-style: italic;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tidbit.fresh {
+        animation: none;
+    }
+}
+
+/* How to get a Google key */
+
+.how-to {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.how-to summary {
+    cursor: pointer;
+    color: var(--accent-dark);
+}
+
+.how-to ol {
+    padding-left: 20px;
+}
+
+.how-to li {
+    margin-bottom: 6px;
+    overflow-wrap: anywhere;
+}
+
 .feed {
     margin-top: 6px;
     font-size: 14px;

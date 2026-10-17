@@ -130,6 +130,11 @@ data class Dish(
     val what: String,
     @Description("When people eat it: \"breakfast\", \"lunch\", \"snack\" or \"dinner\".")
     val meal: String = "lunch",
+    @Description(
+        "One or two short sentences a curious traveller enjoys: where the dish comes from, or how the people there eat it. " +
+            "Only what is well known. Empty rather than a guess.",
+    )
+    val story: String = "",
 )
 
 /** The typed answer of the `dishes` node. */

@@ -60,7 +60,7 @@ stateDiagram-v2
 | `interview` | Asks the traveller what a food planner asks, a few questions at a time and allergies first, and reads the answers into a `Profile`. The topics are fixed in code; the model writes the questions for the places of the trip and skips what the request already says. Each round pauses the run, and at the end the traveller checks the profile. | A loop on one node with a conditional edge, `interrupt` in every round, `ask<Reading>` |
 | `brief` | A model reads the request and the answers into a `Brief`, and the stops are found on the map, with where the traveller sleeps. When the request names no place, or the map does not know one, the run pauses with a question. | A typed answer with `ask<Brief>`, `interrupt` from inside a node, `Retry` |
 | `guide`, `map`, `reviews` | The three sources are asked at the same time. `reviews` is only in the graph when there is a Google key. What a source answered is kept when the step runs again. | Parallel nodes with a `work` and an update, and no reducer; `effect` |
-| `dishes` | A model names what each stop is known for, with what the guide says and the traveller's allergies, diet and season in front of it. | `ask<Menu>` |
+| `dishes` | A model names what each stop is known for, with what the guide says and the traveller's allergies, diet and season in front of it, and a line of history or custom for each dish. The page shows these one at a time while the agent chooses the restaurants, the slowest part of a plan. | `ask<Menu>` |
 | `plan` ⇄ `tools` | An agent chooses a restaurant for each meal. Its tools search the sources again and write the route into the state. | `toolLoop` in a graph of your own, `StateTool`, a token budget |
 | `order` | Sorts the meals and measures the walks between them, the first of a day from where the traveller sleeps. | A plain node |
 | `review` | The run waits here for the traveller. A change goes back to the agent; a yes ends the run. | `interruptBefore`, `resume` with an update, a conditional edge that loops |
@@ -129,7 +129,10 @@ its address to start the sample at once. For a trip of your own, add a key under
 - **Claude**, with a key of the Anthropic API.
 - **OpenAI, Gemini, Ollama** or another server with the API of OpenAI: its address, a model and a
   key. A local Ollama needs no key.
-- Optionally a key for **Google Places**, for ratings.
+- Optionally a key for **Google Places**, for ratings. **Settings** shows how to get one, step by
+  step; it is a key of the Places API (New), best restricted to the site of the page. Google's
+  [guide](https://developers.google.com/maps/documentation/places/web-service/get-api-key) has the
+  same steps.
 
 The keys are kept in the `localStorage` of your browser. Anyone who can use your browser can read
 them there, so use keys you can revoke.

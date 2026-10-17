@@ -49,7 +49,25 @@ object Catalan : Texts {
     override val apiKey = "Clau de l'API"
     override val emptyForLocalServer = "Deixa-la buida per a un servidor local"
     override val googleKey = "Clau de Google Places, per a les valoracions (opcional)"
-    override val googleBills = "Google cobra cada cerca al titular de la clau. Sense ella, el planificador fa servir la guia de viatge i el mapa de carrers."
+    override val googleBills =
+        "Google dona una quantitat de cerques gratis cada mes i cobra la resta al titular de la clau. " +
+            "Un viatge fa una cerca per parada, i unes quantes més quan el planificador busca un lloc. " +
+            "Sense clau, el planificador fa servir la guia de viatge i el mapa de carrers."
+    override val howToGetAGoogleKey = "Com aconseguir una clau de Google"
+
+    override fun googleKeySteps(site: String) =
+        listOf(
+            KeyStep("Crea un projecte a la consola de Google Cloud. Google demana un compte de facturació, amb una targeta.", "Crea un projecte", GoogleConsole.NEW_PROJECT),
+            KeyStep("Obre Places API (New) i prem Habilita.", "Places API (New)", GoogleConsole.PLACES_API),
+            KeyStep("A Credencials, prem Crea credencials i després Clau d'API.", "Credencials", GoogleConsole.CREDENTIALS),
+            KeyStep(
+                "Restringeix la clau, perquè només aquesta pàgina la pugui fer servir: a Restriccions d'aplicació tria Llocs web i afegeix $site, " +
+                    "i a Restriccions d'API tria Places API (New).",
+            ),
+            KeyStep("Copia la clau i enganxa-la a dalt."),
+        )
+    override val googlePrices = "Els preus de Google"
+    override val googleGuide = "La guia de Google"
     override val done = "Fet"
 
     override val planningYourRoute = "Planificant la teva ruta"
@@ -276,6 +294,9 @@ object Catalan : Texts {
 
     override val modelThinking = "El model pensa abans d'escriure. Aquí pot trigar fins a un minut."
 
+    override fun whileIChoose(stop: String) = "Mentre trio els restaurants · $stop"
+    override val anotherDish = "Un altre"
+
     override fun asking(question: String) = "Escrivint les preguntes: «$question»"
 
     override fun foundPlaces(places: List<String>) = "Trobat: ${places.joinToString(" · ")}"
@@ -327,6 +348,16 @@ object Catalan : Texts {
             "Un panet amb porc a làmines fines cuit amb all i vi blanc.",
             "Una tarteleta de crema amb la superfície torrada, que es menja calenta i amb canyella.",
             "Un licor de guinda que es pren en un gotet, dret a la barra.",
+        )
+    override val sampleStories =
+        listOf(
+            "Diuen que porta el nom d'en Brás, que tenia una taverna al Bairro Alto.",
+            "Arriba a taula a la seva olla, per compartir entre dos o més, i es menja amb cullera.",
+            "Al juny, per les festes de Sant Antoni, tota la ciutat les fa a la brasa al carrer.",
+            "El lagareiro treballava al molí d'oli: per això el pop neda en oli d'oliva.",
+            "A Lisboa hi posen mostassa i se la mengen dempeus a la barra, amb una canya petita.",
+            "Els primers els van fer els monjos del Monestir dels Jerònims, a Belém. Quan van tancar els monestirs, el 1834, una pastisseria del costat en va comprar la recepta.",
+            "Demana-la com elas, amb les guindes al got, o sem elas, sense.",
         )
     override val sampleFirstSearch = "Primer, un lloc per als pastéis de nata."
     override val sampleWhy = "Exemple: triat pel que en diuen les fonts, no per aquest plat."
