@@ -16,6 +16,7 @@ import io.ktor.client.HttpClient
 import kotlin.js.Date
 import kotlin.js.Promise
 import kotlinx.browser.document
+import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -152,10 +153,16 @@ class App(
     private var swaps = emptyMap<Pair<Int, MealTime>, MealSwap>()
     private var job: Job? = null
     private var map: RouteMap? = null
+
+    /** The day the route shows, `null` for the whole trip, and the list of its meals. */
+    private var day: Int? = ShownDay.load()
+    private var dayList: HTMLElement? = null
     private var runPanel: HTMLElement? = null
 
     /** Shows the page, with the saved plan when there is one. */
     fun open() {
+        window.addEventListener("beforeprint", { printing(all = true) })
+        window.addEventListener("afterprint", { printing(all = false) })
         render()
         scope.launch {
             val saved =
@@ -186,6 +193,7 @@ class App(
         this.request = request
         val trip = newTrip(request, language, answers)
         this.trip = trip
+        firstDay()
         tab = Tab.PLAN
         run { planner().stream(trip, config) }
     }
@@ -332,6 +340,12 @@ class App(
         if (tab == Tab.PLAN) (root.querySelector(".turn") as? HTMLElement)?.let { turn -> window.requestAnimationFrame { turn.asDynamic().scrollIntoView(js("({ block: 'start', behavior: 'smooth' })")) } }
     }
 
+    /** A new trip, or a trip planned anew, is shown from its first day. */
+    private fun firstDay() {
+        day = 1
+        ShownDay.save(1)
+    }
+
     private fun startOver() {
         job?.cancel()
         scope.launch {
@@ -364,6 +378,7 @@ class App(
             }
             val again = from.plannedAgain()
             trip = again
+            firstDay()
             tab = Tab.PLAN
             // Named: in a coroutine, a bare `run` is the scope function of the standard library, which runs nothing.
             this@App.run { planner().stream(again, config) }
@@ -413,6 +428,7 @@ class App(
                     checkpointer.save(config.threadId, checkpoint)
                     sample = false
                     fileFailure = ""
+                    firstDay()
                     tab = Tab.PLAN
                     show(if (checkpoint.isComplete) GraphResult.Completed(checkpoint.state) else GraphResult.Interrupted(checkpoint.state, checkpoint.nextNodes))
                 } catch (e: NotAPlanException) {
@@ -509,6 +525,7 @@ class App(
         document.documentElement?.setAttribute("lang", language.code)
         map?.remove()
         map = null
+        dayList = null
         runPanel = null
         root.clear()
 
@@ -1284,31 +1301,11 @@ class App(
             if (trip.route.isEmpty()) {
                 add("p", "failure", texts.noMealPlanned)
             } else {
-                val container = add("div", "map")
-                val days = trip.route.map { it.day }.distinct()
-                if (days.size > 1) {
-                    add("div", "chips") {
-                        button(texts.wholeTrip, "chip") { map?.show(null) }
-                        days.forEach { day -> button(texts.day(day), "chip ${RouteMap.dayClass(day)}") { map?.show(day) } }
-                    }
-                }
-                map = RouteMap(container, trip, texts)
+                // One day at a time: the strip stays at the top of the screen, and a day fits on a phone.
+                if (trip.days > 1) dayStrip(trip)
+                map = RouteMap(add("div", "map"), trip, texts).also { it.show(day) }
             }
-
-            var number = 0
-            (1..trip.days).forEach { day ->
-                val meals = trip.route.filter { it.day == day }
-                add("h3", "day ${RouteMap.dayClass(day)}", texts.dayAt(day, trip.stopOn(day)?.title.orEmpty()))
-                trip.sleepingPlace(day, MealTime.DINNER)?.first?.takeIf { it.isNotBlank() }?.let { add("p", "hint small sleeping", texts.sleepingAt(it)) }
-                if (meals.isEmpty()) add("p", "hint", texts.nothingPlannedThisDay)
-                // A day of one meal is no walk: its card has the link to the place.
-                if (meals.size > 1) trip.dayInGoogleMaps(day)?.let { add("p", "day-link") { link(texts.dayInGoogleMaps, it) } }
-                meals.forEachIndexed { index, meal ->
-                    number++
-                    meal.walk?.let { add("p", "walk", texts.walk(texts.distance(it), fromStay = index == 0)) }
-                    meal(trip, meal, number)
-                }
-            }
+            dayList = add("div", "day-list").also { it.fillDay(trip) }
 
             saveOneByOne(trip)
             trip.stops.forEach { stop ->
@@ -1399,6 +1396,102 @@ class App(
                 }
             }
         }
+    }
+
+    /** The day shown, `null` for the whole trip; a trip of one day has only that day. */
+    private fun shownDay(trip: Trip): Int? = if (trip.days <= 1) 1 else day?.takeIf { it in 1..trip.days }
+
+    /** The days of the trip as tabs: the whole trip, then each day with the town of its stop. */
+    private fun HTMLElement.dayStrip(trip: Trip) {
+        val shown = shownDay(trip)
+        add("nav", "days") {
+            setAttribute("aria-label", texts.wholeTrip)
+            fun tab(label: String, place: String, opens: Int?, classes: String) =
+                add("button", "day-tab $classes" + if (opens == shown) " current" else "") {
+                    setAttribute("type", "button")
+                    setAttribute("data-day", opens?.toString() ?: "")
+                    setAttribute("aria-pressed", (opens == shown).toString())
+                    add("span", "day-tab-label", label)
+                    if (place.isNotEmpty()) add("span", "day-tab-place", place)
+                    onclick = { showDay(opens) }
+                }
+            tab(texts.wholeTrip, "", null, "")
+            (1..trip.days).forEach { tab(texts.day(it), trip.stopOn(it)?.title.orEmpty().substringBefore(',').trim(), it, RouteMap.dayClass(it)) }
+        }
+    }
+
+    /**
+     * Shows [it], a day or the whole trip for `null`, on the map and in the list, and remembers it.
+     * Only the list is drawn again, so the map and the strip stay where they are.
+     */
+    private fun showDay(it: Int?) {
+        val trip = trip ?: return
+        day = it
+        ShownDay.save(it)
+        val shown = shownDay(trip)
+        root.querySelectorAll(".day-tab").let { tabs ->
+            (0 until tabs.length).mapNotNull { tabs.item(it) as? HTMLElement }.forEach { tab ->
+                val current = tab.getAttribute("data-day") == (shown?.toString() ?: "")
+                tab.classList.toggle("current", current)
+                tab.setAttribute("aria-pressed", current.toString())
+                if (current) tab.asDynamic().scrollIntoView(js("({ block: 'nearest', inline: 'center', behavior: 'smooth' })"))
+            }
+        }
+        map?.show(shown)
+        dayList?.let { list ->
+            list.clear()
+            list.fillDay(trip)
+            // A traveller who scrolled down a long day sees the next one from its start, with its map.
+            (root.querySelector(".map") as? HTMLElement)?.let { if (list.getBoundingClientRect().top < 0) it.scrollIntoView(js("({ block: 'start' })")) }
+        }
+    }
+
+    /** The meals of the day shown, or for the whole trip a line for each day, to open it. */
+    private fun HTMLElement.fillDay(trip: Trip) {
+        val shown = shownDay(trip)
+        if (shown == null) {
+            add("ol", "overview") {
+                (1..trip.days).forEach { day ->
+                    add("li", "overview-day ${RouteMap.dayClass(day)}") {
+                        onclick = { showDay(day) }
+                        add("div", "overview-title", texts.dayAt(day, trip.stopOn(day)?.title.orEmpty()))
+                        val meals = trip.route.filter { it.day == day }.sortedBy { it.time }
+                        add("div", "overview-places", meals.mapNotNull { meal -> trip.restaurant(meal.restaurantId)?.let { "${texts.meal(meal.time)}: ${it.name}" } }.joinToString(" · ").ifEmpty { texts.nothingPlannedThisDay })
+                    }
+                }
+            }
+            return
+        }
+        daySection(trip, shown)
+        // The next day is a tap away at the end of this one, without going back up.
+        if (trip.days > 1) {
+            add("div", "day-steps") {
+                if (shown > 1) button("← " + texts.day(shown - 1), "ghost") { showDay(shown - 1) }
+                if (shown < trip.days) button(texts.day(shown + 1) + " →", "ghost next") { showDay(shown + 1) }
+            }
+        }
+    }
+
+    /** The heading of [shown], where the traveller sleeps, and its meals, numbered as on the map. */
+    private fun HTMLElement.daySection(trip: Trip, shown: Int) {
+        val meals = trip.route.filter { it.day == shown }.sortedBy { it.time }
+        add("h3", "day ${RouteMap.dayClass(shown)}", texts.dayAt(shown, trip.stopOn(shown)?.title.orEmpty()))
+        trip.sleepingPlace(shown, MealTime.DINNER)?.first?.takeIf { it.isNotBlank() }?.let { add("p", "hint small sleeping", texts.sleepingAt(it)) }
+        if (meals.isEmpty()) add("p", "hint", texts.nothingPlannedThisDay)
+        // A day of one meal is no walk: its card has the link to the place.
+        if (meals.size > 1) trip.dayInGoogleMaps(shown)?.let { add("p", "day-link") { link(texts.dayInGoogleMaps, it) } }
+        meals.forEachIndexed { index, meal ->
+            meal.walk?.let { add("p", "walk", texts.walk(texts.distance(it), fromStay = index == 0)) }
+            meal(trip, meal, index + 1)
+        }
+    }
+
+    /** A printed route has every day, whichever day the screen shows. */
+    private fun printing(all: Boolean) {
+        val trip = trip ?: return
+        val list = dayList ?: return
+        list.clear()
+        if (all) (1..trip.days).forEach { list.daySection(trip, it) } else list.fillDay(trip)
     }
 
     /**
@@ -1632,6 +1725,30 @@ class App(
 
         /** The budgets a profile can have, as a model writes them. */
         val BUDGETS = listOf("low", "medium", "high")
+    }
+}
+
+/**
+ * The day of the route the traveller looked at last, so that a reload or a change shows that day
+ * again: `null` for the whole trip. A new trip starts at its first day. A browser that blocks its
+ * storage starts at the first day each time.
+ */
+private object ShownDay {
+    private const val KEY = "foodie.day"
+
+    fun load(): Int? =
+        try {
+            localStorage.getItem(KEY).let { if (it == "all") null else it?.toIntOrNull() ?: 1 }
+        } catch (_: Throwable) {
+            1
+        }
+
+    fun save(day: Int?) {
+        try {
+            localStorage.setItem(KEY, day?.toString() ?: "all")
+        } catch (_: Throwable) {
+            // The browser blocks its storage: the day holds until the page is closed.
+        }
     }
 }
 

@@ -363,7 +363,11 @@ button.chip {
 }
 
 .map {
-    height: 320px;
+    /* Short on a phone, so that the day's meals start on the same screen. */
+    height: 34vh;
+    min-height: 200px;
+    max-height: 320px;
+    scroll-margin-top: 72px;
     border-radius: 14px;
     border: 1px solid var(--line);
     z-index: 0;
@@ -529,12 +533,12 @@ h3.day {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
-.pin.day1, .chip.day1 { --day: var(--day1); }
-.pin.day2, .chip.day2 { --day: var(--day2); }
-.pin.day3, .chip.day3 { --day: var(--day3); }
-.pin.day4, .chip.day4 { --day: var(--day4); }
-.pin.day5, .chip.day5 { --day: var(--day5); }
-.pin.day6, .chip.day6 { --day: var(--day6); }
+.day1 { --day: var(--day1); }
+.day2 { --day: var(--day2); }
+.day3 { --day: var(--day3); }
+.day4 { --day: var(--day4); }
+.day5 { --day: var(--day5); }
+.day6 { --day: var(--day6); }
 
 .pin[class*="day"] {
     background: var(--day);
@@ -580,7 +584,7 @@ h3.day6 { border-color: var(--day6); }
 }
 
 @media print {
-    .top button, .card, .chips, .credits, .how {
+    .top button, .card, .chips, .credits, .how, .days, .day-steps {
         display: none;
     }
 
@@ -964,4 +968,98 @@ select.language {
 .up-front-question input {
     width: 100%;
     margin-top: 6px;
+}
+
+/* The days of the route, as tabs that stay at the top of the screen. */
+.days {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    gap: 6px;
+    margin: 0 -16px;
+    padding: 8px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+}
+
+.days::-webkit-scrollbar {
+    display: none;
+}
+
+button.day-tab {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 44px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    border-color: var(--day, var(--line));
+    background: var(--card);
+    color: var(--day, var(--soft));
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+button.day-tab.current {
+    background: var(--day, var(--ink));
+    border-color: var(--day, var(--ink));
+    color: #fff;
+}
+
+.day-tab-label {
+    font-weight: 700;
+}
+
+.day-tab-place {
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+.day-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* The whole trip: a line for each day, which opens it. */
+.overview {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.overview-day {
+    cursor: pointer;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--day, var(--soft));
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+.overview-title {
+    font-weight: 700;
+}
+
+.overview-places {
+    font-size: 14px;
+    color: var(--soft);
+}
+
+.day-steps {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.day-steps .next {
+    margin-left: auto;
 }

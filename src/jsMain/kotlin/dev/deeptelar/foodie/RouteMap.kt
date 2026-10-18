@@ -18,6 +18,9 @@ class RouteMap(
     private val map: dynamic = leaflet.map(container, json("scrollWheelZoom" to false))
     private val points = mutableMapOf<Int, MutableList<Array<Double>>>()
 
+    /** The pins and the line of each day, so that a day can be shown alone. */
+    private val layers = mutableMapOf<Int, dynamic>()
+
     init {
         leaflet
             .tileLayer(
@@ -25,23 +28,26 @@ class RouteMap(
                 json("maxZoom" to 19, "attribution" to "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors"),
             ).addTo(map)
 
-        trip.route.forEachIndexed { index, meal ->
-            val restaurant = trip.restaurant(meal.restaurantId) ?: return@forEachIndexed
-            val point = arrayOf(restaurant.lat, restaurant.lon)
-            points.getOrPut(meal.day) { mutableListOf() } += point
-            val icon = leaflet.divIcon(json("className" to "pin ${dayClass(meal.day)}", "html" to "${index + 1}", "iconSize" to arrayOf(28, 28)))
-            // The popup is an element with text in it, so a name cannot be read as HTML.
-            val popup = (document.createElement("div") as HTMLElement).apply { textContent = "${texts.meal(meal.time)}: ${restaurant.name}" }
-            leaflet.marker(point, json("icon" to icon)).addTo(map).bindPopup(popup)
-        }
-        points.forEach { (day, line) ->
-            leaflet.polyline(line.toTypedArray(), json("color" to DAY_COLORS[(day - 1) % DAY_COLORS.size], "weight" to 3, "opacity" to 0.75, "dashArray" to "6 6")).addTo(map)
+        trip.route.groupBy { it.day }.forEach { (day, meals) ->
+            val layer = leaflet.layerGroup()
+            layers[day] = layer
+            // Numbered within the day, as the day's cards are.
+            meals.sortedBy { it.time }.mapNotNull { meal -> trip.restaurant(meal.restaurantId)?.let { meal to it } }.forEachIndexed { index, (meal, restaurant) ->
+                val point = arrayOf(restaurant.lat, restaurant.lon)
+                points.getOrPut(day) { mutableListOf() } += point
+                val icon = leaflet.divIcon(json("className" to "pin ${dayClass(day)}", "html" to "${index + 1}", "iconSize" to arrayOf(28, 28)))
+                // The popup is an element with text in it, so a name cannot be read as HTML.
+                val popup = (document.createElement("div") as HTMLElement).apply { textContent = "${texts.meal(meal.time)}: ${restaurant.name}" }
+                leaflet.marker(point, json("icon" to icon)).addTo(layer).bindPopup(popup)
+            }
+            points[day]?.let { line -> leaflet.polyline(line.toTypedArray(), json("color" to DAY_COLORS[(day - 1) % DAY_COLORS.size], "weight" to 3, "opacity" to 0.75, "dashArray" to "6 6")).addTo(layer) }
         }
         show(null)
     }
 
-    /** Moves the map to the meals of [day], or to the whole route for `null`. */
+    /** Shows the meals of [day] alone, or the whole route for `null`, and moves the map to them. */
     fun show(day: Int?) {
+        layers.forEach { (it, layer) -> if (day == null || it == day) layer.addTo(map) else layer.remove() }
         val shown = (if (day == null) points.values.flatten() else points[day].orEmpty()).toTypedArray()
         if (shown.isEmpty()) {
             map.setView(arrayOf(20.0, 0.0), 2)
