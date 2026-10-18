@@ -1450,8 +1450,23 @@ class App(
                     add("ul") { trip.notes.forEach { add("li", text = it) } }
                 }
             }
-            // The sample asks no model, so it has no tokens to show.
+            // The sample asks no model, so it has no tokens to show, and searches no Google.
+            if (!sample && (trip.tokens.total > 0 || trip.googleSearches > 0)) costOf(trip)
             add("p", "hint small", texts.placesCompared(trip.restaurants.size) + if (trip.tokens.total > 0) " · " + texts.tokensUsed(trip.tokens.total) else "")
+        }
+    }
+
+    /** What [trip] cost at the providers' list prices, for the model of the settings: what an app that paid for it would pay. */
+    private fun HTMLElement.costOf(trip: Trip) {
+        val cost = trip.cost(settings.modelName)
+        val model = Settings.CLAUDE_MODELS.firstOrNull { it.first == settings.modelName }?.second ?: settings.modelName
+        add("details", "known") {
+            add("summary", text = cost.total?.let { texts.costAbout(texts.money(it)) } ?: texts.whatItCost)
+            add("ul") {
+                if (trip.tokens.total > 0) add("li", text = texts.modelCost(model, trip.tokens.inputTokens, trip.tokens.outputTokens, cost.model?.let(texts::money)))
+                if (trip.googleSearches > 0) add("li", text = texts.googleCost(trip.googleSearches, texts.money(cost.google)))
+            }
+            add("p", "hint small", texts.atListPrices)
         }
     }
 

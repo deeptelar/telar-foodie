@@ -173,7 +173,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                     work = { trip ->
                         gather(trip, trip.language.texts.theReviews) { stop ->
                             reportProgress(Activity(trip.language.texts.readingReviews(stop.title)))
-                            Found(effect("reviews ${stop.name}") { reviews.search(stop.name, reviewQuery(stop), stop.location) })
+                            Found(effect("reviews ${stop.name}") { reviews.search(stop.name, reviewQuery(stop), stop.location) }, googleSearches = 1)
                         }
                     },
                 ) { trip, found -> trip.with(found) }
@@ -221,16 +221,16 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                         // Google bills each search: only the first few dishes of a stop, which a model names first, are searched there.
                         val reviewed =
                             sources.reviews?.let { reviews ->
-                                dishes.take(REVIEWED_DISHES).flatMap { dish ->
+                                dishes.take(REVIEWED_DISHES).mapNotNull { dish ->
                                     try {
                                         effect("specialists ${stop.name} ${dish.name}") { reviews.search(stop.name, "best ${dish.name} in ${stop.name}", stop.location) }
                                     } catch (e: Throwable) {
                                         if (!e.isFailure()) throw e
-                                        emptyList()
+                                        null
                                     }
                                 }
                             }.orEmpty()
-                        Found(onMap + reviewed)
+                        Found(onMap + reviewed.flatten(), googleSearches = reviewed.size)
                     }
                 },
             ) { trip, found -> trip.with(found) }
@@ -313,6 +313,8 @@ internal data class Found(
     val guideNotes: Map<String, String> = emptyMap(),
     val notes: List<String> = emptyList(),
     val sights: List<Sight> = emptyList(),
+    /** The searches of Google Places that answered, which Google bills. */
+    val googleSearches: Int = 0,
 )
 
 /**
@@ -330,7 +332,7 @@ private suspend fun gather(trip: Trip, source: String, ask: suspend (Stop) -> Fo
                 if (!e.isFailure()) throw e
                 Found(notes = listOf(trip.language.texts.gaveNoAnswer(source, stop.name, e.message.orEmpty())))
             }
-        all = Found(all.restaurants + found.restaurants, all.guideNotes + found.guideNotes, all.notes + found.notes, all.sights + found.sights)
+        all = Found(all.restaurants + found.restaurants, all.guideNotes + found.guideNotes, all.notes + found.notes, all.sights + found.sights, all.googleSearches + found.googleSearches)
     }
     return all
 }
@@ -357,7 +359,10 @@ private suspend fun guideNotes(trip: Trip, pages: Shared<String, GuidePage>): Ma
     }
 
 private fun Trip.with(found: Found): Trip =
-    copy(restaurants = restaurants.merged(found.restaurants), guideNotes = guideNotes + found.guideNotes, notes = notes + found.notes, sights = sights + found.sights)
+    copy(
+        restaurants = restaurants.merged(found.restaurants), guideNotes = guideNotes + found.guideNotes, notes = notes + found.notes, sights = sights + found.sights,
+        googleSearches = googleSearches + found.googleSearches,
+    )
 
 /** The meals in the order they are eaten, each with the walk from the meal before it on the same day, or from where the traveller slept. */
 internal fun ordered(trip: Trip): List<Meal> {

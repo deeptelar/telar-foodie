@@ -244,6 +244,23 @@ interface Texts {
 
     fun tokensUsed(count: Int): String
 
+    /** The heading of what a plan cost, when the model's price is not known. */
+    val whatItCost: String
+
+    /** The heading of what a plan cost, [amount] in all. */
+    fun costAbout(amount: String): String
+
+    /** What the model's tokens cost; [amount] is `null` for a model without a known price. */
+    fun modelCost(model: String, read: Int, written: Int, amount: String?): String
+
+    fun googleCost(searches: Int, amount: String): String
+
+    /** What the amounts of a cost are, and what can make them lower. */
+    val atListPrices: String
+
+    /** An amount of US dollars, with two decimals. */
+    fun money(dollars: Double): String
+
     fun ratings(count: Int): String
 
     fun meal(time: MealTime): String

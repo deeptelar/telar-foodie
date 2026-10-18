@@ -256,6 +256,19 @@ object Catalan : Texts {
 
     override fun tokensUsed(count: Int) = "$count tokens utilitzats"
 
+    override val whatItCost = "El que ha costat aquest pla"
+
+    override fun costAbout(amount: String) = "Aquest pla ha costat uns $amount"
+
+    override fun modelCost(model: String, read: Int, written: Int, amount: String?) = "$model: $read tokens llegits i $written escrits" + (amount?.let { " · $it" } ?: "")
+
+    override fun googleCost(searches: Int, amount: String) = "Google Places: $searches " + (if (searches == 1) "cerca" else "cerques") + " · $amount"
+
+    override val atListPrices =
+        "Als preus de llista dels proveïdors d'octubre de 2026. Google no cobra les primeres 1.000 cerques de cada mes, i la memòria cau d'un proveïdor pot abaratir els tokens llegits."
+
+    override fun money(dollars: Double) = amount(dollars, ',') + " US$"
+
     override fun ratings(count: Int) = "$count valoracions"
 
     override fun meal(time: MealTime) =

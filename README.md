@@ -110,6 +110,10 @@ Around the graph:
 - **The page shows the run live.** [`App.kt`](src/jsMain/kotlin/dev/deeptelar/foodie/App.kt)
   collects `stream()`: a node that starts, what it reports with `reportProgress`, the text of the
   model as it is written, and the tool calls of the agent.
+- **A plan says what it cost.** The trip counts its tokens and its searches of Google Places in
+  its state, and the end of the route prices them at the providers' list prices
+  ([`Cost.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Cost.kt)): what an app that paid for its
+  travellers' plans would pay. Seven days with two changes cost about $2.12 with Claude Opus 5.5.
 - **A source that fails does not fail the trip.** The street map's public servers are busy now and
   then. The trip is then planned with what the other sources found, and says what is missing.
 - **The tests need no key and no network.** [`PlannerTest`](src/commonTest/kotlin/dev/deeptelar/foodie/PlannerTest.kt)

@@ -430,6 +430,8 @@ class PlannerTest {
             assertEquals(MapSearch.Dishes(listOf("bifana", "bifanas")), searches.last())
             // A drink that every bar pours has no words: only the sandwich is searched in the reviews.
             assertEquals("best Bifana in $lisbon", queries.last())
+            // Google bills each search: the trip counts them.
+            assertEquals(queries.size, run.state.googleSearches)
             assertEquals(listOf(castle), run.state.sights)
             val prompt = model.requests[2].messages.first().text
             assertTrue(Regex("""\[r\d+\] Casa das Bifanas · sandwich · known for: Bifana""").containsMatchIn(prompt), prompt)
@@ -495,6 +497,8 @@ class PlannerTest {
             assertEquals(setOf(Nodes.GUIDE, Nodes.MAP, Nodes.REVIEWS, Nodes.DISHES), run.steps[2].toSet())
             // The salt cod of the menu has no words to search for: the specialists step searches nothing.
             assertEquals(listOf("traditional portuguese restaurant where locals eat", "best bacalhau"), queries)
+            // The node's search and the agent's both count.
+            assertEquals(2, run.state.googleSearches)
             // The rating joined the entry of the map.
             val ze = run.state.restaurants.single { it.name == "Zé da Mouraria" }
             assertEquals(setOf(Source.MAP, Source.REVIEWS), ze.sources)

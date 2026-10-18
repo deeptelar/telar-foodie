@@ -42,6 +42,8 @@ data class Trip(
     val messages: List<ChatMessage> = emptyList(),
     /** The tokens the models used for this trip. */
     val tokens: TokenUsage = TokenUsage(),
+    /** The searches of Google Places for this trip: Google bills each one. */
+    val googleSearches: Int = 0,
     /** [tokens] when the agent began its current turn: the first plan, or a change the traveller asked for. */
     val turnStart: Int = 0,
     /** Written by the traveller at the review: `true` ends the run. */

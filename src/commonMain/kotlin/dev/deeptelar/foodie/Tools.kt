@@ -202,7 +202,8 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
                 val stop = trip.knownStop(search.stop)
                 val around = trip.around(stop, search.near, sources)
                 reportProgress(Activity(trip.language.texts.searchingReviews(around?.first ?: stop.title, search.query)))
-                trip.found(reviews.search(stop.name, search.query, around?.second ?: stop.location), "Google found nothing for \"${search.query}\".", around)
+                val found = reviews.search(stop.name, search.query, around?.second ?: stop.location)
+                trip.copy(googleSearches = trip.googleSearches + 1).found(found, "Google found nothing for \"${search.query}\".", around)
             }
         },
     )
