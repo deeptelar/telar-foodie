@@ -210,7 +210,14 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                         if (dishes.isEmpty()) return@gather Found()
                         reportProgress(Activity(trip.language.texts.lookingForSpecialists(stop.title)))
                         val words = dishes.flatMap { it.words }.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
-                        val onMap = effect("specialists ${stop.name} ${words.hashCode()}") { sources.map.restaurants(stop.name, stop.location, MapSearch.Dishes(words), MAP_RADIUS) }
+                        // A map that does not answer leaves the reviews to search: the map's own step already said that it did not.
+                        val onMap =
+                            try {
+                                effect("specialists ${stop.name} ${words.hashCode()}") { sources.map.restaurants(stop.name, stop.location, MapSearch.Dishes(words), MAP_RADIUS) }
+                            } catch (e: Throwable) {
+                                if (!e.isFailure()) throw e
+                                emptyList()
+                            }
                         // Google bills each search: only the first few dishes of a stop, which a model names first, are searched there.
                         val reviewed =
                             sources.reviews?.let { reviews ->

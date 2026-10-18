@@ -434,6 +434,29 @@ class PlannerTest {
         }
 
     @Test
+    fun `when the map does not answer, the places known for a dish are still searched in the reviews`() =
+        runTest {
+            val cafe = Restaurant(stop = lisbon, name = "Café Bifana", lat = 38.7135, lon = -9.1390, rating = 4.7, ratings = 900, sources = setOf(Source.REVIEWS))
+            val queries = mutableListOf<String>()
+            val reviews = PlaceReviews { _, query, _ -> (if (query.startsWith("best")) listOf(cafe) else emptyList()).also { queries += query } }
+            val dishes = Menu(listOf(Dish(lisbon, "Bifana", "A pork sandwich.", "lunch", words = listOf("bifana"))))
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(dishes)
+                    says("Planned.")
+                }
+            val down = StreetMap { _, _, _, _ -> throw SourceException("No server of the street map answered.") }
+
+            val run = planner(model, sources(map = down, reviews = reviews)).stream(interviewed("One day in Lisbon"), config()).record()
+
+            assertEquals("best Bifana in $lisbon", queries.last())
+            assertTrue("Café Bifana · known for: Bifana" in model.requests[2].messages.first().text)
+            // The map's own step says that it did not answer, once.
+            assertEquals(1, run.state.notes.size, run.state.notes.toString())
+        }
+
+    @Test
     fun `with a source of reviews the graph has a node and a tool for it`() =
         runTest {
             val rated = Restaurant(stop = lisbon, name = "Zé da Mouraria", lat = 38.71551, lon = -9.13621, rating = 4.6, ratings = 3200, sources = setOf(Source.REVIEWS))
