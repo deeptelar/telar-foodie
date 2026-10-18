@@ -16,6 +16,8 @@ object Catalan : Texts {
     override val startHint =
         "Explica-m'ho per escrit o en veu alta: on, quant de temps, amb qui, què t'encanta i què no pots menjar. " +
             "Et pregunto el que falti."
+    override val upFrontTitle = "Digues-m'ho ara i no t'ho preguntaré"
+    override val upFrontHint = "Tot és opcional: el que et saltis, t'ho preguntaré després si el viatge ho necessita."
     override val requestPlaceholder = "3 dies a Lisboa i 2 a Porto. Res de porc, i m'encanten els dolços."
     override val examples =
         listOf(

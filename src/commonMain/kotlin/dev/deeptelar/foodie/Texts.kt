@@ -25,6 +25,10 @@ interface Texts {
 
     val whereAreYouGoing: String
     val startHint: String
+
+    /** Above the questions of the start page that the traveller can answer before the interview. */
+    val upFrontTitle: String
+    val upFrontHint: String
     val requestPlaceholder: String
     val examples: List<String>
     val planMyRoute: String

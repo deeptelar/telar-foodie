@@ -140,6 +140,18 @@ enum class InterviewStage {
     DONE,
 }
 
+/** The topics the start page asks about with answers to tap, next to the request: what every trip needs, so the interview need not ask it. */
+val UP_FRONT: List<Topic> = listOf(Topic.ALLERGIES, Topic.PREGNANCY, Topic.DIET, Topic.MEALS, Topic.BUDGET, Topic.TASTE)
+
+/**
+ * A new trip for [request], with what the traveller answered on the start page: those topics are
+ * covered, so the interview asks only about the others. A skipped question is asked as usual.
+ */
+fun newTrip(request: String, language: Language, answers: List<Answer> = emptyList()): Trip {
+    val given = answers.filter { it.topic != null && it.text.isNotBlank() }
+    return Trip(request, language, answers = given, interview = Interview(covered = given.mapNotNull { it.topic }.toSet()))
+}
+
 /** The topics that are asked about even when the request mentions them: a planner makes sure of what is a matter of health. */
 internal val ALWAYS_ASKED: Set<Topic> = setOf(Topic.ALLERGIES, Topic.PREGNANCY)
 

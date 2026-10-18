@@ -16,6 +16,8 @@ object English : Texts {
     override val startHint =
         "Tell me about it, in writing or out loud: where, for how long, who comes along, what you love and what you cannot eat. " +
             "I ask about whatever is missing."
+    override val upFrontTitle = "Tell me now, and I won't ask"
+    override val upFrontHint = "All optional: what you skip, I ask later if the trip needs it."
     override val requestPlaceholder = "3 days in Lisbon and 2 in Porto. No pork, and I love pastries."
     override val examples =
         listOf(

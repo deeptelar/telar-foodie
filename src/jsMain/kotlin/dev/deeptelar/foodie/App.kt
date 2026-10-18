@@ -181,10 +181,10 @@ class App(
         return planner(model, Sources.online(client, settings.googleKey), planModel = planModel)
     }
 
-    private fun start(request: String, sample: Boolean) {
+    private fun start(request: String, sample: Boolean, answers: List<Answer> = emptyList()) {
         this.sample = sample
         this.request = request
-        val trip = Trip(request, language = language)
+        val trip = newTrip(request, language, answers)
         this.trip = trip
         tab = Tab.PLAN
         run { planner().stream(trip, config) }
@@ -379,7 +379,7 @@ class App(
                 } catch (_: Throwable) {
                     null
                 }
-            if (saved == null) start(request, sample) else resume()
+            if (saved == null) start(request, sample, trip?.answers.orEmpty()) else resume()
         }
     }
 
@@ -635,6 +635,7 @@ class App(
                     }
                 }
             }
+            upFront()
             add("div", "actions") {
                 button(texts.planMyRoute, "primary") {
                     when {
@@ -644,7 +645,7 @@ class App(
                             settingsOpen = true
                             render()
                         }
-                        else -> start(request.trim(), sample = false)
+                        else -> start(request.trim(), sample = false, upFrontAnswers())
                     }
                 }
                 button(texts.trySample, "ghost") { start(texts.sampleRequest, sample = true) }
@@ -663,6 +664,31 @@ class App(
             add("ol") { texts.howItWorksSteps.forEach { add("li", text = it) } }
         }
     }
+
+    /**
+     * The questions every trip needs, with answers to tap next to the request, so the interview
+     * does not ask them again. All of them can be skipped.
+     */
+    private fun HTMLElement.upFront() {
+        add("details", "up-front") {
+            setAttribute("open", "")
+            add("summary", text = texts.upFrontTitle)
+            add("p", "hint small", texts.upFrontHint)
+            UP_FRONT.map { texts.question(it) }.forEach { question ->
+                add("div", "up-front-question") {
+                    add("p", "field-label", question.text)
+                    add("div", "chips") { question.options.forEach { chip(question, it) } }
+                    if (question.topic == Topic.ALLERGIES) add("p", "hint small", texts.allergyNote)
+                    textInput(drafts[question.text]?.own.orEmpty(), texts.somethingElse, question.text) { text ->
+                        drafts = drafts + (question.text to (drafts[question.text] ?: Draft()).copy(own = text))
+                    }
+                }
+            }
+        }
+    }
+
+    /** What the traveller answered on the start page: a skipped question has no answer, and the interview asks it. */
+    private fun upFrontAnswers(): List<Answer> = UP_FRONT.map { texts.question(it) }.map { Answer(it.topic, it.text, drafts[it.text]?.text.orEmpty()) }
 
     private fun HTMLElement.settingsPanel() {
         add("section", "card settings") {

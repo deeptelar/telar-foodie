@@ -946,3 +946,22 @@ select.language {
     align-items: center;
     gap: 6px;
 }
+
+/* The questions of the start page that the traveller can answer before the interview. */
+.up-front {
+    margin: 12px 0;
+}
+
+.up-front summary {
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.up-front-question {
+    margin-top: 12px;
+}
+
+.up-front-question input {
+    width: 100%;
+    margin-top: 6px;
+}

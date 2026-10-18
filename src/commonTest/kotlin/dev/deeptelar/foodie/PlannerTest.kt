@@ -807,6 +807,30 @@ class PlannerTest {
         }
 
     @Test
+    fun `what the traveller answered on the start page is not asked again`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    // The model would ask about allergies again: the topics answered on the start page are covered.
+                    answers(Reading(Profile(allergies = listOf(Allergy("shellfish"))), answered = listOf(Topic.WHERE), questions = listOf(Question(Topic.ALLERGIES, "Any allergy?"), Question(Topic.DATES, "When?"))))
+                }
+            val answers =
+                UP_FRONT.map { English.question(it) }.map { question ->
+                    Answer(question.topic, question.text, mapOf(Topic.ALLERGIES to "Shellfish", Topic.PREGNANCY to "No")[question.topic].orEmpty())
+                }
+            val trip = newTrip("One day in Lisbon", Language.ENGLISH, answers)
+            // A skipped question is no answer, and the interview asks it.
+            assertEquals(listOf(Topic.ALLERGIES, Topic.PREGNANCY), trip.answers.map { it.topic })
+
+            val asked = planner(model, sources()).invoke(trip, config())
+
+            assertEquals(listOf(Topic.DIET, Topic.DATES, Topic.PARTY), asked.state.questions.map { it.topic })
+            val prompt = model.requests.single().messages.first().text
+            assertTrue("- ALLERGIES: Allergies (done)" in prompt, prompt)
+            assertTrue("- ${English.question(Topic.ALLERGIES).text} Shellfish" in prompt, prompt)
+        }
+
+    @Test
     fun `a traveller who wants to plan right away skips the rest of the interview`() =
         runTest {
             val model =

@@ -16,6 +16,8 @@ object Spanish : Texts {
     override val startHint =
         "Cuéntamelo por escrito o en voz alta: adónde, cuánto tiempo, con quién, qué te encanta y qué no puedes comer. " +
             "Te pregunto lo que falte."
+    override val upFrontTitle = "Dímelo ahora y no te lo preguntaré"
+    override val upFrontHint = "Todo es opcional: lo que te saltes, te lo pregunto después si el viaje lo necesita."
     override val requestPlaceholder = "3 días en Lisboa y 2 en Oporto. Nada de cerdo, y me encantan los dulces."
     override val examples =
         listOf(
