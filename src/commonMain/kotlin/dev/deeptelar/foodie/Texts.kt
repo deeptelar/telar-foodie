@@ -420,6 +420,11 @@ interface Texts {
     val recommended: String
     val yourChoice: String
     val otherOptions: String
+
+    /** The button that opens a meal's card, and how many other places were offered for it. */
+    val details: String
+
+    fun otherOptionsCount(count: Int): String
     val chooseThisOne: String
 }
 

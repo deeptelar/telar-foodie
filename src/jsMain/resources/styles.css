@@ -1215,3 +1215,53 @@ article.meal.changing .meal-text > :not(.changing-note) {
         display: none;
     }
 }
+
+/* A meal's card: closed, where, what to order and what to watch out for; open, everything. */
+.meal-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+}
+
+.meal:not(.open) .meal-more {
+    display: none;
+}
+
+.meal-more {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--line);
+}
+
+.meal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0 16px;
+}
+
+.meal-actions > .marked-swap {
+    flex-basis: 100%;
+}
+
+button.meal-toggle::after {
+    content: " ▾";
+}
+
+.meal.open button.meal-toggle::after {
+    content: " ▴";
+}
+
+@media print {
+    .meal .meal-more {
+        display: flex;
+    }
+
+    .meal-actions {
+        display: none;
+    }
+}

@@ -427,5 +427,8 @@ object English : Texts {
     override val recommended = "Recommended"
     override val yourChoice = "Your choice"
     override val otherOptions = "Other options"
+    override val details = "Details"
+
+    override fun otherOptionsCount(count: Int) = if (count == 1) "1 other option" else "$count other options"
     override val chooseThisOne = "Choose this one"
 }

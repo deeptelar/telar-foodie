@@ -161,6 +161,9 @@ class App(
     private var revising = false
     private var changing = emptySet<Pair<Int, MealTime>>()
     private var beforeChange: Checkpoint<Trip>? = null
+
+    /** The meals whose cards are open, by their day and time. */
+    private var opened = emptySet<Pair<Int, MealTime>>()
     private var job: Job? = null
     private var map: RouteMap? = null
 
@@ -390,6 +393,8 @@ class App(
         steps = steps(trip)
         val changed = changing.minWithOrNull(compareBy({ it.first }, { it.second }))
         val revised = revising
+        // The changed places open, with the places offered for them.
+        if (result.state.offers.isNotEmpty()) opened = opened + changing.filter { result.state.offerFor(it.first, it.second) != null }
         changing = emptySet()
         revising = false
         render()
@@ -1644,48 +1649,79 @@ class App(
             }.setAttribute("aria-label", texts.onTheMap)
             add("div", "meal-text") {
                 if (beingChanged) add("p", "changing-note", texts.lookingForOthers)
-                add("div", "meal-time", texts.meal(meal.time))
-                add("h4", text = restaurant.name)
-                restaurant.rating?.let { stars -> add("div", "rating", "★ $stars" + restaurant.ratings?.let { " · " + texts.ratings(it) }.orEmpty()) }
-                add("p", "order") {
-                    add("strong", text = texts.order)
-                    add("span", text = meal.dish)
-                    trip.dishes.firstOrNull { it.name.equals(meal.dish, ignoreCase = true) }?.let { add("span", "what", " · ${it.what}") }
+                // Closed, a card says where, what to order and what to watch out for: the rest opens with a tap.
+                val more = add("div", "meal-summary") {
+                    add("div", "meal-time", texts.meal(meal.time))
+                    add("h4", text = restaurant.name)
+                    restaurant.rating?.let { stars -> add("div", "rating", "★ $stars" + restaurant.ratings?.let { " · " + texts.ratings(it) }.orEmpty()) }
+                    add("p", "order") {
+                        add("strong", text = texts.order)
+                        add("span", text = meal.dish)
+                    }
                 }
-                add("p", "why", meal.why)
                 if (meal.caution.isNotBlank()) add("p", "caution", "⚠ ${meal.caution}")
                 val offer = trip.offerFor(meal.day, meal.time)
-                add("div", "badges") {
-                    // Of the places the agent offered, the one it recommends is always marked.
-                    if (offer != null) {
+                // Of the places the agent offered, the one it recommends is always marked.
+                if (offer != null) {
+                    add("div", "badges") {
                         if (offer.recommended.restaurantId == meal.restaurantId) add("span", "badge recommended", "★ " + texts.recommended) else add("span", "badge chosen", texts.yourChoice)
                     }
-                    trip.speciality(restaurant)?.let { add("span", "badge speciality", texts.knownForDish(it.name)) }
-                    restaurant.sources.forEach { add("span", "badge", texts.source(it)) }
                 }
-                val facts = listOf(restaurant.cuisine, restaurant.address, restaurant.price, restaurant.hours).filter { it.isNotBlank() }
-                if (facts.isNotEmpty()) add("p", "facts", facts.joinToString(" · "))
-                val booking = texts.booking(restaurant.reservation)
-                if (booking != null || restaurant.phone.isNotBlank()) {
-                    add("p", "booking") {
-                        booking?.let { add("span", text = it) }
-                        if (booking != null && restaurant.phone.isNotBlank()) add("span", text = " · ")
-                        if (restaurant.phone.isNotBlank()) phoneLink(restaurant.phone)
+                val others = offer?.options.orEmpty().count { it.restaurantId != meal.restaurantId && trip.restaurant(it.restaurantId) != null }
+                val toggle = add("div", "meal-actions") {
+                    button(texts.details + if (others > 0 && phase == Phase.REVIEW) " · " + texts.otherOptionsCount(others) else "", "link meal-toggle") { toggleMeal(card, meal) }
+                    // The agent changes the route only while it waits for the traveller.
+                    if (phase == Phase.REVIEW) swapControl(trip, meal)
+                }
+                more.onclick = { toggleMeal(card, meal) }
+                add("div", "meal-more") {
+                    trip.dishes.firstOrNull { it.name.equals(meal.dish, ignoreCase = true) }?.let { add("p", "what", it.what) }
+                    add("p", "why", meal.why)
+                    add("div", "badges") {
+                        trip.speciality(restaurant)?.let { add("span", "badge speciality", texts.knownForDish(it.name)) }
+                        restaurant.sources.forEach { add("span", "badge", texts.source(it)) }
                     }
+                    val facts = listOf(restaurant.cuisine, restaurant.address, restaurant.price, restaurant.hours).filter { it.isNotBlank() }
+                    if (facts.isNotEmpty()) add("p", "facts", facts.joinToString(" · "))
+                    val booking = texts.booking(restaurant.reservation)
+                    if (booking != null || restaurant.phone.isNotBlank()) {
+                        add("p", "booking") {
+                            booking?.let { add("span", text = it) }
+                            if (booking != null && restaurant.phone.isNotBlank()) add("span", text = " · ")
+                            if (restaurant.phone.isNotBlank()) phoneLink(restaurant.phone)
+                        }
+                    }
+                    add("div", "links") {
+                        if (restaurant.website.isNotBlank()) link(texts.website, restaurant.website)
+                        link(texts.openInGoogleMaps, restaurant.googleMapsLink())
+                        link("OpenStreetMap", "https://www.openstreetmap.org/?mlat=${restaurant.lat}&mlon=${restaurant.lon}#map=18/${restaurant.lat}/${restaurant.lon}")
+                    }
+                    if (offer != null && offer.recommendation.isNotBlank() && offer.recommended.restaurantId == meal.restaurantId) add("p", "recommendation", offer.recommendation)
+                    if (phase == Phase.REVIEW) offer?.let { options(trip, meal, it) }
                 }
-                add("div", "links") {
-                    if (restaurant.website.isNotBlank()) link(texts.website, restaurant.website)
-                    link(texts.openInGoogleMaps, restaurant.googleMapsLink())
-                    link("OpenStreetMap", "https://www.openstreetmap.org/?mlat=${restaurant.lat}&mlon=${restaurant.lon}#map=18/${restaurant.lat}/${restaurant.lon}")
+                // The actions come after what they open, at the end of an open card.
+                if ((meal.day to meal.time) in opened) {
+                    card.classList.add("open")
+                    appendChild(toggle)
                 }
-                if (offer != null && offer.recommendation.isNotBlank() && offer.recommended.restaurantId == meal.restaurantId) add("p", "recommendation", offer.recommendation)
-                // The agent changes the route only while it waits for the traveller.
-                if (phase == Phase.REVIEW) {
-                    offer?.let { options(trip, meal, it) }
-                    swapControl(trip, meal)
-                }
+                toggle.querySelector(".meal-toggle")?.setAttribute("aria-expanded", ((meal.day to meal.time) in opened).toString())
             }
         }
+    }
+
+    /** Opens or closes the card of [meal], in place. */
+    private fun toggleMeal(card: HTMLElement, meal: Meal) {
+        val key = meal.day to meal.time
+        opened = if (key in opened) opened - key else opened + key
+        val open = key in opened
+        card.classList.toggle("open", open)
+        val actions = card.querySelector(".meal-actions") as? HTMLElement ?: return
+        val text = card.querySelector(".meal-text") as? HTMLElement ?: return
+        // Open, the actions go under the details; closed, under the summary again.
+        if (open) text.appendChild(actions) else text.insertBefore(actions, card.querySelector(".meal-more"))
+        actions.querySelector(".meal-toggle")?.setAttribute("aria-expanded", open.toString())
+        markCard(card)
+        map?.mark(meal.day, meal.time)
     }
 
     /** The other places the agent offered for [meal], each with a button that puts it on the route; the recommended one says so, and why. */

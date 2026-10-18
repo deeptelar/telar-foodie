@@ -445,5 +445,8 @@ object Catalan : Texts {
     override val recommended = "Recomanat"
     override val yourChoice = "La teva tria"
     override val otherOptions = "Altres opcions"
+    override val details = "Detalls"
+
+    override fun otherOptionsCount(count: Int) = if (count == 1) "1 opció més" else "$count opcions més"
     override val chooseThisOne = "Tria aquest"
 }
