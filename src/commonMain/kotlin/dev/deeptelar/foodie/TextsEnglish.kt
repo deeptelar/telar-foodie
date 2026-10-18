@@ -220,8 +220,6 @@ object English : Texts {
 
     override fun budget(word: String) = word
 
-    override val yourFoodieRoute = "Your foodie route"
-    override val hereIsYourRoute = "Here is your route"
     override val noMealPlanned = "The planner put no meal on the route. Tell it below what you are looking for, or start over."
     override val wholeTrip = "Whole trip"
     override val nothingPlannedThisDay = "Nothing planned for this day."

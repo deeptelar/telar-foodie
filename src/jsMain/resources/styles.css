@@ -57,6 +57,7 @@ a {
     justify-content: space-between;
     gap: 8px 12px;
     padding: 8px 0 4px;
+    margin-bottom: 8px;
 }
 
 p.tagline {
@@ -912,6 +913,20 @@ select.language {
     width: auto;
     min-height: 44px;
     padding: 8px 10px;
+    font-weight: 600;
+}
+
+button.settings-button {
+    min-width: 44px;
+    padding: 8px 10px;
+    font-size: 20px;
+    line-height: 1;
+}
+
+button.settings-button.current {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
 }
 
 .step-detail.quiet {

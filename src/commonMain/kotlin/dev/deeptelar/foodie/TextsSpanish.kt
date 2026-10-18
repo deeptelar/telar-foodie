@@ -227,8 +227,6 @@ object Spanish : Texts {
             else -> word
         }
 
-    override val yourFoodieRoute = "Tu ruta gastronómica"
-    override val hereIsYourRoute = "Aquí tienes tu ruta"
     override val noMealPlanned = "El planificador no ha puesto ninguna comida en la ruta. Dile abajo qué buscas, o empieza de nuevo."
     override val wholeTrip = "Todo el viaje"
     override val nothingPlannedThisDay = "Nada planificado para este día."

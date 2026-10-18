@@ -610,9 +610,11 @@ class App(
             add("div", "top-actions") {
                 (add("select", "language") as HTMLSelectElement).apply {
                     setAttribute("aria-label", texts.languageLabel)
+                    // The language by its code, so that the title and both buttons fit in one row on a phone.
                     Language.entries.forEach { option ->
-                        add("option", text = option.own) {
+                        add("option", text = option.code.uppercase()) {
                             setAttribute("value", option.name)
+                            setAttribute("title", option.own)
                             if (option == language) setAttribute("selected", "selected")
                         }
                     }
@@ -621,19 +623,23 @@ class App(
                         render()
                     }
                 }
-                button(if (settingsOpen) texts.close else texts.settings, "ghost") {
+                button(if (settingsOpen) "✕" else "⚙", "ghost settings-button" + if (settingsOpen) " current" else "") {
                     settingsOpen = !settingsOpen
                     render()
+                }.apply {
+                    setAttribute("aria-label", if (settingsOpen) texts.close else texts.settings)
+                    setAttribute("title", texts.settings)
                 }
             }
         }
-        // Below the buttons, across the page: next to them it has no room on a phone.
-        root.add("p", "tagline", texts.tagline)
+        // What the page is, before a trip: then the trip takes the room.
+        if (phase == Phase.START) root.add("p", "tagline", texts.tagline)
         if (settingsOpen) root.settingsPanel()
 
         val trip = trip
         // Before a trip there is nothing to keep apart from the conversation.
-        if (phase != Phase.START) root.tabs()
+        // On the route, the details are in its menu, and the route starts under the header; the tabs lead back from the details.
+        if (phase != Phase.START && (tab == Tab.DETAILS || phase !in setOf(Phase.REVIEW, Phase.DONE))) root.tabs()
         if (phase != Phase.START && tab == Tab.DETAILS) {
             root.detailsTab(trip)
         } else {
@@ -1390,8 +1396,6 @@ class App(
 
     private fun HTMLElement.route(trip: Trip) {
         add("section", "route") {
-            add("h2", text = if (phase == Phase.DONE) texts.yourFoodieRoute else texts.hereIsYourRoute)
-            add("p", "hint", trip.stops.joinToString(" · ") { texts.daysIn(it.days, it.title) })
             if (trip.summary.isNotBlank()) summary(trip.summary)
 
             if (trip.route.isEmpty()) {
@@ -1491,6 +1495,10 @@ class App(
                     closeSheet()
                     window.print()
                 }
+            }
+            button(texts.seeYourDetails, "ghost") {
+                closeSheet()
+                openDetails()
             }
             button(texts.planAgain, "ghost") {
                 closeSheet()
@@ -1629,6 +1637,7 @@ class App(
     private fun HTMLElement.fillDay(trip: Trip) {
         val shown = shownDay(trip)
         if (shown == null) {
+            add("p", "hint", trip.stops.joinToString(" · ") { texts.daysIn(it.days, it.title) })
             add("ol", "overview") {
                 (1..trip.days).forEach { day ->
                     add("li", "overview-day ${RouteMap.dayClass(day)}") {

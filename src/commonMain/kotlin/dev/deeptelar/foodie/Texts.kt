@@ -213,8 +213,6 @@ interface Texts {
 
     // The route
 
-    val yourFoodieRoute: String
-    val hereIsYourRoute: String
     val noMealPlanned: String
     val wholeTrip: String
     val nothingPlannedThisDay: String
