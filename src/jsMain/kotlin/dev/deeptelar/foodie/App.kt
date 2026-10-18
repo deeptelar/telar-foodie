@@ -164,6 +164,9 @@ class App(
 
     /** The meals whose cards are open, by their day and time. */
     private var opened = emptySet<Pair<Int, MealTime>>()
+
+    /** Whether the traveller opened the agent's words above the route. */
+    private var summaryOpen = false
     private var job: Job? = null
     private var map: RouteMap? = null
 
@@ -282,6 +285,7 @@ class App(
     private fun run(revision: Boolean = false, events: () -> Flow<GraphEvent<Trip>>) {
         phase = Phase.RUNNING
         revising = revision
+        summaryOpen = false
         drafts = emptyMap()
         swaps = emptyMap()
         editing = null
@@ -1388,7 +1392,7 @@ class App(
         add("section", "route") {
             add("h2", text = if (phase == Phase.DONE) texts.yourFoodieRoute else texts.hereIsYourRoute)
             add("p", "hint", trip.stops.joinToString(" · ") { texts.daysIn(it.days, it.title) })
-            if (trip.summary.isNotBlank()) add("p", "summary", trip.summary)
+            if (trip.summary.isNotBlank()) summary(trip.summary)
 
             if (trip.route.isEmpty()) {
                 add("p", "failure", texts.noMealPlanned)
@@ -1519,6 +1523,30 @@ class App(
         }
     }
 
+    /**
+     * The agent's last words, in two lines that open with a tap, so that the map is near the top
+     * of the screen. It opens only while the traveller reads it: another day, or a reload, closes it.
+     */
+    private fun HTMLElement.summary(text: String) {
+        add("div", "summary" + if (summaryOpen) " open" else "") {
+            val box = this
+            add("p", "summary-text", text)
+            val toggle = button(if (summaryOpen) texts.readLess else texts.readMore, "link summary-toggle") {}
+            toggle.setAttribute("aria-expanded", summaryOpen.toString())
+            toggle.onclick = {
+                summaryOpen = !summaryOpen
+                box.classList.toggle("open", summaryOpen)
+                toggle.textContent = if (summaryOpen) texts.readLess else texts.readMore
+                toggle.setAttribute("aria-expanded", summaryOpen.toString())
+            }
+            // Words that fit in two lines need no button.
+            window.requestAnimationFrame {
+                val words = box.querySelector(".summary-text") as? HTMLElement
+                if (!summaryOpen && words != null && words.scrollHeight <= words.clientHeight + 1) toggle.remove()
+            }
+        }
+    }
+
     /** The day shown, `null` for the whole trip; a trip of one day has only that day. */
     private fun shownDay(trip: Trip): Int? = if (trip.days <= 1) 1 else day?.takeIf { it in 1..trip.days }
 
@@ -1549,6 +1577,7 @@ class App(
         val trip = trip ?: return
         day = it
         ShownDay.save(it)
+        closeSummary()
         val shown = shownDay(trip)
         root.querySelectorAll(".day-tab").let { tabs ->
             (0 until tabs.length).mapNotNull { tabs.item(it) as? HTMLElement }.forEach { tab ->
@@ -1585,6 +1614,16 @@ class App(
     }
 
     private fun mealKey(day: Int, time: MealTime): String = "$day-${time.name}"
+
+    private fun closeSummary() {
+        if (!summaryOpen) return
+        summaryOpen = false
+        (root.querySelector(".summary") as? HTMLElement)?.classList?.remove("open")
+        (root.querySelector(".summary-toggle") as? HTMLElement)?.let {
+            it.textContent = texts.readMore
+            it.setAttribute("aria-expanded", "false")
+        }
+    }
 
     /** The meals of the day shown, or for the whole trip a line for each day, to open it. */
     private fun HTMLElement.fillDay(trip: Trip) {

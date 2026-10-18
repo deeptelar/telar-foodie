@@ -367,6 +367,8 @@ object English : Texts {
         }
     override val thisDayInGoogleMaps = "This day in Google Maps"
     override val moreActions = "More"
+    override val readMore = "Read more"
+    override val readLess = "Show less"
     override val onTheMap = "Show on the map"
     override val saveForMyMaps = "Save the places for Google Maps"
     override val myMapsHintBefore = "To have them all in Google Maps: in "

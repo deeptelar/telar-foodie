@@ -362,6 +362,38 @@ button.chip {
     white-space: pre-wrap;
 }
 
+/* Closed, the agent's words are two lines. */
+.summary:not(.open) .summary-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+}
+
+button.summary-toggle {
+    min-height: 28px;
+    margin-top: 2px;
+}
+
+button.summary-toggle::after {
+    content: " ▾";
+}
+
+.summary.open button.summary-toggle::after {
+    content: " ▴";
+}
+
+@media print {
+    .summary .summary-text {
+        display: block;
+    }
+
+    .summary-toggle {
+        display: none;
+    }
+}
+
 .map {
     /* Short on a phone, so that the day's meals start on the same screen. */
     height: 34vh;

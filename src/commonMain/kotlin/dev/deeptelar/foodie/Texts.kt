@@ -353,6 +353,10 @@ interface Texts {
     /** The button of the bar at the bottom that opens everything else. */
     val moreActions: String
 
+    /** The button that opens the agent's words above the route, and the one that closes them. */
+    val readMore: String
+    val readLess: String
+
     /** What the number of a meal does: it shows the place on the map. */
     val onTheMap: String
     val saveForMyMaps: String
