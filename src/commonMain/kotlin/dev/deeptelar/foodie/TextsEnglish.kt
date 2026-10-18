@@ -228,6 +228,7 @@ object English : Texts {
     override val enjoyYourTrip = "Enjoy your trip"
     override val printOrSave = "Print or save as PDF"
     override val planAnotherTrip = "Plan another trip"
+    override val planAgain = "Plan it again with my answers"
     override val wantSomethingDifferent = "Want something different?"
     override val changePlaceholder = "A vegetarian dinner on day 2, and somewhere cheaper for the first lunch."
     override val updateTheRoute = "Update the route"

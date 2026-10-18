@@ -219,6 +219,9 @@ interface Texts {
     val enjoyYourTrip: String
     val printOrSave: String
     val planAnotherTrip: String
+
+    /** Plans the trip again from the start, with the profile the traveller checks first. */
+    val planAgain: String
     val wantSomethingDifferent: String
     val changePlaceholder: String
     val updateTheRoute: String

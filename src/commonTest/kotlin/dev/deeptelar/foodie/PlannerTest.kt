@@ -219,7 +219,7 @@ class PlannerTest {
             assertTrue("- Day 1: $lisbon" in first, first)
             assertTrue("- bacalhau à brás (dinner): Salt cod with eggs and fried potato." in first, first)
             assertTrue("[r1] Restaurante Santa Rita · portuguese · found in: Travel guide, Street map" in first, first)
-            assertEquals(listOf("candidates", "search_map", "read_guide", "set_route", "set_meal", "remove_meal"), model.requests[2].tools.map { it.name })
+            assertEquals(listOf("candidates", "search_map", "read_guide", "set_route", "set_meal", "remove_meal", "set_days", "add_stop"), model.requests[2].tools.map { it.name })
             // What the guide says about the food goes to the model that names the dishes.
             assertTrue("small and family-run" in model.requests[1].messages.first().text)
         }
@@ -503,6 +503,103 @@ class PlannerTest {
         }
 
     @Test
+    fun `a traveller who stays longer gets the days added, and the agent plans them`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it."))
+                    says("One day of salt cod.")
+                    calls(
+                        call("set_days", StopDays("Lisbon", 2)),
+                        call("set_meal", MealChoice(2, "lunch", "r2", "caldo verde", "The map lists it as Portuguese.")),
+                    )
+                    says("A second day, with soup.")
+                }
+
+            planner(model, sources()).test(interviewed("One day in Lisbon"), config()) {
+                expectNodes(Nodes.INTERVIEW, Nodes.BRIEF)
+                expectStep(Nodes.GUIDE, Nodes.MAP, Nodes.DISHES)
+                expectNodes(Nodes.SPECIALISTS, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
+                expectInterruptBefore(Nodes.REVIEW) { trip -> assertEquals(1, trip.days) }
+
+                resumeWith { it.copy(messages = it.messages + ChatMessage.User("We stay one more day.")) }
+                expectNodes(Nodes.REVIEW, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
+                expectInterruptBefore(Nodes.REVIEW) { trip ->
+                    assertEquals(2, trip.days)
+                    assertEquals(listOf(1 to "r1", 2 to "r2"), trip.route.sortedBy { it.day }.map { it.day to it.restaurantId })
+                }
+            }
+
+            val results = model.requests[5].messages.filterIsInstance<ChatMessage.ToolResult>().takeLast(2)
+            assertEquals(listOf(false, false), results.map { it.isError })
+            assertEquals("The trip has 2 days now: days 1 to 2 in $lisbon. Still open: day 1 dinner, day 2 lunch, day 2 dinner.", results[0].text)
+        }
+
+    @Test
+    fun `days added to a stop move the stops after it, and days taken away take their meals`() {
+        val porto = Stop("Porto, Portugal", 2, 3, 41.1496, -8.6109)
+        val trip =
+            Trip(
+                "Two days in Lisbon, then two in Porto",
+                stops = listOf(Stop(lisbon, 2, 1, 38.7078, -9.1366), porto),
+                route = listOf(Meal(1, MealTime.LUNCH, "r1", "", ""), Meal(2, MealTime.LUNCH, "r2", "", ""), Meal(3, MealTime.LUNCH, "r3", "", ""), Meal(4, MealTime.LUNCH, "r4", "", "")),
+            )
+
+        val longer = trip.withDays(trip.stops[0], 3)
+        assertEquals(listOf(1 to 3, 4 to 2), longer.stops.map { it.firstDay to it.days })
+        assertEquals(listOf(1, 2, 4, 5), longer.route.map { it.day })
+        assertEquals(porto.name, longer.stopOn(5)?.name)
+
+        val shorter = trip.withDays(trip.stops[0], 1)
+        assertEquals(listOf(1 to 1, 2 to 2), shorter.stops.map { it.firstDay to it.days })
+        assertEquals(listOf("r1" to 1, "r3" to 2, "r4" to 3), shorter.route.map { it.restaurantId to it.day })
+
+        assertEquals(listOf(1, 2, 3, 4, 5), trip.withDays(porto, 3).route.map { it.day } + 5)
+
+        val gone = trip.withDays(trip.stops[0], 0)
+        assertEquals(listOf(porto.name to (1 to 2)), gone.stops.map { it.name to (it.firstDay to it.days) })
+        assertEquals(listOf("r3" to 1, "r4" to 2), gone.route.map { it.restaurantId to it.day })
+
+        val braga = trip.withStop(Stop("Braga, Portugal", 1, 0, 41.55, -8.42), after = trip.stops[0])
+        assertEquals(listOf(1 to 2, 3 to 1, 4 to 2), braga.stops.map { it.firstDay to it.days })
+        assertEquals(listOf(1, 2, 4, 5), braga.route.map { it.day })
+        assertEquals(listOf(5 to 1), trip.withStop(Stop("Braga, Portugal", 1, 0, 41.55, -8.42), after = null).stops.drop(2).map { it.firstDay to it.days })
+    }
+
+    @Test
+    fun `a place added to the trip gets its days and its candidates, and the agent plans it`() =
+        runTest {
+            val tasca = { stop: String -> Restaurant(stop = stop, name = "Tasca do Chico", lat = 38.7120, lon = -9.1301, cuisine = "portuguese", sources = setOf(Source.MAP)) }
+            val map = StreetMap { stop, _, _, _ -> if (stop == lisbon) listOf(santaRitaOnMap, zeDaMouraria) else listOf(tasca(stop)) }
+            val guide = TravelGuide { page -> if (page == lisbon) GuidePage("Most restaurants are small and family-run.", listOf(santaRitaInGuide)) else GuidePage("Fado houses and grilled sardines.", emptyList()) }
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it."))
+                    says("One day of salt cod.")
+                    calls("add_stop", NewStop("Alfama, Portugal", days = 1, cuisines = listOf("portuguese")))
+                    calls("set_meal", MealChoice(2, "lunch", "r3", "sardinhas assadas", "The map lists it as Portuguese."))
+                    says("A day in Alfama too.")
+                }
+
+            val config = config()
+            val planner = planner(model, sources(map = map, guide = guide))
+            planner.invoke(interviewed("One day in Lisbon"), config)
+            val changed = planner.resume(config) { it.copy(messages = it.messages + ChatMessage.User("Add a day in Alfama.")) }.state
+
+            assertEquals(listOf(lisbon to 1, "Alfama, Portugal" to 2), changed.stops.map { it.name to it.firstDay })
+            assertEquals(listOf(1 to "r1", 2 to "r3"), changed.route.sortedBy { it.day }.map { it.day to it.restaurantId })
+            assertEquals("Fado houses and grilled sardines.", changed.guideNotes["Alfama, Portugal"])
+            val added = model.requests[5].messages.filterIsInstance<ChatMessage.ToolResult>().last().text
+            assertTrue(added.startsWith("Added Alfama, Portugal: day 2. The trip has 2 days now: day 1 in $lisbon, day 2 in Alfama, Portugal."), added)
+            assertTrue("[r3] Tasca do Chico" in added, added)
+            assertEquals(0, model.remaining)
+        }
+
+    @Test
     fun `a meal at a restaurant that is no candidate is refused, and the model is told why`() =
         runTest {
             val model =
@@ -523,7 +620,7 @@ class PlannerTest {
             val results = model.requests[3].messages.filterIsInstance<ChatMessage.ToolResult>()
             assertEquals(listOf(true, true, true, false), results.map { it.isError })
             assertEquals("There is no candidate with the id \"r99\". Use an id from the list.", results[0].text)
-            assertEquals("The trip has 1 days. There is no day 2.", results[1].text)
+            assertEquals("The trip has 1 days. There is no day 2. To make a stay longer, call set_days first.", results[1].text)
             assertEquals("Day 1, lunch: Restaurante Santa Rita. Still open: day 1 dinner.", results[3].text)
             assertEquals(listOf("r1"), trip.route.map { it.restaurantId })
         }
@@ -671,6 +768,40 @@ class PlannerTest {
             assertEquals(listOf(Nodes.REVIEW), (planned as GraphResult.Interrupted).nextNodes)
             // The brief reads the answers too.
             assertTrue("Shellfish, even traces" in model.requests[2].messages.first().text)
+            assertEquals(0, model.remaining)
+        }
+
+    @Test
+    fun `a trip planned again keeps the answers and the profile, and the traveller checks the profile first`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it."))
+                    says("Planned.")
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r2", "caldo verde", "The map lists it as Portuguese."))
+                    says("Planned again.")
+                }
+            val planner = planner(model, sources())
+            val answers = listOf(Answer(Topic.DIET, "Anything you do not eat?", "No pork"))
+            val start = interviewed("One day in Lisbon", Profile(diet = "no pork")).copy(answers = answers, interview = Interview(read = 1, stage = InterviewStage.DONE))
+            val first = planner.invoke(start, config()).state
+
+            val again = first.plannedAgain()
+            assertEquals(Trip("One day in Lisbon", answers = answers, profile = Profile(diet = "no pork"), interview = Interview(read = 1, stage = InterviewStage.CHECKING)), again)
+
+            val config = config()
+            // The profile is shown without asking the model to read it again.
+            val checking = planner.invoke(again, config)
+            assertEquals(listOf(Nodes.INTERVIEW), (checking as GraphResult.Interrupted).nextNodes)
+            assertEquals(InterviewStage.CHECKING, checking.state.interview.stage)
+
+            val planned = planner.resume(config) { it.confirmed() }
+            assertEquals(listOf("r2"), planned.state.route.map { it.restaurantId })
+            assertEquals("Planned again.", planned.state.summary)
             assertEquals(0, model.remaining)
         }
 

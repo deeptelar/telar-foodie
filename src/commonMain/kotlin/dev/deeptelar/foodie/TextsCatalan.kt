@@ -235,6 +235,7 @@ object Catalan : Texts {
     override val enjoyYourTrip = "Gaudeix del viatge"
     override val printOrSave = "Imprimeix o desa com a PDF"
     override val planAnotherTrip = "Planifica un altre viatge"
+    override val planAgain = "Torna a planificar amb les meves respostes"
     override val wantSomethingDifferent = "Vols alguna cosa diferent?"
     override val changePlaceholder = "Un sopar vegetarià el dia 2, i un lloc més barat per al primer dinar."
     override val updateTheRoute = "Actualitza la ruta"

@@ -235,6 +235,7 @@ object Spanish : Texts {
     override val enjoyYourTrip = "Disfruta del viaje"
     override val printOrSave = "Imprimir o guardar como PDF"
     override val planAnotherTrip = "Planificar otro viaje"
+    override val planAgain = "Planificar de nuevo con mis respuestas"
     override val wantSomethingDifferent = "¿Quieres algo distinto?"
     override val changePlaceholder = "Una cena vegetariana el día 2, y algo más barato para la primera comida."
     override val updateTheRoute = "Actualizar la ruta"

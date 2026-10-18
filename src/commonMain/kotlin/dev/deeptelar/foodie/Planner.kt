@@ -376,7 +376,7 @@ internal val LOCAL_CUISINES = listOf("regional", "local")
 private const val STAY_REACH = 30_000
 
 /** A trip is planned for at most this many days at one stop. */
-private const val MAX_DAYS = 10
+internal const val MAX_DAYS = 10
 
 /** How long a source may take for one stop: long enough for the map to try each of its five servers. */
 private val SOURCE_PATIENCE = 80.seconds

@@ -2,6 +2,7 @@ package dev.deeptelar.foodie
 
 import dev.deeptelar.foodie.sources.MapSearch
 import dev.deeptelar.foodie.sources.Sources
+import dev.deeptelar.foodie.sources.isFailure
 import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.Description
 import dev.deeptelar.telar.agent.StateTool
@@ -91,11 +92,33 @@ data class MealSlot(
     val meal: String,
 )
 
+@Serializable
+data class StopDays(
+    @Description("The name of the stop, as in the list of days.")
+    val stop: String,
+    @Description("How many days the traveller eats there, in all: the days already planned count.")
+    val days: Int,
+)
+
+@Serializable
+data class NewStop(
+    @Description("The city, town or island, with its country, in English as the English Wikipedia names them, for example \"Sóller, Spain\".")
+    val place: String,
+    @Description("The same place as the traveller's language names it, without the country. Empty if it is the same.")
+    val shown: String = "",
+    @Description("How many days the traveller eats there.")
+    val days: Int,
+    @Description("The name of the stop it comes after, as in the list of days. Empty to add it at the end of the trip.")
+    val after: String = "",
+    @Description("The values OpenStreetMap uses in its `cuisine` tag for the traditional food of this place, in lower case, the most specific first.")
+    val cuisines: List<String> = emptyList(),
+)
+
 /** How many restaurants a search shows the model. */
 private const val SHOWN = 15
 
 internal fun routeTools(sources: Sources): List<StateTool<Trip>> =
-    searchTools(sources).map { it.nudging() } + routeEditors
+    searchTools(sources).map { it.nudging() } + routeEditors + stopAdder(sources)
 
 /** The tools that look for candidates. */
 private fun searchTools(sources: Sources): List<StateTool<Trip>> =
@@ -140,7 +163,7 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
  * The tools that write the route. The agent writes the whole route with `set_route` in one answer,
  * with its message to the traveller: every round of the agent sends the whole conversation to the
  * model again, so a route written meal by meal takes many slow rounds. `set_meal` and `remove_meal`
- * are for the changes after it.
+ * are for the changes after it, and `set_days` for a traveller who stays longer or leaves sooner.
  */
 private val routeEditors: List<StateTool<Trip>> =
     listOf(
@@ -190,7 +213,118 @@ private val routeEditors: List<StateTool<Trip>> =
             val after = trip.copy(route = trip.route.filterNot { it.day == slot.day && it.time == time })
             ToolOutcome(after, "Removed. " + after.openMeals())
         },
+        StateTool<Trip, StopDays>(
+            "set_days",
+            "Changes how many days the traveller stays at a stop; 0 takes the stop off the trip. The days of the stops after it move, with their meals; " +
+                "the meals of days that are no longer part of the trip are taken off the route.",
+        ) { trip, change ->
+            val stop =
+                trip.stopNamed(change.stop)
+                    ?: throw IllegalArgumentException("There is no stop named \"${change.stop}\". The stops are: ${trip.stops.joinToString { it.name }}. Add a new place with add_stop.")
+            if (change.days !in 0..MAX_DAYS) throw IllegalArgumentException("A stop has 1 to $MAX_DAYS days, or 0 to take it off the trip.")
+            if (change.days == 0 && trip.stops.size == 1) throw IllegalArgumentException("${stop.name} is the only stop. Add the place the traveller goes to instead with add_stop first.")
+            val after = trip.withDays(stop, change.days)
+            val removed = trip.route.size - after.route.size
+            ToolOutcome(
+                after,
+                "The trip has ${after.days} days now: " + after.dayList() + "." +
+                    (if (removed > 0) " $removed meals of the days that are gone are off the route." else "") +
+                    " " + after.openMeals(),
+            )
+        },
     )
+
+/**
+ * The trip with [days] days at [stop]: the stops after it start later or sooner, and so do their
+ * meals. The meals of the days the stop no longer has are dropped.
+ */
+internal fun Trip.withDays(stop: Stop, days: Int): Trip {
+    val shift = days - stop.days
+    val end = stop.firstDay + stop.days
+    var day = 1
+    val moved =
+        stops.map { if (it.name == stop.name) it.copy(days = days) else it }.filter { it.days > 0 }.map { it.copy(firstDay = day).also { moved -> day += moved.days } }
+    val meals =
+        route.mapNotNull { meal ->
+            when {
+                meal.day >= end -> meal.copy(day = meal.day + shift)
+                meal.day >= stop.firstDay + days -> null
+                else -> meal
+            }
+        }
+    return copy(stops = moved, route = meals)
+}
+
+/**
+ * The tool that adds a place to the trip, such as another town of the same country. The new stop
+ * gets candidates the way the first stops did, from the guide and the street map; a source that
+ * fails is said in the result, and the agent can search it again.
+ */
+private fun stopAdder(sources: Sources): StateTool<Trip> =
+    StateTool<Trip, NewStop>(
+        "add_stop",
+        "Adds a place to the trip for some days, after a stop or at the end; the days after it move, with their meals. " +
+            "Reads the travel guide and the street map for it, and lists what they found. To go there instead of a stop, add it, then set the days of that stop.",
+    ) { trip, new ->
+        if (new.days !in 1..MAX_DAYS) throw IllegalArgumentException("A stop has 1 to $MAX_DAYS days.")
+        trip.stopNamed(new.place)?.let { throw IllegalArgumentException("${it.name} is a stop already. Change its days with set_days.") }
+        val after =
+            new.after.takeIf { it.isNotBlank() }?.let { name ->
+                trip.stopNamed(name) ?: throw IllegalArgumentException("There is no stop named \"$name\". The stops are: ${trip.stops.joinToString { it.name }}.")
+            }
+        val texts = trip.language.texts
+        reportProgress(Activity(texts.findingOnTheMap(new.shown.ifBlank { new.place })))
+        val location = sources.geocoder.locate(new.place) ?: throw IllegalArgumentException("The map does not know \"${new.place}\". Name it as the English Wikipedia does, with its country.")
+        val stop = Stop(new.place.trim(), new.days, 0, location.lat, location.lon, cuisines = new.cuisines.map { it.trim().lowercase() }.filter { it.isNotEmpty() }, shown = new.shown.trim())
+        val problems = mutableListOf<String>()
+        suspend fun <T> tried(source: String, read: suspend () -> T): T? =
+            try {
+                read()
+            } catch (e: Throwable) {
+                if (!e.isFailure()) throw e
+                problems += "The $source gave no answer for ${stop.name}: ${e.message}"
+                null
+            }
+        reportProgress(Activity(texts.readingTheGuide(stop.title)))
+        val page = tried("travel guide") { sources.guide.read(stop.name) }
+        reportProgress(Activity(texts.lookingOnTheMap(stop.cuisines.firstOrNull() ?: "local", stop.title)))
+        val onMap = tried("street map") { sources.map.restaurants(stop.name, stop.location, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) }.orEmpty()
+        val inGuide = page?.restaurants.orEmpty().map { it.copy(stop = stop.name) }.filter { metresBetween(it.location, stop.location) <= GUIDE_REACH }
+        val added = trip.withStop(stop, after).let { if (page == null || page.text.isBlank()) it else it.copy(guideNotes = it.guideNotes + (stop.name to page.text)) }
+        val outcome = added.found(inGuide + onMap, "No candidates yet in ${stop.name}. Search the map, the guide or the reviews for it.")
+        val placed = outcome.state.stopNamed(stop.name)!!
+        val last = placed.firstDay + placed.days - 1
+        outcome.copy(
+            text =
+                "Added ${stop.name}: ${if (last == placed.firstDay) "day ${placed.firstDay}" else "days ${placed.firstDay} to $last"}. The trip has ${outcome.state.days} days now: " +
+                    outcome.state.dayList() + ". " + outcome.state.openMeals() +
+                    problems.joinToString("") { "\n$it" } +
+                    (page?.text?.takeIf { it.isNotBlank() }?.let { "\n\nWhat the guide says about eating there:\n" + it.take(GUIDE_TEXT) } ?: "") +
+                    "\n\nCandidates in ${stop.name}:\n" + outcome.text,
+        )
+    }
+
+/** The trip with [stop] after the stop [after], or at the end without it: the days after it move by its days, with their meals. */
+internal fun Trip.withStop(stop: Stop, after: Stop?): Trip {
+    val at = if (after == null) stops.size else stops.indexOfFirst { it.name == after.name } + 1
+    val start = stops.take(at).sumOf { it.days } + 1
+    var day = 1
+    val moved = (stops.take(at) + stop + stops.drop(at)).map { it.copy(firstDay = day).also { placed -> day += placed.days } }
+    return copy(stops = moved, route = route.map { if (it.day >= start) it.copy(day = it.day + stop.days) else it })
+}
+
+/** The days of the trip, for the model: "days 1 to 4 in Palma de Mallorca, Spain, day 5 in Sóller, Spain". */
+private fun Trip.dayList(): String =
+    stops.joinToString { stop ->
+        val last = stop.firstDay + stop.days - 1
+        (if (last == stop.firstDay) "day ${stop.firstDay}" else "days ${stop.firstDay} to $last") + " in ${stop.name}"
+    }
+
+/** The stop the model means by [name]: its name, its name without the country, or as the traveller reads it. */
+private fun Trip.stopNamed(name: String): Stop? {
+    val wanted = name.trim()
+    return stops.firstOrNull { stop -> listOf(stop.name, stop.name.substringBefore(','), stop.title).any { it.trim().equals(wanted, ignoreCase = true) } }
+}
 
 /**
  * The trip with [choice] on its route, in the place of the meal of its day and time.
@@ -199,7 +333,7 @@ private val routeEditors: List<StateTool<Trip>> =
  */
 private fun Trip.withMeal(choice: MealChoice): Trip {
     val time = mealTime(choice.meal)
-    val stop = stopOn(choice.day) ?: throw IllegalArgumentException("The trip has $days days. There is no day ${choice.day}.")
+    val stop = stopOn(choice.day) ?: throw IllegalArgumentException("The trip has $days days. There is no day ${choice.day}. To make a stay longer, call set_days first.")
     val restaurant = restaurant(choice.restaurant) ?: throw IllegalArgumentException("There is no candidate with the id \"${choice.restaurant}\". Use an id from the list.")
     if (restaurant.stop != stop.name) throw IllegalArgumentException("${restaurant.name} is in ${restaurant.stop}, but day ${choice.day} is in ${stop.name}.")
     val meal = Meal(choice.day, time, restaurant.id, choice.dish.trim(), choice.why.trim(), choice.caution.trim())
@@ -250,7 +384,7 @@ private fun Trip.searchesThisTurn(): Int {
     return turn.filterIsInstance<ChatMessage.Assistant>().sumOf { answer -> answer.toolCalls.count { it.name !in EDITORS } }
 }
 
-private val EDITORS = setOf("set_route", "set_meal", "remove_meal")
+private val EDITORS = setOf("set_route", "set_meal", "remove_meal", "set_days", "add_stop")
 
 /** After this many searches in one turn, every search result asks the agent to write the route. */
 private const val SEARCHES = 8

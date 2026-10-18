@@ -235,6 +235,14 @@ fun Trip.replannedFor(profile: Profile, erase: Boolean = false): Trip {
     return changed.copy(messages = messages + ChatMessage.User(profileChangePrompt(changed)))
 }
 
+/**
+ * The trip to be planned again from the start, for another route: the request, the answers and the
+ * profile stay, and the traveller checks the profile first, where one or two things can change.
+ * Everything the planner found and chose is gone, so the sources are asked again.
+ */
+fun Trip.plannedAgain(): Trip =
+    Trip(request, language, answers = answers, profile = profile, interview = interview.copy(stage = InterviewStage.CHECKING))
+
 /** The profile without the empty lines of an editor: an allergy with no food, and spaces around words. */
 private fun Profile.tidied(): Profile =
     copy(

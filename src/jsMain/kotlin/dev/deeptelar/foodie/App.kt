@@ -346,6 +346,26 @@ class App(
         }
     }
 
+    /**
+     * Plans [from] again from the start, for another route: the page shows the profile to check, where
+     * the traveller can change one or two things, and the planner then finds and chooses anew.
+     */
+    private fun planAgain(from: Trip) {
+        job?.cancel()
+        scope.launch {
+            try {
+                checkpointer.delete(config.threadId)
+            } catch (_: Throwable) {
+                // The browser blocks its storage: then nothing was saved either.
+            }
+            val again = from.plannedAgain()
+            trip = again
+            tab = Tab.PLAN
+            // Named: in a coroutine, a bare `run` is the scope function of the standard library, which runs nothing.
+            this@App.run { planner().stream(again, config) }
+        }
+    }
+
     /** After a failure: continues the saved run, or starts again when the first step never finished. */
     private fun tryAgain() {
         scope.launch {
@@ -1314,6 +1334,7 @@ class App(
                 add("h2", text = texts.enjoyYourTrip)
                 add("div", "actions") {
                     button(texts.printOrSave, "primary") { window.print() }
+                    button(texts.planAgain, "ghost") { planAgain(trip) }
                     button(texts.planAnotherTrip, "ghost") { startOver() }
                 }
             } else {
@@ -1331,6 +1352,7 @@ class App(
                         if (text.isEmpty()) wish.focus() else resume { it.copy(messages = it.messages + ChatMessage.User(text)) }
                     }
                     button(texts.happyWithIt, "ghost") { resume { it.copy(approved = true) } }
+                    button(texts.planAgain, "ghost") { planAgain(trip) }
                     button(texts.startOver, "ghost") { startOver() }
                 }
             }
