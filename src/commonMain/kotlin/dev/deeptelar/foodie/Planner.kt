@@ -378,8 +378,8 @@ private const val STAY_REACH = 30_000
 /** A trip is planned for at most this many days at one stop. */
 private const val MAX_DAYS = 10
 
-/** How long a source may take for one stop. */
-private val SOURCE_PATIENCE = 60.seconds
+/** How long a source may take for one stop: long enough for the map to try each of its five servers. */
+private val SOURCE_PATIENCE = 80.seconds
 
 /** How long the map may take for the sights of a stop, after its restaurants: together they stay within [SOURCE_PATIENCE]. */
 private val SIGHTS_PATIENCE = 15.seconds

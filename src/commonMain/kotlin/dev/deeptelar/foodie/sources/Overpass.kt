@@ -77,6 +77,9 @@ class Overpass(
         val PUBLIC_SERVERS: List<String> =
             listOf(
                 "https://overpass-api.de/api/interpreter",
+                // A machine of the same service, asked directly: it answered when the address above gave 502.
+                "https://z.overpass-api.de/api/interpreter",
+                "https://overpass.kumi.systems/api/interpreter",
                 "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
                 "https://overpass.private.coffee/api/interpreter",
             )
