@@ -722,25 +722,33 @@ class App(
         add("section", "card") {
             add("h2", text = texts.whereAreYouGoing)
             add("p", "hint", texts.startHint)
+            // The examples are for a traveller who has not started writing: then they make room for the questions below.
+            lateinit var examples: HTMLElement
+            fun written(words: String) {
+                request = words
+                examples.hidden = words.isNotBlank()
+            }
             val text =
                 (add("textarea") as HTMLTextAreaElement).apply {
                     rows = 4
                     placeholder = texts.requestPlaceholder
                     value = request
-                    oninput = { request = value }
+                    oninput = { written(value) }
                 }
             speakRow(read = { request }) {
-                request = it
                 text.value = it
+                written(it)
             }
-            add("div", "chips") {
-                texts.examples.forEach { example ->
-                    button(example, "chip") {
-                        request = example
-                        text.value = example
+            examples =
+                add("div", "chips") {
+                    texts.examples.forEach { example ->
+                        button(example, "chip") {
+                            text.value = example
+                            written(example)
+                        }
                     }
                 }
-            }
+            examples.hidden = request.isNotBlank()
             upFront()
             add("div", "actions") {
                 button(texts.planMyRoute, "primary") {
