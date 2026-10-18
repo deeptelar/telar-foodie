@@ -383,7 +383,8 @@ object Catalan : Texts {
             "no" -> "Sense reserves: hi vas directament"
             else -> null
         }
-    override val dayInGoogleMaps = "Recorre aquest dia a Google Maps"
+    override val thisDayInGoogleMaps = "Aquest dia a Google Maps"
+    override val moreActions = "Més"
     override val onTheMap = "Mostra-ho al mapa"
     override val saveForMyMaps = "Desa els llocs per a Google Maps"
     override val myMapsHintBefore = "Per tenir-los tots a Google Maps: a "

@@ -365,7 +365,8 @@ object English : Texts {
             "no" -> "No bookings: just go"
             else -> null
         }
-    override val dayInGoogleMaps = "Follow this day in Google Maps"
+    override val thisDayInGoogleMaps = "This day in Google Maps"
+    override val moreActions = "More"
     override val onTheMap = "Show on the map"
     override val saveForMyMaps = "Save the places for Google Maps"
     override val myMapsHintBefore = "To have them all in Google Maps: in "

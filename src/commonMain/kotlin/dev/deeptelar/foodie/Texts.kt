@@ -347,8 +347,11 @@ interface Texts {
 
     // The route in Google Maps
 
-    /** The link under a day that opens its meals as a walk. */
-    val dayInGoogleMaps: String
+    /** The link in the bar at the bottom that opens the meals of the day shown as a route. */
+    val thisDayInGoogleMaps: String
+
+    /** The button of the bar at the bottom that opens everything else. */
+    val moreActions: String
 
     /** What the number of a meal does: it shows the place on the map. */
     val onTheMap: String

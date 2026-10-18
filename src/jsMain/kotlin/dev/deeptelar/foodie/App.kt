@@ -636,7 +636,7 @@ class App(
             plan(trip)
         }
         root.credits()
-        drawSendBar()
+        drawBottomBar()
     }
 
     private fun HTMLElement.tabs() {
@@ -1436,18 +1436,72 @@ class App(
             }
             // The sample asks no model, so it has no tokens to show.
             add("p", "hint small", texts.placesCompared(trip.restaurants.size) + if (trip.tokens.total > 0) " · " + texts.tokensUsed(trip.tokens.total) else "")
-            add("div", "quiet-actions") {
-                button(texts.saveForMyMaps, "link") {
-                    val day = Date().toISOString().take(10)
-                    download(kmlName(trip, day), trip.toKml(), KML)
+        }
+    }
+
+    /**
+     * What the traveller does with the route now and then, in a sheet from the bar at the bottom:
+     * asking for a change in words or saying it is good, planning again, and taking the route
+     * along as a file, to Google My Maps or on paper.
+     */
+    private fun openMenu(trip: Trip) {
+        closeSheet()
+        val backdrop = root.add("div", "sheet-backdrop")
+        val sheet = root.add("div", "sheet menu") {
+            setAttribute("role", "dialog")
+            setAttribute("aria-modal", "true")
+        }
+        document.body?.classList?.add("sheet-open")
+        backdrop.onclick = { closeSheet() }
+        sheet.add("div", "sheet-head") {
+            add("h3", text = if (phase == Phase.DONE) texts.enjoyYourTrip else texts.wantSomethingDifferent)
+            button("×", "ghost sheet-close") { closeSheet() }.setAttribute("aria-label", texts.close)
+        }
+        if (phase == Phase.REVIEW) {
+            val wish =
+                (sheet.add("textarea") as HTMLTextAreaElement).apply {
+                    rows = 2
+                    placeholder = texts.changePlaceholder
                 }
-                // A phone imports nothing into My Maps: the file goes to a computer, by mail or a chat.
-                if (canShareFiles()) {
-                    button(texts.sendTheFile, "link") {
-                        val day = Date().toISOString().take(10)
-                        if (!shareFile(kmlName(trip, day), trip.toKml(), KML, trip.mapTitle(), texts.sentFileText)) {
-                            shareFile(csvName(trip, day), trip.toCsv(), "text/csv", trip.mapTitle(), texts.sentFileText)
-                        }
+            sheet.speakRow(read = { wish.value }) { wish.value = it }
+            sheet.add("div", "actions") {
+                button(texts.updateTheRoute, "primary") {
+                    val text = wish.value.trim()
+                    // The wish goes to the agent as the traveller's next message, and the graph loops back to it.
+                    if (text.isEmpty()) {
+                        wish.focus()
+                    } else {
+                        closeSheet()
+                        revise { it.copy(messages = it.messages + ChatMessage.User(text)) }
+                    }
+                }
+                button(texts.happyWithIt, "ghost") {
+                    closeSheet()
+                    revise { it.copy(approved = true) }
+                }
+            }
+        }
+        sheet.add("div", "menu-items") {
+            if (phase == Phase.DONE) {
+                button(texts.printOrSave, "ghost") {
+                    closeSheet()
+                    window.print()
+                }
+            }
+            button(texts.planAgain, "ghost") {
+                closeSheet()
+                planAgain(trip)
+            }
+            button(texts.saveForMyMaps, "ghost") {
+                val day = Date().toISOString().take(10)
+                download(kmlName(trip, day), trip.toKml(), KML)
+            }
+            // A phone imports nothing into My Maps: the file goes to a computer, by mail or a chat.
+            if (canShareFiles()) {
+                button(texts.sendTheFile, "ghost") {
+                    val day = Date().toISOString().take(10)
+                    if (!shareFile(kmlName(trip, day), trip.toKml(), KML, trip.mapTitle(), texts.sentFileText)) {
+                        shareFile(csvName(trip, day), trip.toCsv(), "text/csv", trip.mapTitle(), texts.sentFileText)
                     }
                 }
             }
@@ -1456,37 +1510,11 @@ class App(
                 link("Google My Maps", MY_MAPS)
                 add("span", text = texts.myMapsHintAfter)
             }
-            add("div", "quiet-actions") { button(texts.saveToFile, "link") { saveFile() } }
+            button(texts.saveToFile, "ghost") { saveFile() }
             add("p", "hint small", texts.savedFileHint)
-        }
-
-        // While the planner changes the route, the bar under it says so, and nothing else can be asked.
-        if (phase == Phase.REVIEW || phase == Phase.DONE) add("section", "card") {
-            if (phase == Phase.DONE) {
-                add("h2", text = texts.enjoyYourTrip)
-                add("div", "actions") {
-                    button(texts.printOrSave, "primary") { window.print() }
-                    button(texts.planAgain, "ghost") { planAgain(trip) }
-                    button(texts.planAnotherTrip, "ghost") { startOver() }
-                }
-            } else {
-                add("h2", text = texts.wantSomethingDifferent)
-                val wish =
-                    (add("textarea") as HTMLTextAreaElement).apply {
-                        rows = 2
-                        placeholder = texts.changePlaceholder
-                    }
-                speakRow(read = { wish.value }) { wish.value = it }
-                add("div", "actions") {
-                    button(texts.updateTheRoute, "primary") {
-                        val text = wish.value.trim()
-                        // The wish goes to the agent as the traveller's next message, and the graph loops back to it.
-                        if (text.isEmpty()) wish.focus() else revise { it.copy(messages = it.messages + ChatMessage.User(text)) }
-                    }
-                    button(texts.happyWithIt, "ghost") { revise { it.copy(approved = true) } }
-                    button(texts.planAgain, "ghost") { planAgain(trip) }
-                    button(texts.startOver, "ghost") { startOver() }
-                }
+            button(if (phase == Phase.DONE) texts.planAnotherTrip else texts.startOver, "ghost") {
+                closeSheet()
+                startOver()
             }
         }
     }
@@ -1531,6 +1559,7 @@ class App(
             }
         }
         map?.show(shown)
+        drawBottomBar()
         dayList?.let { list ->
             list.clear()
             list.fillDay(trip)
@@ -1589,8 +1618,6 @@ class App(
         add("h3", "day ${RouteMap.dayClass(shown)}", texts.dayAt(shown, trip.stopOn(shown)?.title.orEmpty()))
         trip.sleepingPlace(shown, MealTime.DINNER)?.first?.takeIf { it.isNotBlank() }?.let { add("p", "hint small sleeping", texts.sleepingAt(it)) }
         if (meals.isEmpty()) add("p", "hint", texts.nothingPlannedThisDay)
-        // A day of one meal is no walk: its card has the link to the place.
-        if (meals.size > 1) trip.dayInGoogleMaps(shown)?.let { add("p", "day-link") { link(texts.dayInGoogleMaps, it) } }
         meals.forEachIndexed { index, meal ->
             meal.walk?.let { add("p", "walk", texts.walk(texts.distance(it), fromStay = index == 0)) }
             meal(trip, meal, index + 1)
@@ -1912,14 +1939,25 @@ class App(
             it.clear()
             it.fillDay(trip)
         }
-        drawSendBar()
+        drawBottomBar()
     }
 
-    /** The bar at the bottom that sends the marked places, while there are any. */
-    private fun drawSendBar() {
-        root.querySelector(".send-bar")?.remove()
-        if (phase != Phase.REVIEW || swaps.values.none { it.said }) return
-        root.add("div", "send-bar") { button(swapLabel(), "primary swap-send") { sendSwaps() } }
+    /**
+     * The bar at the bottom of the route: the day shown in Google Maps, or the button that sends the
+     * marked places while there are any, and the menu of everything else.
+     */
+    private fun drawBottomBar() {
+        root.querySelector(".bottom-bar")?.remove()
+        val trip = trip ?: return
+        if (phase != Phase.REVIEW && phase != Phase.DONE || trip.route.isEmpty() || tab != Tab.PLAN) return
+        root.add("div", "bottom-bar") {
+            val shown = shownDay(trip)
+            when {
+                phase == Phase.REVIEW && swaps.values.any { it.said } -> button(swapLabel(), "primary swap-send") { sendSwaps() }
+                shown != null -> trip.dayInGoogleMaps(shown)?.let { link(texts.thisDayInGoogleMaps, it, "bar-link") }
+            }
+            button("☰ " + texts.moreActions, if (phase == Phase.REVIEW && swaps.values.none { it.said } && shown == null) "primary menu-button" else "ghost menu-button") { openMenu(trip) }
+        }
     }
 
     private companion object {

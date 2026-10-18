@@ -515,12 +515,6 @@ h3.day {
     white-space: nowrap;
 }
 
-/* Under a day's heading: the day's meals as a walk in Google Maps. */
-.day-link {
-    font-size: 14px;
-    margin: -4px 0 10px;
-}
-
 .pin {
     flex: none;
     width: 28px;
@@ -1146,7 +1140,7 @@ button.sheet-close {
 }
 
 /* The bars at the bottom of the screen: sending the marked places, and the planner at work. */
-.send-bar, .working {
+.bottom-bar, .working {
     position: fixed;
     left: 0;
     right: 0;
@@ -1161,11 +1155,50 @@ button.sheet-close {
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
 }
 
-.send-bar button {
+/* The day in Google Maps, or sending the marked places, takes the room the menu leaves. */
+.bottom-bar > :first-child:not(.menu-button) {
     flex: 1;
 }
 
-body:has(.send-bar) main, body:has(.working) main {
+a.bar-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+}
+
+button.menu-button {
+    flex: none;
+}
+
+.bottom-bar > button.menu-button:only-child {
+    flex: 1;
+}
+
+.menu-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.menu-items > button {
+    width: 100%;
+    text-align: left;
+}
+
+.menu-items > .hint {
+    margin: -4px 0 4px;
+}
+
+body:has(.bottom-bar) main, body:has(.working) main {
     padding-bottom: 96px;
 }
 
@@ -1211,7 +1244,7 @@ article.meal.changing .meal-text > :not(.changing-note) {
 }
 
 @media print {
-    .send-bar, .working, .sheet, .sheet-backdrop {
+    .bottom-bar, .working, .sheet, .sheet-backdrop {
         display: none;
     }
 }
