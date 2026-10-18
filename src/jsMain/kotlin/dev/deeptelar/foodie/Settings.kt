@@ -24,9 +24,20 @@ data class Settings(
     val openAiModel: String = "gpt-5",
     val openAiUrl: String = OpenAiChatModel.OPENAI_BASE_URL,
     val googleKey: String = "",
+    /** Where the traces of the runs go: the `/v1/traces` of an OpenTelemetry collector, or empty for none. */
+    val traceUrl: String = "",
+    /** A header that every request of traces sends, such as the key of a backend: "Name: value". */
+    val traceHeader: String = "",
     /** The language the traveller chose, or `null` for the browser's. */
     val language: Language? = null,
 ) {
+    /** The header of [traceHeader], as a name and a value; none when it has no name. */
+    val traceHeaders: Map<String, String>
+        get() {
+            val name = traceHeader.substringBefore(':').trim()
+            return if (name.isEmpty() || ':' !in traceHeader) emptyMap() else mapOf(name to traceHeader.substringAfter(':').trim())
+        }
+
     /** Whether a model can be asked with these settings. A local server such as Ollama needs no key, but then it has another address. */
     val hasModel: Boolean
         get() =

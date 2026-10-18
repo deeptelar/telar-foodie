@@ -11,6 +11,7 @@ import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.ToolCall
 import dev.deeptelar.telar.agent.pendingToolCalls
 import dev.deeptelar.telar.checkpoint.browser.LocalStorageCheckpointer
+import dev.deeptelar.telar.otel.OtlpObserver
 import dev.deeptelar.telar.serialization.KotlinxStateSerializer
 import io.ktor.client.HttpClient
 import kotlin.js.Date
@@ -19,6 +20,7 @@ import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.await
@@ -102,15 +104,46 @@ class App(
     private val scope = MainScope()
     private val client = HttpClient()
     private val checkpointer = LocalStorageCheckpointer(KotlinxStateSerializer<Trip>(), keyPrefix = "foodie.run.")
-    private val config =
-        GraphConfig(
-            threadId = "trip",
-            checkpointer = checkpointer,
-            // The run stops when the route is ready and waits for the traveller.
-            interruptBefore = setOf(Nodes.REVIEW),
-            // Every round of the agent is two steps, and a trip of several days takes many rounds.
-            maxIterations = 120,
-        )
+    private val config: GraphConfig<Trip>
+        get() =
+            GraphConfig(
+                threadId = "trip",
+                checkpointer = checkpointer,
+                // The run stops when the route is ready and waits for the traveller.
+                interruptBefore = setOf(Nodes.REVIEW),
+                // Every round of the agent is two steps, and a trip of several days takes many rounds.
+                maxIterations = 120,
+                observers = listOfNotNull(tracer()),
+            )
+
+    /** The observer that sends the runs as traces, with the settings it was made for, and the coroutines that send them. */
+    private var tracing: Triple<Pair<String, String>, OtlpObserver, Job>? = null
+
+    /**
+     * The observer that sends the runs to the collector of the settings, or `null` when they name
+     * none. A change of the settings makes a new one. The requests of the models and sources carry
+     * no `traceparent`: their servers would refuse a header they do not allow from a page.
+     */
+    private fun tracer(): OtlpObserver? {
+        val url = settings.traceUrl.trim()
+        val made = url to settings.traceHeader
+        tracing?.let { (madeFor, observer, job) -> if (madeFor == made) return observer else job.cancel() }
+        tracing = null
+        if (url.isEmpty()) return null
+        val job = Job(scope.coroutineContext[Job])
+        val observer =
+            OtlpObserver(
+                client,
+                CoroutineScope(scope.coroutineContext + job),
+                endpoint = url,
+                serviceName = "foodie-route",
+                resource = mapOf("deployment.environment" to window.location.hostname),
+                headers = settings.traceHeaders,
+                onExportFailed = { console.warn("Foodie Route could not send its traces: ${it.message}") },
+            )
+        tracing = Triple(made, observer, job)
+        return observer
+    }
 
     private var settings = Settings.load()
 
@@ -179,6 +212,8 @@ class App(
     fun open() {
         window.addEventListener("beforeprint", { printing(all = true) })
         window.addEventListener("afterprint", { printing(all = false) })
+        // A page that is hidden may be closed: what was traced so far is sent now.
+        document.addEventListener("visibilitychange", { if (document.asDynamic().visibilityState == "hidden") tracing?.let { scope.launch { it.second.flush() } } })
         render()
         scope.launch {
             val saved =
@@ -866,6 +901,13 @@ class App(
                     add("span", text = " · ")
                     link(texts.googleGuide, GoogleConsole.GUIDE)
                 }
+            }
+            // For whoever runs the page: the traces show how long each step took, and which failed.
+            add("details", "how-to") {
+                add("summary", text = texts.tracing)
+                add("p", "hint small", texts.tracingHint)
+                field(texts.tracingAddress, settings.traceUrl, placeholder = "http://localhost:4318/v1/traces") { change(settings.copy(traceUrl = it)) }
+                field(texts.tracingHeader, settings.traceHeader, type = "password", placeholder = "x-honeycomb-team: ...") { change(settings.copy(traceHeader = it)) }
             }
             add("div", "actions") {
                 button(texts.done, "primary") {

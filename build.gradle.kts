@@ -47,6 +47,8 @@ kotlin {
         }
         jsMain.dependencies {
             implementation(libs.telar.checkpoint.browser)
+            // The runs as OpenTelemetry traces, sent with the page's own HttpClient.
+            implementation(libs.telar.otel)
             implementation(libs.ktor.client.js)
         }
     }

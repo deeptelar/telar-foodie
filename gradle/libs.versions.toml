@@ -12,6 +12,7 @@ telar-anthropic = { module = "dev.deeptelar:telar-anthropic", version.ref = "tel
 telar-openai = { module = "dev.deeptelar:telar-openai", version.ref = "telar" }
 telar-serialization = { module = "dev.deeptelar:telar-serialization", version.ref = "telar" }
 telar-checkpoint-browser = { module = "dev.deeptelar:telar-checkpoint-browser", version.ref = "telar" }
+telar-otel = { module = "dev.deeptelar:telar-otel", version.ref = "telar" }
 telar-test = { module = "dev.deeptelar:telar-test", version.ref = "telar" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }

@@ -261,6 +261,14 @@ interface Texts {
     /** An amount of US dollars, with two decimals. */
     fun money(dollars: Double): String
 
+    val tracing: String
+
+    val tracingHint: String
+
+    val tracingAddress: String
+
+    val tracingHeader: String
+
     fun ratings(count: Int): String
 
     fun meal(time: MealTime): String

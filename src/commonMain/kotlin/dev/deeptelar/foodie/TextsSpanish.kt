@@ -269,6 +269,15 @@ object Spanish : Texts {
 
     override fun money(dollars: Double) = amount(dollars, ',') + " US$"
 
+    override val tracing = "Trazas de OpenTelemetry (para desarrolladores)"
+
+    override val tracingHint =
+        "Cada ejecución se envía como una traza: un span por paso, con lo que ha tardado y lo que ha fallado, y nada del viaje. El colector debe permitir el origen de esta página (CORS)."
+
+    override val tracingAddress = "Dirección de las trazas (OTLP/HTTP)"
+
+    override val tracingHeader = "Cabecera para la clave del servicio (Nombre: valor, opcional)"
+
     override fun ratings(count: Int) = "$count valoraciones"
 
     override fun meal(time: MealTime) =

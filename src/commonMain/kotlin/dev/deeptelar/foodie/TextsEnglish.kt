@@ -262,6 +262,15 @@ object English : Texts {
 
     override fun money(dollars: Double) = "$" + amount(dollars, '.')
 
+    override val tracing = "OpenTelemetry traces (for developers)"
+
+    override val tracingHint =
+        "Each run is sent as a trace: a span for each step, with how long it took and what failed, and nothing of the trip. The collector has to allow this page's origin (CORS)."
+
+    override val tracingAddress = "Address of the traces (OTLP/HTTP)"
+
+    override val tracingHeader = "Header for the backend's key (Name: value, optional)"
+
     override fun ratings(count: Int) = "$count ratings"
 
     override fun meal(time: MealTime) = time.label

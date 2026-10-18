@@ -114,6 +114,9 @@ Around the graph:
   its state, and the end of the route prices them at the providers' list prices
   ([`Cost.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Cost.kt)): what an app that paid for its
   travellers' plans would pay. Seven days with two changes cost about $2.12 with Claude Opus 5.5.
+- **The runs can be traced.** With the address of an OpenTelemetry collector in **Settings**, the
+  `OtlpObserver` of `telar-otel` sends each run as a trace from the browser: a span for each step,
+  with how long it took and what failed, and nothing of the trip.
 - **A source that fails does not fail the trip.** The street map's public servers are busy now and
   then. The trip is then planned with what the other sources found, and says what is missing.
 - **The tests need no key and no network.** [`PlannerTest`](src/commonTest/kotlin/dev/deeptelar/foodie/PlannerTest.kt)
