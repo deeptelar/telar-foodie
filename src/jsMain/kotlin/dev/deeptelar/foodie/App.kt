@@ -1303,7 +1303,7 @@ class App(
             } else {
                 // One day at a time: the strip stays at the top of the screen, and a day fits on a phone.
                 if (trip.days > 1) dayStrip(trip)
-                map = RouteMap(add("div", "map"), trip, texts).also { it.show(day) }
+                map = RouteMap(add("div", "map"), trip, texts, ::pinTapped).also { it.show(shownDay(trip)) }
             }
             dayList = add("div", "day-list").also { it.fillDay(trip) }
 
@@ -1446,6 +1446,24 @@ class App(
         }
     }
 
+    /** A tap on a pin brings its card to the middle of the screen, on its day, and marks it there. */
+    private fun pinTapped(day: Int, time: MealTime) {
+        val trip = trip ?: return
+        if (shownDay(trip) != day) showDay(day)
+        map?.mark(day, time)
+        val card = root.querySelector("article.meal[data-meal='${mealKey(day, time)}']") as? HTMLElement ?: return
+        markCard(card)
+        window.requestAnimationFrame { card.asDynamic().scrollIntoView(js("({ block: 'center', behavior: 'smooth' })")) }
+    }
+
+    /** Marks [card] as the meal on the map, and no other. */
+    private fun markCard(card: HTMLElement) {
+        root.querySelectorAll("article.meal.marked").let { cards -> (0 until cards.length).forEach { (cards.item(it) as? HTMLElement)?.classList?.remove("marked") } }
+        card.classList.add("marked")
+    }
+
+    private fun mealKey(day: Int, time: MealTime): String = "$day-${time.name}"
+
     /** The meals of the day shown, or for the whole trip a line for each day, to open it. */
     private fun HTMLElement.fillDay(trip: Trip) {
         val shown = shownDay(trip)
@@ -1526,8 +1544,15 @@ class App(
 
     private fun HTMLElement.meal(trip: Trip, meal: Meal, number: Int) {
         val restaurant = trip.restaurant(meal.restaurantId) ?: return
-        add("article", "meal") {
-            add("div", "pin ${RouteMap.dayClass(meal.day)}", "$number")
+        add("article", "meal ${RouteMap.dayClass(meal.day)}") {
+            setAttribute("data-meal", mealKey(meal.day, meal.time))
+            // The number is the pin's: a tap shows the place on the map.
+            val card = this
+            button("$number", "pin ${RouteMap.dayClass(meal.day)}") {
+                markCard(card)
+                map?.mark(meal.day, meal.time)
+                (root.querySelector(".map") as? HTMLElement)?.scrollIntoView(js("({ block: 'start', behavior: 'smooth' })"))
+            }.setAttribute("aria-label", texts.onTheMap)
             add("div", "meal-text") {
                 add("div", "meal-time", texts.meal(meal.time))
                 add("h4", text = restaurant.name)

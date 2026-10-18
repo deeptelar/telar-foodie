@@ -384,6 +384,7 @@ object Spanish : Texts {
             else -> null
         }
     override val dayInGoogleMaps = "Recorre este día en Google Maps"
+    override val onTheMap = "Ver en el mapa"
     override val saveForMyMaps = "Guardar los sitios para Google Maps"
     override val myMapsHintBefore = "Para tenerlos todos en Google Maps: en "
     override val myMapsHintAfter =

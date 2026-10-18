@@ -7,12 +7,13 @@ import kotlin.js.json
 
 /**
  * The route on a map of OpenStreetMap, drawn with Leaflet. The page loads Leaflet with a script
- * tag, so it is the global `L` here.
+ * tag, so it is the global `L` here. A tap on a pin goes to [onPin] with the meal's day and time.
  */
 class RouteMap(
     container: HTMLElement,
     trip: Trip,
     texts: Texts,
+    onPin: (Int, MealTime) -> Unit = { _, _ -> },
 ) {
     private val leaflet: dynamic = window.asDynamic().L
     private val map: dynamic = leaflet.map(container, json("scrollWheelZoom" to false))
@@ -20,6 +21,10 @@ class RouteMap(
 
     /** The pins and the line of each day, so that a day can be shown alone. */
     private val layers = mutableMapOf<Int, dynamic>()
+
+    /** The pin of each meal, by its day and time, and the one marked last. */
+    private val markers = mutableMapOf<Pair<Int, MealTime>, dynamic>()
+    private var marked: dynamic = null
 
     init {
         leaflet
@@ -38,7 +43,9 @@ class RouteMap(
                 val icon = leaflet.divIcon(json("className" to "pin ${dayClass(day)}", "html" to "${index + 1}", "iconSize" to arrayOf(28, 28)))
                 // The popup is an element with text in it, so a name cannot be read as HTML.
                 val popup = (document.createElement("div") as HTMLElement).apply { textContent = "${texts.meal(meal.time)}: ${restaurant.name}" }
-                leaflet.marker(point, json("icon" to icon)).addTo(layer).bindPopup(popup)
+                val marker = leaflet.marker(point, json("icon" to icon)).addTo(layer).bindPopup(popup)
+                marker.on("click") { onPin(day, meal.time) }
+                markers[day to meal.time] = marker
             }
             points[day]?.let { line -> leaflet.polyline(line.toTypedArray(), json("color" to DAY_COLORS[(day - 1) % DAY_COLORS.size], "weight" to 3, "opacity" to 0.75, "dashArray" to "6 6")).addTo(layer) }
         }
@@ -54,6 +61,15 @@ class RouteMap(
         } else {
             map.fitBounds(leaflet.latLngBounds(shown), json("padding" to arrayOf(36, 36), "maxZoom" to 16))
         }
+    }
+
+    /** Marks the pin of the meal at [time] of [day] and opens its name; the map moves to it when it is outside. */
+    fun mark(day: Int, time: MealTime) {
+        val marker = markers[day to time] ?: return
+        marked?.getElement()?.classList?.remove("marked")
+        marked = marker
+        marker.getElement()?.classList?.add("marked")
+        marker.openPopup()
     }
 
     /** Frees what Leaflet holds for the map. Call it before the container leaves the page. */

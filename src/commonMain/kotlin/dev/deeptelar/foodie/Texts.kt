@@ -349,6 +349,9 @@ interface Texts {
 
     /** The link under a day that opens its meals as a walk. */
     val dayInGoogleMaps: String
+
+    /** What the number of a meal does: it shows the place on the map. */
+    val onTheMap: String
     val saveForMyMaps: String
 
     /** How to import the file into Google My Maps: the words before and after the link to it. */

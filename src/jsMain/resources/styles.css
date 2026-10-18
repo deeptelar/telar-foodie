@@ -1063,3 +1063,23 @@ button.day-tab.current {
 .day-steps .next {
     margin-left: auto;
 }
+
+/* The number of a meal is the pin's, and shows it on the map. */
+button.pin {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+}
+
+/* The meal whose pin was tapped, and the pin of the meal shown. */
+article.meal.marked {
+    border-color: var(--day, var(--ink));
+    box-shadow: 0 0 0 2px var(--day, var(--ink));
+    scroll-margin-top: 72px;
+}
+
+.leaflet-marker-icon.marked {
+    box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--day, var(--ink));
+    z-index: 1000 !important;
+}
