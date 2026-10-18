@@ -386,6 +386,16 @@ object Spanish : Texts {
     override val myMapsHintAfter =
         ", crea un mapa nuevo, elige Importar y escoge el archivo. Luego el mapa aparece en la app de Google Maps, en Guardados, Mapas. " +
             "Es más fácil importarlo desde un ordenador."
+    override val saveOneByOne = "Guarda los sitios en Google Maps, uno a uno"
+    override val oneByOneHint =
+        "Cada botón abre el sitio en Google Maps. Allí toca Guardar, elige una lista, por ejemplo una nueva para este viaje, y vuelve para el siguiente. " +
+            "La página recuerda cuáles has abierto."
+    override val saveInGoogleMaps = "Guardar en Google Maps"
+    override fun openedOfAll(opened: Int, all: Int) = "$opened de $all abiertos"
+    override val sendTheFile = "Envíate el archivo"
+    override val sentFileText =
+        "Los sitios de mi Foodie Route. En un ordenador, abre Google My Maps, crea un mapa nuevo e importa este archivo. " +
+            "Si pregunta qué columnas usar, elige Latitude y Longitude para el sitio, y Name para el título."
     override val saveToFile = "Guardar el plan en un archivo"
     override val openAFile = "Abrir un plan guardado"
     override val savedFileHint =

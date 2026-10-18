@@ -1248,6 +1248,7 @@ class App(
                 }
             }
 
+            saveOneByOne(trip)
             trip.stops.forEach { stop ->
                 val dishes = trip.dishes.filter { it.stop == stop.name }
                 if (dishes.isNotEmpty()) {
@@ -1287,7 +1288,16 @@ class App(
             add("div", "quiet-actions") {
                 button(texts.saveForMyMaps, "link") {
                     val day = Date().toISOString().take(10)
-                    download(kmlName(trip, day), trip.toKml(), "application/vnd.google-earth.kml+xml")
+                    download(kmlName(trip, day), trip.toKml(), KML)
+                }
+                // A phone imports nothing into My Maps: the file goes to a computer, by mail or a chat.
+                if (canShareFiles()) {
+                    button(texts.sendTheFile, "link") {
+                        val day = Date().toISOString().take(10)
+                        if (!shareFile(kmlName(trip, day), trip.toKml(), KML, trip.mapTitle(), texts.sentFileText)) {
+                            shareFile(csvName(trip, day), trip.toCsv(), "text/csv", trip.mapTitle(), texts.sentFileText)
+                        }
+                    }
                 }
             }
             add("p", "hint small") {
@@ -1322,6 +1332,36 @@ class App(
                     }
                     button(texts.happyWithIt, "ghost") { resume { it.copy(approved = true) } }
                     button(texts.startOver, "ghost") { startOver() }
+                }
+            }
+        }
+    }
+
+    /**
+     * The route's places, each with a button that opens it in Google Maps to be saved there: on a
+     * phone, the app opens. The page ticks off and remembers the ones that were opened.
+     */
+    private fun HTMLElement.saveOneByOne(trip: Trip) {
+        val places = trip.route.sortedWith(compareBy({ it.day }, { it.time })).mapNotNull { meal -> trip.restaurant(meal.restaurantId)?.let { meal to it } }
+        if (places.isEmpty()) return
+        val route = places.joinToString(",") { it.second.id }
+        var opened = OpenedInMaps.load(route)
+        add("details", "known one-by-one") {
+            add("summary", text = texts.saveOneByOne)
+            add("p", "hint small", texts.oneByOneHint)
+            val count = add("p", "count", texts.openedOfAll(opened.size, places.size))
+            add("ol", "save-list") {
+                places.forEach { (meal, place) ->
+                    // Drawn again in place: drawing the page again would close the list.
+                    val item = add("li", if (place.id in opened) "opened" else "")
+                    item.add("span", "save-name", "${texts.day(meal.day)} · ${texts.meal(meal.time)} · ${place.name}")
+                    item.link(texts.saveInGoogleMaps, place.googleMapsLink(), "save-link").onclick = {
+                        opened = opened + place.id
+                        OpenedInMaps.save(route, opened)
+                        item.className = "opened"
+                        count.textContent = texts.openedOfAll(opened.size, places.size)
+                        Unit
+                    }
                 }
             }
         }
@@ -1367,6 +1407,9 @@ class App(
 
 
     private companion object {
+        /** The media type of a KML file. */
+        const val KML = "application/vnd.google-earth.kml+xml"
+
         /** How many of the agent's last actions a run shows. */
         const val FEED_LINES = 8
 

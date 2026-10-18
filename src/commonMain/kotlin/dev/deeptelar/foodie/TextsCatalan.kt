@@ -386,6 +386,16 @@ object Catalan : Texts {
     override val myMapsHintAfter =
         ", crea un mapa nou, tria Importa i escull el fitxer. Després el mapa surt a l'app de Google Maps, a Desats, Mapes. " +
             "És més fàcil importar-lo des d'un ordinador."
+    override val saveOneByOne = "Desa els llocs a Google Maps, un per un"
+    override val oneByOneHint =
+        "Cada botó obre el lloc a Google Maps. Allà toca Desa, tria una llista, per exemple una de nova per a aquest viatge, i torna per al següent. " +
+            "La pàgina recorda quins has obert."
+    override val saveInGoogleMaps = "Desa a Google Maps"
+    override fun openedOfAll(opened: Int, all: Int) = "$opened de $all oberts"
+    override val sendTheFile = "Envia't el fitxer"
+    override val sentFileText =
+        "Els llocs de la meva Foodie Route. En un ordinador, obre Google My Maps, crea un mapa nou i importa aquest fitxer. " +
+            "Si et pregunta quines columnes fer servir, tria Latitude i Longitude per al lloc, i Name per al títol."
     override val saveToFile = "Desa el pla en un fitxer"
     override val openAFile = "Obre un pla desat"
     override val savedFileHint =

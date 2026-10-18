@@ -368,6 +368,16 @@ object English : Texts {
     override val myMapsHintAfter =
         ", create a new map, choose Import and pick the file. The map then appears in the Google Maps app, under Saved, Maps. " +
             "Importing is easiest on a computer."
+    override val saveOneByOne = "Save the places in Google Maps, one by one"
+    override val oneByOneHint =
+        "Each button opens the place in Google Maps. Tap Save there, pick a list, such as a new one for this trip, and come back for the next. " +
+            "The page remembers which ones you opened."
+    override val saveInGoogleMaps = "Save in Google Maps"
+    override fun openedOfAll(opened: Int, all: Int) = "$opened of $all opened"
+    override val sendTheFile = "Send the file to yourself"
+    override val sentFileText =
+        "The places of my Foodie Route. On a computer, open Google My Maps, create a new map and import this file. " +
+            "If it asks which columns to use, choose Latitude and Longitude for the place, and Name for the title."
     override val saveToFile = "Save the plan as a file"
     override val openAFile = "Open a saved plan"
     override val savedFileHint =

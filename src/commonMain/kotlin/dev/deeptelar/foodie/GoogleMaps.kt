@@ -59,39 +59,52 @@ private const val MAPS = "https://www.google.com/maps"
 /** Where Google My Maps is, to import the file of [toKml]. */
 const val MY_MAPS: String = "https://www.google.com/maps/d/"
 
+/** A pin of the route for a file of Google My Maps: a meal, with what to read about it. */
+private class Pin(
+    val day: Int,
+    val name: String,
+    val lat: Double,
+    val lon: Double,
+    val lines: List<String>,
+)
+
+/** A pin for each meal of the route, numbered in the order they are eaten. */
+private fun Trip.pins(): List<Pin> {
+    val texts = language.texts
+    return route.sortedWith(compareBy({ it.day }, { it.time })).mapNotNull { meal -> restaurant(meal.restaurantId)?.let { meal to it } }.mapIndexed { index, (meal, place) ->
+        val lines =
+            listOfNotNull(
+                texts.order + meal.dish,
+                meal.why,
+                meal.caution.takeIf { it.isNotBlank() }?.let { "⚠ $it" },
+                place.address.takeIf { it.isNotBlank() },
+                listOfNotNull(texts.booking(place.reservation), place.phone.takeIf { it.isNotBlank() }).joinToString(" · ").takeIf { it.isNotBlank() },
+                place.website.takeIf { it.isNotBlank() },
+            )
+        Pin(meal.day, "${index + 1}. ${texts.meal(meal.time)} · ${place.name}", place.lat, place.lon, lines)
+    }
+}
+
 /**
  * The route as a KML file for Google My Maps: a folder for each day, and a pin for each meal with
  * what to order there, why, and what to watch out for.
  */
 fun Trip.toKml(): String {
     val texts = language.texts
+    val pins = pins()
     return buildString {
         appendLine("""<?xml version="1.0" encoding="UTF-8"?>""")
         appendLine("""<kml xmlns="http://www.opengis.net/kml/2.2">""")
         appendLine("<Document>")
-        appendLine("<name>${xml("Foodie Route · " + stops.joinToString(" · ") { it.title })}</name>")
-        var number = 0
-        (1..days).forEach { day ->
-            val meals = route.filter { it.day == day }.sortedBy { it.time }
-            if (meals.isEmpty()) return@forEach
+        appendLine("<name>${xml(mapTitle())}</name>")
+        pins.groupBy { it.day }.forEach { (day, pinsOfDay) ->
             appendLine("<Folder>")
             appendLine("<name>${xml(texts.dayAt(day, stopOn(day)?.title.orEmpty()))}</name>")
-            meals.forEach { meal ->
-                number++
-                val place = restaurant(meal.restaurantId) ?: return@forEach
-                val lines =
-                    listOf(
-                        texts.order + meal.dish,
-                        meal.why,
-                        meal.caution.takeIf { it.isNotBlank() }?.let { "⚠ $it" },
-                        place.address.takeIf { it.isNotBlank() },
-                        listOfNotNull(texts.booking(place.reservation), place.phone.takeIf { it.isNotBlank() }).joinToString(" · ").takeIf { it.isNotBlank() },
-                        place.website.takeIf { it.isNotBlank() },
-                    ).filterNotNull()
+            pinsOfDay.forEach { pin ->
                 appendLine("<Placemark>")
-                appendLine("<name>${xml("$number. ${texts.meal(meal.time)} · ${place.name}")}</name>")
-                appendLine("<description>${xml(lines.joinToString("\n"))}</description>")
-                appendLine("<Point><coordinates>${place.lon},${place.lat}</coordinates></Point>")
+                appendLine("<name>${xml(pin.name)}</name>")
+                appendLine("<description>${xml(pin.lines.joinToString("\n"))}</description>")
+                appendLine("<Point><coordinates>${pin.lon},${pin.lat}</coordinates></Point>")
                 appendLine("</Placemark>")
             }
             appendLine("</Folder>")
@@ -101,8 +114,26 @@ fun Trip.toKml(): String {
     }
 }
 
+/**
+ * The route as a CSV file for Google My Maps, for where a KML file cannot go: the share sheet of a
+ * phone's browser takes text files, and no KML. My Maps asks which columns say where a pin is and
+ * what its name is: "Latitude", "Longitude" and "Name".
+ */
+fun Trip.toCsv(): String =
+    (listOf("Name,Latitude,Longitude,Description") + pins().map { pin -> listOf(csv(pin.name), "${pin.lat}", "${pin.lon}", csv(pin.lines.joinToString("\n"))).joinToString(",") })
+        .joinToString("\r\n", postfix = "\r\n")
+
+/** The name of the map in My Maps: the trip's places. */
+fun Trip.mapTitle(): String = "Foodie Route · " + stops.joinToString(" · ") { it.title }
+
+/** [text] as a field of a CSV file: in quotes, with its quotes doubled. */
+private fun csv(text: String): String = "\"" + text.replace("\"", "\"\"") + "\""
+
 /** [text] as it may stand in the text of an XML element. */
 private fun xml(text: String): String = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 /** The name of the KML file of [trip], beside the file of the plan. */
 fun kmlName(trip: Trip, day: String): String = fileName(trip, day).removeSuffix(".json") + ".kml"
+
+/** The name of the CSV file of [trip]. */
+fun csvName(trip: Trip, day: String): String = fileName(trip, day).removeSuffix(".json") + ".csv"

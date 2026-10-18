@@ -63,4 +63,16 @@ class GoogleMapsTest {
         assertTrue("Booking recommended · +34 971 72 17 81" in kml, kml)
         assertEquals("foodie-route-palma-de-mallorca-2026-10-18.kml", kmlName(trip, "2026-10-18"))
     }
+
+    @Test
+    fun `the file a phone can share is a CSV of the same pins, with the columns My Maps asks for`() {
+        val rows = trip.toCsv().split("\r\n")
+        assertEquals("Name,Latitude,Longitude,Description", rows.first())
+        assertTrue(rows[1].startsWith("\"1. Breakfast · Ca'n Joan de s'Aigo\",39.5699,2.6526,\"Order: ensaïmada\nThe famous one.\""), rows[1])
+        // A quote in a field is doubled, and the line breaks of a description stay inside its quotes.
+        val quoted = trip.copy(route = listOf(Meal(1, MealTime.LUNCH, "r3", "sopes \"de la casa\"", "Home cooking."))).toCsv()
+        assertTrue("\"Order: sopes \"\"de la casa\"\"\nHome cooking.\nC de la Previsió 4\"" in quoted, quoted)
+        assertEquals(6, rows.size, "a header, four meals and the end of the last line")
+        assertEquals("foodie-route-palma-de-mallorca-2026-10-18.csv", csvName(trip, "2026-10-18"))
+    }
 }

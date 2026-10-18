@@ -470,6 +470,47 @@ h3.day {
     padding-left: 22px;
 }
 
+/* The places to save one by one in Google Maps: an opened one is ticked off. */
+.save-list {
+    padding-left: 0;
+    list-style: none;
+}
+
+.save-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2px 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.save-list .save-name::before {
+    content: "○ ";
+    color: var(--soft);
+}
+
+.save-list li.opened .save-name::before {
+    content: "✓ ";
+    color: var(--ok);
+}
+
+.save-list li.opened .save-name {
+    color: var(--soft);
+}
+
+.one-by-one .count {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.save-link {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 /* Under a day's heading: the day's meals as a walk in Google Maps. */
 .day-link {
     font-size: 14px;

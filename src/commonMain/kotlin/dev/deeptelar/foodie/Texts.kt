@@ -348,6 +348,16 @@ interface Texts {
     val myMapsHintBefore: String
     val myMapsHintAfter: String
 
+    /** Over the list that opens the places one by one, to save each in the app. */
+    val saveOneByOne: String
+    val oneByOneHint: String
+    val saveInGoogleMaps: String
+    fun openedOfAll(opened: Int, all: Int): String
+
+    /** The button that sends the file for My Maps through the phone's share sheet, and the words that go with it. */
+    val sendTheFile: String
+    val sentFileText: String
+
     // A plan in a file
 
     val saveToFile: String
