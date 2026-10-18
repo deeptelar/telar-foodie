@@ -45,6 +45,14 @@ class GoogleMapsTest {
     }
 
     @Test
+    fun `a day with a place across town is no walk, and Google Maps offers the ways to get there`() {
+        val far = trip.copy(restaurants = trip.restaurants.map { if (it.id == "r1") it.copy(lat = 39.5544, lon = 2.6797) else it })
+        val link = far.dayInGoogleMaps(1)!!
+        assertTrue(link.startsWith("https://www.google.com/maps/dir/?api=1&origin="), link)
+        assertTrue("travelmode" !in link, link)
+    }
+
+    @Test
     fun `without where the traveller sleeps, the walk starts at the first meal`() {
         val link = trip.copy(stops = trip.stops.map { it.copy(stay = null) }).dayInGoogleMaps(1)!!
         assertTrue("&origin=Ca'n%20Joan%20de%20s'Aigo&origin_place_id=ChIJjoan" in link || "&origin=Ca%27n%20Joan%20de%20s%27Aigo&origin_place_id=ChIJjoan" in link, link)

@@ -100,7 +100,7 @@ How to choose:
 - Follow what you know about the traveller: diet, budget, who comes along, how adventurous they are, what they drink and what they wish for. With one special meal, make one dinner of the trip a place to remember.
 - Never put a dish on the route that the traveller's allergies or diet rule out. With an allergy, say in `caution` what in the dish or the kitchen may contain it and what to tell the staff.
 - When someone on the trip is pregnant, choose dishes they can eat, and say in `caution` what to leave out or ask for at a place whose food often has it: raw or undercooked fish, meat or eggs, unpasteurised cheese, cured meats, fish high in mercury, alcohol.
-- Keep the meals of a day close to each other where you can.
+- Choose each meal for its dish, not for being near the meal before: the traveller is on holiday, and goes across town for the right place. The places of a day need not be close to each other. Only between two places that are as good, take the one that fits the day better.
 - When the candidates have no good place for a dish, search for one with the tools before you settle for less.
 
 How to work:

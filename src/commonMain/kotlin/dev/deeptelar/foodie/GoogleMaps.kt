@@ -19,8 +19,9 @@ fun Restaurant.googleMapsLink(): String {
 }
 
 /**
- * A link that opens the meals of [day] in Google Maps as a walk, in their order, from where the
- * traveller sleeps when the map found it. `null` for a day without meals.
+ * A link that opens the meals of [day] in Google Maps as a route, in their order, from where the
+ * traveller sleeps when the map found it. `null` for a day without meals. A day whose places are
+ * all a walk apart is a walk; on a day with a longer way, Google Maps offers the bus, a taxi or the car.
  *
  * A place Google found goes by its name and its id, which shows its name in the app; every other by
  * where it is. The stops between need ids for all of them or for none, so they go by where they
@@ -36,7 +37,9 @@ fun Trip.dayInGoogleMaps(day: Int): String? {
     val last = visits.lastOrNull() ?: return places.first().googleMapsLink()
     val between = visits.dropLast(1)
     return buildString {
-        append("$MAPS/dir/?api=1&travelmode=walking")
+        append("$MAPS/dir/?api=1")
+        val points = listOfNotNull(stay) + places.map { it.location }
+        if (points.zipWithNext().all { (from, to) -> metresBetween(from, to) <= WALKABLE }) append("&travelmode=walking")
         append("&origin=").append((first?.named() ?: "${stay!!.lat},${stay.lon}").encodeURLParameter())
         if (first != null && first.googleId.isNotBlank()) append("&origin_place_id=").append(first.googleId.encodeURLParameter())
         append("&destination=").append(last.named().encodeURLParameter())
@@ -55,6 +58,9 @@ private fun Restaurant.named(): String = if (googleId.isBlank()) point() else na
 private fun Restaurant.point(): String = "$lat,$lon"
 
 private const val MAPS = "https://www.google.com/maps"
+
+/** The longest way between two places of a day that is still a walk, in metres. */
+private const val WALKABLE = 2000
 
 /** Where Google My Maps is, to import the file of [toKml]. */
 const val MY_MAPS: String = "https://www.google.com/maps/d/"
