@@ -367,7 +367,7 @@ class SourcesTest {
                     respond(
                         """
                         {"places":[
-                          {"displayName":{"text":"Zé da Mouraria"},"formattedAddress":"R. João do Outeiro 24, Lisboa","location":{"latitude":38.7155,"longitude":-9.1362},
+                          {"id":"ChIJze","displayName":{"text":"Zé da Mouraria"},"formattedAddress":"R. João do Outeiro 24, Lisboa","location":{"latitude":38.7155,"longitude":-9.1362},
                            "rating":4.6,"userRatingCount":3200,"priceLevel":"PRICE_LEVEL_MODERATE","websiteUri":"https://example.org/ze",
                            "primaryTypeDisplayName":{"text":"Portuguese restaurant"}},
                           {"displayName":{"text":"No position"}}
@@ -382,7 +382,7 @@ class SourcesTest {
                 listOf(
                     Restaurant(
                         stop = "Lisbon", name = "Zé da Mouraria", lat = 38.7155, lon = -9.1362, cuisine = "Portuguese restaurant",
-                        address = "R. João do Outeiro 24, Lisboa", website = "https://example.org/ze", price = "medium",
+                        address = "R. João do Outeiro 24, Lisboa", website = "https://example.org/ze", price = "medium", googleId = "ChIJze",
                         rating = 4.6, ratings = 3200, sources = setOf(Source.REVIEWS),
                     ),
                 ),

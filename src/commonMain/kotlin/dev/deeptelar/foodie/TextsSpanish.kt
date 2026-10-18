@@ -372,6 +372,12 @@ object Spanish : Texts {
     override val stepSpecialists = "Los sitios conocidos por cada plato"
     override fun lookingForSpecialists(stop: String) = "Buscando los sitios conocidos por los platos de $stop"
     override fun knownForDish(dish: String) = "Conocido por: $dish"
+    override val dayInGoogleMaps = "Recorre este día en Google Maps"
+    override val saveForMyMaps = "Guardar los sitios para Google Maps"
+    override val myMapsHintBefore = "Para tenerlos todos en Google Maps: en "
+    override val myMapsHintAfter =
+        ", crea un mapa nuevo, elige Importar y escoge el archivo. Luego el mapa aparece en la app de Google Maps, en Guardados, Mapas. " +
+            "Es más fácil importarlo desde un ordenador."
     override val saveToFile = "Guardar el plan en un archivo"
     override val openAFile = "Abrir un plan guardado"
     override val savedFileHint =

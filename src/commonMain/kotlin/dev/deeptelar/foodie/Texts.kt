@@ -335,6 +335,16 @@ interface Texts {
     /** On the card of a meal at a place known for a dish of its stop. */
     fun knownForDish(dish: String): String
 
+    // The route in Google Maps
+
+    /** The link under a day that opens its meals as a walk. */
+    val dayInGoogleMaps: String
+    val saveForMyMaps: String
+
+    /** How to import the file into Google My Maps: the words before and after the link to it. */
+    val myMapsHintBefore: String
+    val myMapsHintAfter: String
+
     // A plan in a file
 
     val saveToFile: String

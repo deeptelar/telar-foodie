@@ -1239,6 +1239,8 @@ class App(
                 val meals = trip.route.filter { it.day == day }
                 add("h3", "day ${RouteMap.dayClass(day)}", texts.dayAt(day, trip.stopOn(day)?.title.orEmpty()))
                 if (meals.isEmpty()) add("p", "hint", texts.nothingPlannedThisDay)
+                // A day of one meal is no walk: its card has the link to the place.
+                if (meals.size > 1) trip.dayInGoogleMaps(day)?.let { add("p", "day-link") { link(texts.dayInGoogleMaps, it) } }
                 meals.forEachIndexed { index, meal ->
                     number++
                     meal.walk?.let { add("p", "walk", texts.walk(texts.distance(it), fromStay = index == 0)) }
@@ -1282,6 +1284,17 @@ class App(
             }
             // The sample asks no model, so it has no tokens to show.
             add("p", "hint small", texts.placesCompared(trip.restaurants.size) + if (trip.tokens.total > 0) " · " + texts.tokensUsed(trip.tokens.total) else "")
+            add("div", "quiet-actions") {
+                button(texts.saveForMyMaps, "link") {
+                    val day = Date().toISOString().take(10)
+                    download(kmlName(trip, day), trip.toKml(), "application/vnd.google-earth.kml+xml")
+                }
+            }
+            add("p", "hint small") {
+                add("span", text = texts.myMapsHintBefore)
+                link("Google My Maps", MY_MAPS)
+                add("span", text = texts.myMapsHintAfter)
+            }
             add("div", "quiet-actions") { button(texts.saveToFile, "link") { saveFile() } }
             add("p", "hint small", texts.savedFileHint)
         }
@@ -1337,14 +1350,13 @@ class App(
                 if (facts.isNotEmpty()) add("p", "facts", facts.joinToString(" · "))
                 add("div", "links") {
                     if (restaurant.website.isNotBlank()) link(texts.website, restaurant.website)
-                    link(texts.openInGoogleMaps, "https://www.google.com/maps/search/?api=1&query=${encode("${restaurant.name}, ${restaurant.stop}")}")
+                    link(texts.openInGoogleMaps, restaurant.googleMapsLink())
                     link("OpenStreetMap", "https://www.openstreetmap.org/?mlat=${restaurant.lat}&mlon=${restaurant.lon}#map=18/${restaurant.lat}/${restaurant.lon}")
                 }
             }
         }
     }
 
-    private fun encode(text: String): String = js("encodeURIComponent")(text).unsafeCast<String>()
 
     private companion object {
         /** How many of the agent's last actions a run shows. */

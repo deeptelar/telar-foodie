@@ -45,6 +45,7 @@ fun List<Restaurant>.merged(found: List<Restaurant>): List<Restaurant> {
                     hours = known.hours.ifBlank { new.hours },
                     price = known.price.ifBlank { new.price },
                     note = known.note.ifBlank { new.note },
+                    googleId = known.googleId.ifBlank { new.googleId },
                     rating = known.rating ?: new.rating,
                     ratings = known.ratings ?: new.ratings,
                     sources = known.sources + new.sources,

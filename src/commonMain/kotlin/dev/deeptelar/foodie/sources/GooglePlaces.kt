@@ -44,7 +44,7 @@ class GooglePlaces(
 
     companion object {
         private const val FIELDS =
-            "places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount," +
+            "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount," +
                 "places.priceLevel,places.websiteUri,places.primaryTypeDisplayName"
 
         /** Results come from around this distance of the stop first, in metres. */
@@ -81,6 +81,7 @@ class GooglePlaces(
                     cuisine = place.obj("primaryTypeDisplayName")?.text("text").orEmpty(),
                     address = place.text("formattedAddress"),
                     website = place.text("websiteUri"),
+                    googleId = place.text("id"),
                     price = PRICES[place.text("priceLevel")].orEmpty(),
                     rating = place.number("rating"),
                     ratings = place.number("userRatingCount")?.toInt(),

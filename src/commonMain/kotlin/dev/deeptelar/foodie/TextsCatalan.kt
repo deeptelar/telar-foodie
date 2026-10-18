@@ -372,6 +372,12 @@ object Catalan : Texts {
     override val stepSpecialists = "Els llocs coneguts per cada plat"
     override fun lookingForSpecialists(stop: String) = "Buscant els llocs coneguts pels plats de $stop"
     override fun knownForDish(dish: String) = "Conegut per: $dish"
+    override val dayInGoogleMaps = "Recorre aquest dia a Google Maps"
+    override val saveForMyMaps = "Desa els llocs per a Google Maps"
+    override val myMapsHintBefore = "Per tenir-los tots a Google Maps: a "
+    override val myMapsHintAfter =
+        ", crea un mapa nou, tria Importa i escull el fitxer. Després el mapa surt a l'app de Google Maps, a Desats, Mapes. " +
+            "És més fàcil importar-lo des d'un ordinador."
     override val saveToFile = "Desa el pla en un fitxer"
     override val openAFile = "Obre un pla desat"
     override val savedFileHint =

@@ -183,6 +183,8 @@ data class Restaurant(
     val price: String = "",
     /** What a source says about the place in words: the guide's description. */
     val note: String = "",
+    /** The id Google Maps knows the place by, when Google found it: a link opens exactly that place. */
+    val googleId: String = "",
     /** Stars out of five, and how many people rated. Only Google has these. */
     val rating: Double? = null,
     val ratings: Int? = null,

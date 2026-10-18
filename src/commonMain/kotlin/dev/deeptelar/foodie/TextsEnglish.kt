@@ -354,6 +354,12 @@ object English : Texts {
     override val stepSpecialists = "The places known for each dish"
     override fun lookingForSpecialists(stop: String) = "Looking for the places known for the dishes of $stop"
     override fun knownForDish(dish: String) = "Known for: $dish"
+    override val dayInGoogleMaps = "Walk this day in Google Maps"
+    override val saveForMyMaps = "Save the places for Google Maps"
+    override val myMapsHintBefore = "To have them all in Google Maps: in "
+    override val myMapsHintAfter =
+        ", create a new map, choose Import and pick the file. The map then appears in the Google Maps app, under Saved, Maps. " +
+            "Importing is easiest on a computer."
     override val saveToFile = "Save the plan as a file"
     override val openAFile = "Open a saved plan"
     override val savedFileHint =

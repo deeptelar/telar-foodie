@@ -459,6 +459,12 @@ h3.day {
     padding-left: 22px;
 }
 
+/* Under a day's heading: the day's meals as a walk in Google Maps. */
+.day-link {
+    font-size: 14px;
+    margin: -4px 0 10px;
+}
+
 .pin {
     flex: none;
     width: 28px;
