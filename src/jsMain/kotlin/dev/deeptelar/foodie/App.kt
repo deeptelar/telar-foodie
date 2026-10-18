@@ -189,7 +189,8 @@ class App(
 
     /**
      * Continues the saved run, with [update] applied to its state first. [trip] is then the state
-     * the run continues with, which is saved only when its step is done: a pause before that keeps it.
+     * the run continues with. `resume` saves it before the first step runs, so a step that fails
+     * or a pause keeps it, such as the traveller's answers, and "Try again" goes on with it.
      */
     private fun resume(update: (Trip) -> Trip = { it }) {
         run { planner().streamResume(config) { update(it).also { started -> trip = started } } }
@@ -304,7 +305,8 @@ class App(
             }
             is GraphEvent.Interrupted -> show(GraphResult.Interrupted(event.state, event.nextNodes))
             is GraphEvent.Completed -> show(GraphResult.Completed(event.state))
-            is GraphEvent.SubgraphEvent -> Unit
+            // No node of the planner runs for each item of a list, and no subgraph is part of it.
+            is GraphEvent.SubgraphEvent, is GraphEvent.ItemCompleted -> Unit
         }
     }
 

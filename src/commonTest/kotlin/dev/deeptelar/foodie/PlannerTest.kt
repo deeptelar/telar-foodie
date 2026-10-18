@@ -23,6 +23,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -454,6 +455,20 @@ class PlannerTest {
             assertTrue("Café Bifana · known for: Bifana" in model.requests[2].messages.first().text)
             // The map's own step says that it did not answer, once.
             assertEquals(1, run.state.notes.size, run.state.notes.toString())
+        }
+
+    @Test
+    fun `the traveller's answers are kept when the step that reads them fails, so trying again goes on with them`() =
+        runTest {
+            val config = config()
+            val model = ScriptedChatModel { answers(Reading(Profile())) }
+            val asked = planner(model, sources()).invoke(Trip("One day in Lisbon"), config)
+            val answers = asked.state.questions.map { Answer(it.topic, it.text, "Peanuts") }
+
+            // The script has no answer for the reading of the answers: the step fails.
+            assertFailsWith<AssertionError> { planner(model, sources()).resume(config) { it.answered(answers) } }
+
+            assertEquals(answers, config.checkpointer!!.load(config.threadId)!!.state.answers)
         }
 
     @Test
