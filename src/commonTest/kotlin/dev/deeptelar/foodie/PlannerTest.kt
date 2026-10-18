@@ -1056,6 +1056,31 @@ class PlannerTest {
     }
 
     @Test
+    fun `a dish ordered twice on the route is pointed out to the agent, by the stop's dish it names`() {
+        val trip =
+            Trip(
+                "Three days in Lisbon",
+                dishes = listOf(Dish(lisbon, "Pastel de nata", "A custard tart.", "breakfast")),
+                route =
+                    listOf(
+                        Meal(1, MealTime.BREAKFAST, "r1", "pastel de nata", ""),
+                        Meal(1, MealTime.LUNCH, "r2", "bifana", ""),
+                        Meal(3, MealTime.BREAKFAST, "r3", "Pastel de nata, warm, with a bica", ""),
+                    ),
+            )
+
+        val told = trip.repeatedDishes(trip.route.takeLast(1))
+
+        assertEquals(
+            "\nThe same dish more than once: pastel de nata on day 1 breakfast, day 3 breakfast. " +
+                "Give each meal its own dish unless the traveller asked for this one again: a stop has more to eat at that time of the day than its best-known dish.",
+            told,
+        )
+        // A meal whose dish is on the route once is no repetition.
+        assertEquals("", trip.repeatedDishes(trip.route.filter { it.time == MealTime.LUNCH }))
+    }
+
+    @Test
     fun `a search near a place looks around it, and says how far each place is from it`() =
         runTest {
             var searched: Pair<Location, Int>? = null

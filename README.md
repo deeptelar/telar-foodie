@@ -100,6 +100,13 @@ Around the graph:
   the tools `set_days` and `add_stop`, and its searches can look around a place with `near`.
 - **The traveller can sleep in more than one place.** Each stop has its hotels by night, and the
   meals the traveller wants near where they sleep are checked against the place of that night.
+- **The tools check what the agent puts on the route.** A restaurant used twice, a meal far from
+  the hotel when the traveller wants it near, or a dish already ordered on another day comes back
+  to the agent in the tool's result, to fix before it answers.
+- **The route is made for a phone.** It shows one day at a time under a strip of days that stays
+  at the top, the map and the cards point at each other, and a card opens for its details. A
+  change runs with the route on the screen, and a cancelled one puts back the checkpoint saved
+  before it.
 - **The page shows the run live.** [`App.kt`](src/jsMain/kotlin/dev/deeptelar/foodie/App.kt)
   collects `stream()`: a node that starts, what it reports with `reportProgress`, the text of the
   model as it is written, and the tool calls of the agent.

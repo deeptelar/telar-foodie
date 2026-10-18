@@ -238,7 +238,9 @@ private val routeEditors: List<StateTool<Trip>> =
                     if (problems.isNotEmpty()) append("\nNot on the route:\n" + problems.joinToString("\n"))
                     if (twice.isNotEmpty()) append("\nMore than once on the route: ${twice.joinToString()}. Use a restaurant once.")
                     append(" " + after.openMeals())
-                    append(after.farFromStay(after.route.filter { meal -> plan.meals.any { it.day == meal.day && MealTime.of(it.meal) == meal.time } }))
+                    val set = after.route.filter { meal -> plan.meals.any { it.day == meal.day && MealTime.of(it.meal) == meal.time } }
+                    append(after.farFromStay(set))
+                    append(after.repeatedDishes(set))
                     if (plan.message.isNotBlank()) {
                         append(if (after.finishedBy(plan)) " The route is done, and the traveller reads your message." else " Your message is not shown yet: fix this, then send the message again.")
                     }
@@ -254,7 +256,7 @@ private val routeEditors: List<StateTool<Trip>> =
                 "Day ${choice.day}, ${mealTime(choice.meal).label.lowercase()}: ${restaurant.name}." +
                     (if (twice) " It is on the route more than once now." else "") +
                     " " + after.openMeals() +
-                    after.farFromStay(after.route.filter { it.day == choice.day && it.time == mealTime(choice.meal) }),
+                    after.route.filter { it.day == choice.day && it.time == mealTime(choice.meal) }.let { after.farFromStay(it) + after.repeatedDishes(it) },
             )
         },
         StateTool<Trip, MealOffer>(
@@ -273,7 +275,7 @@ private val routeEditors: List<StateTool<Trip>> =
             ToolOutcome(
                 after,
                 "Offered for day ${offer.day} ${time.label.lowercase()}: ${names.joinToString()}. ${names.first()} is on the route until the traveller chooses. " +
-                    after.openMeals() + after.farFromStay(options),
+                    after.openMeals() + after.farFromStay(options) + after.repeatedDishes(options.take(1)),
             )
         },
         StateTool<Trip, MealSlot>("remove_meal", "Takes a meal off the route.") { trip, slot ->
@@ -520,6 +522,21 @@ internal fun Trip.farFromStay(meals: List<Meal>): String =
                 "choose a place within $NEAR_STAY m, and search with near \"$name\" if no candidate is."
         }
     }.joinToString("")
+
+/**
+ * What to tell the model when one of [meals] orders a dish that another meal of the route orders
+ * too, in words for it; empty when none does. A dish is the stop's dish it names, such as
+ * "ensaïmada amb xocolata" in "an ensaïmada amb xocolata, warm", or else its own words.
+ */
+internal fun Trip.repeatedDishes(meals: List<Meal>): String {
+    val known = dishes.map { it.name.lowercase().trim() }.filter { it.isNotEmpty() }.sortedByDescending { it.length }
+    fun dish(meal: Meal): String = meal.dish.lowercase().trim().let { words -> known.firstOrNull { it in words } ?: words }
+    return route.filter { it.dish.isNotBlank() }.groupBy(::dish).filterValues { it.size > 1 }.filterValues { same -> same.any { meal -> meals.any { it.day == meal.day && it.time == meal.time } } }
+        .map { (dish, same) ->
+            "\nThe same dish more than once: $dish on " + same.sortedWith(compareBy({ it.day }, { it.time })).joinToString { "day ${it.day} ${it.time.label.lowercase()}" } +
+                ". Give each meal its own dish unless the traveller asked for this one again: a stop has more to eat at that time of the day than its best-known dish."
+        }.joinToString("")
+}
 
 /** The meals of every day: the ones the traveller asked for, or a lunch and a dinner. */
 internal val Trip.dailyMeals: List<MealTime> get() = profile.meals.distinct().sorted().ifEmpty { listOf(MealTime.LUNCH, MealTime.DINNER) }
