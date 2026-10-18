@@ -239,7 +239,8 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
 
         // The place where the run waits for the traveller. It runs when the traveller answered, and a
         // change starts a new turn of the agent, with a budget of its own.
-        val review = node(Nodes.REVIEW) { trip -> trip.copy(turnStart = trip.tokens.total) }
+        // What the traveller chose of the places the agent offered goes before their words.
+        val review = node(Nodes.REVIEW) { trip -> trip.copy(turnStart = trip.tokens.total).withPicksTold() }
 
         val plan =
             toolLoop(

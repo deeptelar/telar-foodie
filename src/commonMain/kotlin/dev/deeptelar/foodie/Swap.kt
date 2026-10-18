@@ -44,6 +44,46 @@ data class MealSwap(
 }
 
 /**
+ * The places the agent offered for one meal: the first is the one it recommends, and it is on the
+ * route until the traveller chooses another.
+ */
+@Serializable
+data class Offer(
+    val day: Int,
+    val time: MealTime,
+    val options: List<Meal>,
+    /** Why the agent recommends the first option over the others, in one sentence. */
+    val recommendation: String = "",
+) {
+    val recommended: Meal get() = options.first()
+}
+
+/** The offer for the meal of [day] and [time], if the agent made one. */
+fun Trip.offerFor(day: Int, time: MealTime): Offer? = offers.firstOrNull { it.day == day && it.time == time }
+
+/**
+ * The trip with [option], one of the places the agent offered, on the route. Nothing runs: the
+ * agent hears of it with the traveller's next words, and the walks of the day are measured again.
+ */
+fun Trip.picked(option: Meal): Trip {
+    val changed = copy(route = route.filterNot { it.day == option.day && it.time == option.time } + option)
+    val slot = "Day ${option.day} ${option.time.label.lowercase()}"
+    val name = restaurant(option.restaurantId)?.name ?: option.restaurantId
+    return changed.copy(route = ordered(changed), picks = picks.filterNot { it.startsWith("$slot:") } + "$slot: $name [${option.restaurantId}]")
+}
+
+/**
+ * The trip as the agent's next turn starts: what the traveller chose of the offers goes before
+ * their words, so that the agent knows the route it changes.
+ */
+internal fun Trip.withPicksTold(): Trip {
+    if (picks.isEmpty()) return this
+    val last = messages.lastOrNull() as? ChatMessage.User ?: return copy(picks = emptyList())
+    val told = "Of the places you offered, I chose:\n" + picks.joinToString("\n") { "- $it" } + "\n\n" + last.text
+    return copy(messages = messages.dropLast(1) + ChatMessage.User(told), picks = emptyList())
+}
+
+/**
  * The trip with the traveller's [swaps] for the agent, as their next message, and the places they
  * leave among the [Trip.rejected], so that no change brings them back.
  */

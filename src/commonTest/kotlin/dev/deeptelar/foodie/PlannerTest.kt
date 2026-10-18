@@ -220,7 +220,7 @@ class PlannerTest {
             assertTrue("- Day 1: $lisbon" in first, first)
             assertTrue("- bacalhau à brás (dinner): Salt cod with eggs and fried potato." in first, first)
             assertTrue("[r1] Restaurante Santa Rita · portuguese · found in: Travel guide, Street map" in first, first)
-            assertEquals(listOf("candidates", "search_map", "read_guide", "set_route", "set_meal", "remove_meal", "set_days", "add_stop"), model.requests[2].tools.map { it.name })
+            assertEquals(listOf("candidates", "search_map", "read_guide", "set_route", "set_meal", "offer_choices", "remove_meal", "set_days", "add_stop"), model.requests[2].tools.map { it.name })
             // What the guide says about the food goes to the model that names the dishes.
             assertTrue("small and family-run" in model.requests[1].messages.first().text)
         }
@@ -1087,6 +1087,76 @@ class PlannerTest {
             assertTrue(refused.isError)
             assertEquals("The traveller asked to change Restaurante Santa Rita: choose another place.", refused.text)
             assertEquals(0, model.remaining)
+        }
+
+    @Test
+    fun `the agent offers places for a meal, the recommended one first, and hears which one the traveller chose`() =
+        runTest {
+            val tasca = Restaurant(stop = lisbon, name = "Tasca do Chico", lat = 38.7120, lon = -9.1301, cuisine = "portuguese", sources = setOf(Source.MAP))
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it."))
+                    says("Salt cod for lunch.")
+                    calls(
+                        "offer_choices",
+                        MealOffer(
+                            1,
+                            "lunch",
+                            listOf(MealOption("r2", "caldo verde", "The map lists it as Portuguese."), MealOption("r3", "sardinhas assadas", "A tasca of the old town.")),
+                            recommendation = "Zé da Mouraria is the one locals queue for.",
+                        ),
+                    )
+                    says("Two places to choose from.")
+                    says("Enjoy the sardines.")
+                }
+            val config = config()
+            val planner = planner(model, sources(map = StreetMap { _, _, _, _ -> listOf(santaRitaOnMap, zeDaMouraria, tasca) }))
+            planner.invoke(interviewed("One day in Lisbon"), config)
+
+            val offered = planner.resume(config) { it.swapped(listOf(MealSwap(1, MealTime.LUNCH, listOf(SwapReason.DISH)))) }.state
+
+            // The recommended place is on the route until the traveller chooses.
+            assertEquals(listOf("r2"), offered.route.map { it.restaurantId })
+            val offer = assertNotNull(offered.offerFor(1, MealTime.LUNCH))
+            assertEquals(listOf("r2", "r3"), offer.options.map { it.restaurantId })
+            assertEquals("r2", offer.recommended.restaurantId)
+            assertEquals("Zé da Mouraria is the one locals queue for.", offer.recommendation)
+            assertTrue("offer two or three new places with `offer_choices`" in model.requests[4].messages.last { it is ChatMessage.User }.text)
+
+            // The traveller taps the other one: nothing runs, and the agent hears of it with their next words.
+            val picked = offered.picked(offer.options[1])
+            assertEquals(listOf("r3"), picked.route.map { it.restaurantId })
+            assertEquals(listOf("Day 1 lunch: Tasca do Chico [r3]"), picked.picks)
+            val after = planner.resume(config) { picked.copy(messages = picked.messages + ChatMessage.User("Thanks!")) }.state
+
+            assertEquals("Of the places you offered, I chose:\n- Day 1 lunch: Tasca do Chico [r3]\n\nThanks!", model.requests.last().messages.last().text)
+            assertEquals(emptyList(), after.picks)
+            assertEquals(listOf("r3"), after.route.map { it.restaurantId })
+            assertEquals(0, model.remaining)
+        }
+
+    @Test
+    fun `an offer of one place, or of a place the traveller left, is refused`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls(
+                        call("offer_choices", MealOffer(1, "lunch", listOf(MealOption("r1", "bacalhau", "Fine.")), "Only one.")),
+                        call("offer_choices", MealOffer(1, "lunch", listOf(MealOption("r1", "bacalhau", "Fine."), MealOption("r2", "bifana", "Fine.")), "Two.")),
+                    )
+                    says("Planned.")
+                }
+
+            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon").copy(rejected = listOf("r2")), config()).state
+
+            val results = model.requests[3].messages.filterIsInstance<ChatMessage.ToolResult>()
+            assertEquals("Offer two or three places.", results[0].text)
+            assertEquals("The traveller asked to change Zé da Mouraria: choose another place.", results[1].text)
+            assertEquals(emptyList(), trip.offers)
         }
 
     @Test

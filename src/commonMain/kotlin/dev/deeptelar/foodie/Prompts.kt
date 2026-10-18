@@ -110,7 +110,7 @@ How to work:
 - Never name a restaurant that is not a candidate, and never invent an id.
 - In `why`, say what speaks for the place, in one sentence, and only what the sources say. If little is known, say so.
 - If `set_route` says that something is wrong, fix it with `set_meal` or `remove_meal`, and then answer the traveller in three to five sentences: what the trip tastes like and what to look forward to. Do not list the restaurants again; the traveller sees the route.
-- When the traveller asks for a change later, change what was asked and leave the rest of the route as it is.
+- When the traveller asks for a change later, change what was asked and leave the rest of the route as it is. When they ask for another place for a meal, offer two or three with `offer_choices`, the one you recommend first, and say why you recommend it.
 - When the traveller stays longer or leaves sooner, change the days of the stop with `set_days`, then plan the meals of the new days.
 - When the traveller goes to another place too, add it with `add_stop`, and plan its meals from what it finds. When they go there instead of a stop, add it, then give that stop fewer days, or 0 to take it off the trip."""
 
@@ -191,8 +191,9 @@ internal fun swapPrompt(trip: Trip, swaps: List<MealSwap>): String =
         }
         appendLine()
         append(
-            "The traveller does not want these places on the route again. Choose a new place for each meal from the candidates, or search for one, " +
-                "then tell the traveller in one or two sentences what changed.",
+            "The traveller does not want these places on the route again. For each meal, offer two or three new places with `offer_choices`, " +
+                "from the candidates or what you search for, the one you recommend first; the traveller taps the one they want. " +
+                "Then tell the traveller in one or two sentences what you offer.",
         )
     }
 

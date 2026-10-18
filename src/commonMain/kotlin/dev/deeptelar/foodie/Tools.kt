@@ -108,6 +108,30 @@ data class MealSlot(
 )
 
 @Serializable
+data class MealOption(
+    @Description("The id of a candidate, for example \"r12\".")
+    val restaurant: String,
+    @Description("The typical dish to order there.")
+    val dish: String,
+    @Description("One sentence on what speaks for this place, from what the sources say.")
+    val why: String,
+    @Description("Only if the traveller has a food allergy or someone is pregnant: what to watch out for, in one sentence. Empty otherwise.")
+    val caution: String = "",
+)
+
+@Serializable
+data class MealOffer(
+    @Description("The day of the trip, counted from 1.")
+    val day: Int,
+    @Description("\"breakfast\", \"lunch\", \"snack\" or \"dinner\".")
+    val meal: String,
+    @Description("Two or three places for the meal, the one you recommend first.")
+    val options: List<MealOption>,
+    @Description("One sentence for the traveller: why you recommend the first over the others.")
+    val recommendation: String,
+)
+
+@Serializable
 data class StopDays(
     @Description("The name of the stop, as in the list of days.")
     val stop: String,
@@ -233,10 +257,29 @@ private val routeEditors: List<StateTool<Trip>> =
                     after.farFromStay(after.route.filter { it.day == choice.day && it.time == mealTime(choice.meal) }),
             )
         },
+        StateTool<Trip, MealOffer>(
+            "offer_choices",
+            "Offers the traveller two or three places for one meal, the one you recommend first, which goes on the route. " +
+                "The traveller taps the one they want; you hear of it with their next words.",
+        ) { trip, offer ->
+            if (offer.options.size !in 2..3) throw IllegalArgumentException("Offer two or three places.")
+            if (offer.options.map { it.restaurant.trim() }.distinct().size < offer.options.size) throw IllegalArgumentException("Offer a place once.")
+            val choices = offer.options.map { MealChoice(offer.day, offer.meal, it.restaurant, it.dish, it.why, it.caution) }
+            // Each option must be a meal the route could have: the same checks as a meal put on it.
+            val options = choices.map { choice -> trip.withMeal(choice).route.first { it.day == choice.day && it.time == mealTime(choice.meal) } }
+            val time = options.first().time
+            val after = trip.withMeal(choices.first()).let { it.copy(offers = it.offers + Offer(offer.day, time, options, offer.recommendation.trim())) }
+            val names = options.mapNotNull { trip.restaurant(it.restaurantId)?.name }
+            ToolOutcome(
+                after,
+                "Offered for day ${offer.day} ${time.label.lowercase()}: ${names.joinToString()}. ${names.first()} is on the route until the traveller chooses. " +
+                    after.openMeals() + after.farFromStay(options),
+            )
+        },
         StateTool<Trip, MealSlot>("remove_meal", "Takes a meal off the route.") { trip, slot ->
             val time = mealTime(slot.meal)
             if (trip.route.none { it.day == slot.day && it.time == time }) throw IllegalArgumentException("Day ${slot.day} has no ${time.label.lowercase()} on the route.")
-            val after = trip.copy(route = trip.route.filterNot { it.day == slot.day && it.time == time })
+            val after = trip.copy(route = trip.route.filterNot { it.day == slot.day && it.time == time }, offers = trip.offers.filterNot { it.day == slot.day && it.time == time })
             ToolOutcome(after, "Removed. " + after.openMeals())
         },
         StateTool<Trip, StopDays>(
@@ -278,7 +321,8 @@ internal fun Trip.withDays(stop: Stop, days: Int): Trip {
                 else -> meal
             }
         }
-    return copy(stops = moved, route = meals)
+    // The offers are for days that moved or are gone: the meals on the route stay.
+    return copy(stops = moved, route = meals, offers = emptyList())
 }
 
 /**
@@ -336,7 +380,7 @@ internal fun Trip.withStop(stop: Stop, after: Stop?): Trip {
     val start = stops.take(at).sumOf { it.days } + 1
     var day = 1
     val moved = (stops.take(at) + stop + stops.drop(at)).map { it.copy(firstDay = day).also { placed -> day += placed.days } }
-    return copy(stops = moved, route = route.map { if (it.day >= start) it.copy(day = it.day + stop.days) else it })
+    return copy(stops = moved, route = route.map { if (it.day >= start) it.copy(day = it.day + stop.days) else it }, offers = emptyList())
 }
 
 /** The days of the trip, for the model: "days 1 to 4 in Palma de Mallorca, Spain, day 5 in Sóller, Spain". */
@@ -364,7 +408,8 @@ private fun Trip.withMeal(choice: MealChoice): Trip {
     if (restaurant.stop != stop.name) throw IllegalArgumentException("${restaurant.name} is in ${restaurant.stop}, but day ${choice.day} is in ${stop.name}.")
     if (restaurant.id in rejected) throw IllegalArgumentException("The traveller asked to change ${restaurant.name}: choose another place.")
     val meal = Meal(choice.day, time, restaurant.id, choice.dish.trim(), choice.why.trim(), choice.caution.trim())
-    return copy(route = route.filterNot { it.day == meal.day && it.time == meal.time } + meal)
+    // An offer for the meal is over once another place is put there.
+    return copy(route = route.filterNot { it.day == meal.day && it.time == meal.time } + meal, offers = offers.filterNot { it.day == meal.day && it.time == meal.time })
 }
 
 /** Whether [plan] finished the route: it has a message, each of its meals is on the route, no meal is open and no restaurant is there twice. */
@@ -411,7 +456,7 @@ private fun Trip.searchesThisTurn(): Int {
     return turn.filterIsInstance<ChatMessage.Assistant>().sumOf { answer -> answer.toolCalls.count { it.name !in EDITORS } }
 }
 
-private val EDITORS = setOf("set_route", "set_meal", "remove_meal", "set_days", "add_stop")
+private val EDITORS = setOf("set_route", "set_meal", "remove_meal", "offer_choices", "set_days", "add_stop")
 
 /** After this many searches in one turn, every search result asks the agent to write the route. */
 private const val SEARCHES = 8

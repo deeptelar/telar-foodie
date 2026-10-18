@@ -50,6 +50,10 @@ data class Trip(
     val notes: List<String> = emptyList(),
     /** The ids of the restaurants the traveller asked to change: the agent may not put them on the route again. */
     val rejected: List<String> = emptyList(),
+    /** The places the agent offered for a meal, for the traveller to choose from. */
+    val offers: List<Offer> = emptyList(),
+    /** What the traveller chose of the [offers], in words for the agent, until its next turn tells it. */
+    val picks: List<String> = emptyList(),
 ) {
     fun stop(name: String): Stop? = stops.firstOrNull { it.name.equals(name.trim(), ignoreCase = true) }
 

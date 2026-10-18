@@ -1420,7 +1420,12 @@ class App(
                 }
                 add("p", "why", meal.why)
                 if (meal.caution.isNotBlank()) add("p", "caution", "⚠ ${meal.caution}")
+                val offer = trip.offerFor(meal.day, meal.time)
                 add("div", "badges") {
+                    // Of the places the agent offered, the one it recommends is always marked.
+                    if (offer != null) {
+                        if (offer.recommended.restaurantId == meal.restaurantId) add("span", "badge recommended", "★ " + texts.recommended) else add("span", "badge chosen", texts.yourChoice)
+                    }
                     trip.speciality(restaurant)?.let { add("span", "badge speciality", texts.knownForDish(it.name)) }
                     restaurant.sources.forEach { add("span", "badge", texts.source(it)) }
                 }
@@ -1439,8 +1444,60 @@ class App(
                     link(texts.openInGoogleMaps, restaurant.googleMapsLink())
                     link("OpenStreetMap", "https://www.openstreetmap.org/?mlat=${restaurant.lat}&mlon=${restaurant.lon}#map=18/${restaurant.lat}/${restaurant.lon}")
                 }
+                if (offer != null && offer.recommendation.isNotBlank() && offer.recommended.restaurantId == meal.restaurantId) add("p", "recommendation", offer.recommendation)
                 // The agent changes the route only while it waits for the traveller.
-                if (phase == Phase.REVIEW) swapSheet(trip, meal)
+                if (phase == Phase.REVIEW) {
+                    offer?.let { options(trip, meal, it) }
+                    swapSheet(trip, meal)
+                }
+            }
+        }
+    }
+
+    /** The other places the agent offered for [meal], each with a button that puts it on the route; the recommended one says so, and why. */
+    private fun HTMLElement.options(trip: Trip, meal: Meal, offer: Offer) {
+        val others = offer.options.filter { it.restaurantId != meal.restaurantId }
+        if (others.isEmpty()) return
+        add("div", "options") {
+            add("p", "field-label", texts.otherOptions)
+            others.forEach { option ->
+                val place = trip.restaurant(option.restaurantId) ?: return@forEach
+                add("div", "option") {
+                    add("div", "option-head") {
+                        add("strong", text = place.name)
+                        if (option == offer.recommended) add("span", "badge recommended", "★ " + texts.recommended)
+                    }
+                    place.rating?.let { stars -> add("div", "rating", "★ $stars" + place.ratings?.let { " · " + texts.ratings(it) }.orEmpty()) }
+                    add("p", "order") {
+                        add("strong", text = texts.order)
+                        add("span", text = option.dish)
+                    }
+                    add("p", "why", option.why)
+                    if (option == offer.recommended && offer.recommendation.isNotBlank()) add("p", "recommendation", offer.recommendation)
+                    if (option.caution.isNotBlank()) add("p", "caution", "⚠ ${option.caution}")
+                    add("div", "links") {
+                        button(texts.chooseThisOne, "chip") { pick(option) }
+                        link(texts.openInGoogleMaps, place.googleMapsLink())
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Puts [option], a place the agent offered, on the route. Nothing runs: the run waits, so its
+     * checkpoint takes the choice, and the agent hears of it with the traveller's next words.
+     */
+    private fun pick(option: Meal) {
+        val now = trip ?: return
+        val picked = now.picked(option)
+        trip = picked
+        render()
+        scope.launch {
+            try {
+                checkpointer.load(config.threadId)?.let { checkpointer.save(config.threadId, it.copy(state = picked)) }
+            } catch (_: Throwable) {
+                // The browser blocks its storage: the choice holds until the page is closed.
             }
         }
     }

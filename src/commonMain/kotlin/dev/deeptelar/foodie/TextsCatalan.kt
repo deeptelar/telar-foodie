@@ -432,4 +432,9 @@ object Catalan : Texts {
     override val nearStayHint = "Toca els àpats que vols a prop d'on dorms."
 
     override fun sleepingAt(place: String) = "Dorms a $place"
+
+    override val recommended = "Recomanat"
+    override val yourChoice = "La teva tria"
+    override val otherOptions = "Altres opcions"
+    override val chooseThisOne = "Tria aquest"
 }

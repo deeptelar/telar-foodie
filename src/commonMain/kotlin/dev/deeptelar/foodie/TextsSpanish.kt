@@ -432,4 +432,9 @@ object Spanish : Texts {
     override val nearStayHint = "Toca las comidas que quieres cerca de donde duermes."
 
     override fun sleepingAt(place: String) = "Duermes en $place"
+
+    override val recommended = "Recomendado"
+    override val yourChoice = "Tu elección"
+    override val otherOptions = "Otras opciones"
+    override val chooseThisOne = "Elegir este"
 }

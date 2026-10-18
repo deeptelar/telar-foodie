@@ -94,7 +94,9 @@ Around the graph:
   answers to tap (the dish, another kind of food, closer to somewhere, the price, touristy), and
   sends the changes of several meals to the agent as one message
   ([`Swap.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Swap.kt)). The places left are not
-  chosen again. The agent can also change the days of a stop and add a place to the trip, with
+  chosen again. For each meal the agent offers two or three places with `offer_choices`, the one
+  it recommends first and marked so, and the traveller taps one: nothing runs, the checkpoint
+  takes the choice, and the agent hears of it with the traveller's next words. The agent can also change the days of a stop and add a place to the trip, with
   the tools `set_days` and `add_stop`, and its searches can look around a place with `near`.
 - **The traveller can sleep in more than one place.** Each stop has its hotels by night, and the
   meals the traveller wants near where they sleep are checked against the place of that night.

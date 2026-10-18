@@ -395,6 +395,13 @@ interface Texts {
     val nearStayHint: String
 
     fun sleepingAt(place: String): String
+
+    // The places the agent offers for a meal
+
+    val recommended: String
+    val yourChoice: String
+    val otherOptions: String
+    val chooseThisOne: String
 }
 
 /** A step of a how-to, with a [link] to where it is done when there is one. */
