@@ -393,7 +393,19 @@ interface Texts {
 
     /** The button that sends the changes of [count] places at once. */
     fun changeThesePlaces(count: Int): String
-    val swapTogetherHint: String
+
+    /** The button of the sheet that keeps this change and goes back to the route, to mark another place. */
+    val alsoChangeAnother: String
+
+    /** A place the traveller marked to change, and the buttons to edit that or keep the place. */
+    val markedToChange: String
+    val editSwap: String
+    val keepThisPlace: String
+
+    /** While the planner changes the route: what the bar says, on a place it changes, and the button that stops it. */
+    val changingTheRoute: String
+    val lookingForOthers: String
+    val stopChanging: String
 
     // Where the traveller sleeps
 

@@ -430,7 +430,13 @@ object Catalan : Texts {
     override val findAnotherPlace = "Busca un altre lloc"
 
     override fun changeThesePlaces(count: Int) = "Canvia aquests $count llocs"
-    override val swapTogetherHint = "Per canviar diversos llocs alhora, obre'ls tots abans de prémer."
+    override val alsoChangeAnother = "Canvia també un altre lloc"
+    override val markedToChange = "Marcat per canviar"
+    override val editSwap = "Edita"
+    override val keepThisPlace = "Mantén-lo"
+    override val changingTheRoute = "Canviant la ruta"
+    override val lookingForOthers = "Buscant altres llocs…"
+    override val stopChanging = "Atura"
     override val nearStay = "A prop d'on dorms"
     override val nearStayHint = "Toca els àpats que vols a prop d'on dorms."
 

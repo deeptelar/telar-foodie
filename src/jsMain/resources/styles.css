@@ -1083,3 +1083,135 @@ article.meal.marked {
     box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--day, var(--ink));
     z-index: 1000 !important;
 }
+
+/* The questions about changing a place, in a sheet over the route. */
+.sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(42, 33, 27, 0.4);
+}
+
+.sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1001;
+    max-width: 720px;
+    max-height: 85vh;
+    margin: 0 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    background: var(--card);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+}
+
+body.sheet-open {
+    overflow: hidden;
+}
+
+.sheet-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sheet-head h3 {
+    font: 700 19px/1.25 Georgia, "Times New Roman", serif;
+}
+
+button.sheet-close {
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.sheet input {
+    width: 100%;
+}
+
+.marked-swap {
+    margin-top: 6px;
+    padding: 8px 10px;
+    border: 1px dashed var(--accent);
+    border-radius: 10px;
+}
+
+/* The bars at the bottom of the screen: sending the marked places, and the planner at work. */
+.send-bar, .working {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: var(--card);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.send-bar button {
+    flex: 1;
+}
+
+body:has(.send-bar) main, body:has(.working) main {
+    padding-bottom: 96px;
+}
+
+.working-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.working-title {
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.working-detail {
+    font-size: 13px;
+    color: var(--soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.spinner {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    border: 3px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+}
+
+article.meal.changing {
+    border-style: dashed;
+}
+
+article.meal.changing .meal-text > :not(.changing-note) {
+    opacity: 0.5;
+}
+
+.changing-note {
+    color: var(--accent-dark);
+    font-weight: 700;
+}
+
+@media print {
+    .send-bar, .working, .sheet, .sheet-backdrop {
+        display: none;
+    }
+}

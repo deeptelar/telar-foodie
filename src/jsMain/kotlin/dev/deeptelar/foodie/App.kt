@@ -22,6 +22,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.await
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -151,6 +152,15 @@ class App(
 
     /** The meals the traveller opened to change, by their day and time, with what they said so far. */
     private var swaps = emptyMap<Pair<Int, MealTime>, MealSwap>()
+
+    /**
+     * Whether the run changes a route the traveller is looking at: the route then stays on the
+     * screen while it runs, with the meals in [changing] marked, and [beforeChange] is the saved run
+     * that stopping the change goes back to.
+     */
+    private var revising = false
+    private var changing = emptySet<Pair<Int, MealTime>>()
+    private var beforeChange: Checkpoint<Trip>? = null
     private var job: Job? = null
     private var map: RouteMap? = null
 
@@ -228,8 +238,47 @@ class App(
         }
     }
 
-    private fun run(events: () -> Flow<GraphEvent<Trip>>) {
+    /**
+     * Continues the run from the route with [update], as [resume] does, while the route stays on
+     * the screen. What was saved before is kept, for [stopChange].
+     */
+    private fun revise(update: (Trip) -> Trip) {
+        scope.launch {
+            beforeChange =
+                try {
+                    checkpointer.load(config.threadId)
+                } catch (_: Throwable) {
+                    null
+                }
+            // Named: in a coroutine, a bare `run` is the scope function of the standard library, which runs nothing.
+            this@App.run(revision = true) { planner().streamResume(config) { update(it).also { started -> trip = started } } }
+        }
+    }
+
+    /** Stops a change of the route and puts the route back as it was; without what was saved before, the run is paused. */
+    private fun stopChange() {
+        val running = job
+        scope.launch {
+            running?.cancelAndJoin()
+            val before = beforeChange
+            changing = emptySet()
+            if (before == null) {
+                phase = Phase.PAUSED
+                render()
+                return@launch
+            }
+            try {
+                checkpointer.save(config.threadId, before)
+            } catch (_: Throwable) {
+                // The browser blocks its storage: the route is back on the page only.
+            }
+            show(GraphResult.Interrupted(before.state, before.nextNodes))
+        }
+    }
+
+    private fun run(revision: Boolean = false, events: () -> Flow<GraphEvent<Trip>>) {
         phase = Phase.RUNNING
+        revising = revision
         drafts = emptyMap()
         swaps = emptyMap()
         editing = null
@@ -241,6 +290,10 @@ class App(
         named = emptyList()
         steps = steps(trip)
         render()
+        // The place being changed stays in view while the planner works on it.
+        changing.minWithOrNull(compareBy({ it.first }, { it.second }))?.let { (day, time) ->
+            (root.querySelector("article.meal[data-meal='${mealKey(day, time)}']") as? HTMLElement)?.asDynamic()?.scrollIntoView(js("({ block: 'center' })"))
+        }
         job =
             scope.launch {
                 // A step that waits for a model shows how long it has waited, so that a slow model does not look like a stuck page.
@@ -335,9 +388,23 @@ class App(
                 else -> Phase.STOPPED
             }
         steps = steps(trip)
+        val changed = changing.minWithOrNull(compareBy({ it.first }, { it.second }))
+        val revised = revising
+        changing = emptySet()
+        revising = false
         render()
-        // The planner's new words are under the conversation: the traveller is taken to them.
-        if (tab == Tab.PLAN) (root.querySelector(".turn") as? HTMLElement)?.let { turn -> window.requestAnimationFrame { turn.asDynamic().scrollIntoView(js("({ block: 'start', behavior: 'smooth' })")) } }
+        when {
+            // A changed place is shown where it was, with the places offered for it.
+            changed != null -> (root.querySelector("article.meal[data-meal='${mealKey(changed.first, changed.second)}']") as? HTMLElement)?.let { card ->
+                markCard(card)
+                map?.mark(changed.first, changed.second)
+                window.requestAnimationFrame { card.asDynamic().scrollIntoView(js("({ block: 'start', behavior: 'smooth' })")) }
+            }
+            // A route changed by the traveller's words is shown from the day's start.
+            revised -> (root.querySelector(".map") as? HTMLElement)?.let { shown -> window.requestAnimationFrame { shown.asDynamic().scrollIntoView(js("({ block: 'start', behavior: 'smooth' })")) } }
+            // The planner's new words are under the conversation: the traveller is taken to them.
+            tab == Tab.PLAN -> (root.querySelector(".turn") as? HTMLElement)?.let { turn -> window.requestAnimationFrame { turn.asDynamic().scrollIntoView(js("({ block: 'start', behavior: 'smooth' })")) } }
+        }
     }
 
     /** A new trip, or a trip planned anew, is shown from its first day. */
@@ -564,6 +631,7 @@ class App(
             plan(trip)
         }
         root.credits()
+        drawSendBar()
     }
 
     private fun HTMLElement.tabs() {
@@ -584,10 +652,16 @@ class App(
     /** The tab of the conversation: what was said, and what the planner does or asks now. */
     private fun plan(trip: Trip?) {
         // The route is what the traveller came for: it stands alone, without the conversation above it.
-        if (trip != null && phase !in setOf(Phase.START, Phase.REVIEW, Phase.DONE)) root.thread(trip)
+        if (trip != null && phase !in setOf(Phase.START, Phase.REVIEW, Phase.DONE) && !revising) root.thread(trip)
         when (phase) {
             Phase.START -> root.startForm()
-            Phase.RUNNING -> runPanel = root.add("section", "card run").also { fillRun(it) }
+            Phase.RUNNING ->
+                if (revising && trip != null && trip.route.isNotEmpty()) {
+                    root.route(trip)
+                    runPanel = root.add("div", "working").also { fillWorking(it) }
+                } else {
+                    runPanel = root.add("section", "card run").also { fillRun(it) }
+                }
             Phase.QUESTION -> if (trip != null) root.questionTurn(trip)
             Phase.CHECKING -> if (trip != null) root.checkingTurn(trip)
             Phase.REVIEW, Phase.DONE -> if (trip != null) root.route(trip)
@@ -792,7 +866,7 @@ class App(
     private fun renderRun() {
         runPanel?.let { panel ->
             panel.clear()
-            fillRun(panel)
+            if (revising) fillWorking(panel) else fillRun(panel)
         }
     }
 
@@ -832,6 +906,19 @@ class App(
             button(texts.pause, "ghost") { pause() }
             button(texts.cancel, "ghost") { startOver() }
         }
+    }
+
+    /** The bar under a route that the planner changes: what it does now, and the button that stops it. */
+    private fun fillWorking(panel: HTMLElement) {
+        panel.add("span", "spinner")
+        panel.add("div", "working-text") {
+            add("div", "working-title", texts.changingTheRoute)
+            val running = steps.firstOrNull { it.status == Status.RUNNING }
+            val doing = feed.lastOrNull() ?: running?.activity?.ifEmpty { null } ?: running?.title
+            val took = running?.let { texts.seconds(((Date.now() - it.started) / 1000).toInt()) }
+            add("div", "working-detail", listOfNotNull(doing, took).joinToString(" · "))
+        }
+        panel.button(texts.stopChanging, "ghost") { stopChange() }
     }
 
     /** One of [dishes]: the next one comes after a while, or when the traveller asks for it. */
@@ -1368,7 +1455,8 @@ class App(
             add("p", "hint small", texts.savedFileHint)
         }
 
-        add("section", "card") {
+        // While the planner changes the route, the bar under it says so, and nothing else can be asked.
+        if (phase == Phase.REVIEW || phase == Phase.DONE) add("section", "card") {
             if (phase == Phase.DONE) {
                 add("h2", text = texts.enjoyYourTrip)
                 add("div", "actions") {
@@ -1388,9 +1476,9 @@ class App(
                     button(texts.updateTheRoute, "primary") {
                         val text = wish.value.trim()
                         // The wish goes to the agent as the traveller's next message, and the graph loops back to it.
-                        if (text.isEmpty()) wish.focus() else resume { it.copy(messages = it.messages + ChatMessage.User(text)) }
+                        if (text.isEmpty()) wish.focus() else revise { it.copy(messages = it.messages + ChatMessage.User(text)) }
                     }
-                    button(texts.happyWithIt, "ghost") { resume { it.copy(approved = true) } }
+                    button(texts.happyWithIt, "ghost") { revise { it.copy(approved = true) } }
                     button(texts.planAgain, "ghost") { planAgain(trip) }
                     button(texts.startOver, "ghost") { startOver() }
                 }
@@ -1544,7 +1632,8 @@ class App(
 
     private fun HTMLElement.meal(trip: Trip, meal: Meal, number: Int) {
         val restaurant = trip.restaurant(meal.restaurantId) ?: return
-        add("article", "meal ${RouteMap.dayClass(meal.day)}") {
+        val beingChanged = phase == Phase.RUNNING && (meal.day to meal.time) in changing
+        add("article", "meal ${RouteMap.dayClass(meal.day)}" + if (beingChanged) " changing" else "") {
             setAttribute("data-meal", mealKey(meal.day, meal.time))
             // The number is the pin's: a tap shows the place on the map.
             val card = this
@@ -1554,6 +1643,7 @@ class App(
                 (root.querySelector(".map") as? HTMLElement)?.scrollIntoView(js("({ block: 'start', behavior: 'smooth' })"))
             }.setAttribute("aria-label", texts.onTheMap)
             add("div", "meal-text") {
+                if (beingChanged) add("p", "changing-note", texts.lookingForOthers)
                 add("div", "meal-time", texts.meal(meal.time))
                 add("h4", text = restaurant.name)
                 restaurant.rating?.let { stars -> add("div", "rating", "★ $stars" + restaurant.ratings?.let { " · " + texts.ratings(it) }.orEmpty()) }
@@ -1592,7 +1682,7 @@ class App(
                 // The agent changes the route only while it waits for the traveller.
                 if (phase == Phase.REVIEW) {
                     offer?.let { options(trip, meal, it) }
-                    swapSheet(trip, meal)
+                    swapControl(trip, meal)
                 }
             }
         }
@@ -1647,31 +1737,70 @@ class App(
     }
 
     /**
-     * The button that opens the questions about changing the place of [meal], or the questions: why
-     * not this one, and what instead or near what, when the answer needs it. Only the sheet is drawn
-     * again after a tap.
+     * The button that opens the questions about changing the place of [meal], or, when the
+     * traveller marked it, what they said and the buttons to edit that or keep the place.
      */
-    private fun HTMLElement.swapSheet(trip: Trip, meal: Meal) {
+    private fun HTMLElement.swapControl(trip: Trip, meal: Meal) {
         val key = meal.day to meal.time
-        val box = add("div", "swap")
-        fun draw() {
-            box.clear()
-            val swap = swaps[key]
-            if (swap == null) {
-                box.button(texts.changeThisPlace, "link") {
-                    swaps = swaps + (key to MealSwap(meal.day, meal.time))
-                    draw()
-                    relabelSwaps()
-                }
-                return
+        val swap = swaps[key]
+        if (swap == null) {
+            button(texts.changeThisPlace, "link") {
+                swaps = swaps + (key to MealSwap(meal.day, meal.time))
+                openSheet(trip, meal)
             }
+            return
+        }
+        add("div", "marked-swap") {
+            add("p", "field-label", texts.markedToChange)
+            val said = swap.reasons.map { texts.swapReason(it) } + listOf(swap.instead, swap.near, swap.note).filter { it.isNotBlank() }
+            if (said.isNotEmpty()) add("p", "hint small", said.joinToString(" · "))
+            add("div", "quiet-actions") {
+                button(texts.editSwap, "link") { openSheet(trip, meal) }
+                button(texts.keepThisPlace, "link") {
+                    swaps = swaps - key
+                    swapsChanged()
+                }
+            }
+        }
+    }
+
+    /**
+     * The questions about changing the place of [meal], in a sheet over the route: why not this
+     * one, and what instead or near what, when the answer needs it. The route stays where it is
+     * under the sheet, and only the sheet is drawn again after a tap.
+     */
+    private fun openSheet(trip: Trip, meal: Meal) {
+        val key = meal.day to meal.time
+        closeSheet()
+        val backdrop = root.add("div", "sheet-backdrop")
+        val sheet = root.add("div", "sheet") {
+            setAttribute("role", "dialog")
+            setAttribute("aria-modal", "true")
+        }
+        document.body?.classList?.add("sheet-open")
+        // Closing keeps what the traveller said, to send with the other places; a sheet where nothing was said is no change.
+        fun close() {
+            swaps[key]?.let { if (!it.said) swaps = swaps - key }
+            closeSheet()
+            swapsChanged()
+        }
+        backdrop.onclick = { close() }
+        fun draw() {
+            sheet.clear()
+            val swap = swaps[key] ?: return
             fun changed(change: (MealSwap) -> MealSwap, redraw: Boolean) {
                 swaps[key]?.let { swaps = swaps + (key to change(it)) }
-                if (redraw) draw()
-                relabelSwaps()
+                if (redraw) draw() else relabelSwaps()
             }
-            box.add("p", "field-label", texts.whyNotThisOne)
-            box.add("div", "chips") {
+            sheet.add("div", "sheet-head") {
+                add("div") {
+                    add("div", "meal-time", texts.day(meal.day) + " · " + texts.meal(meal.time))
+                    add("h3", text = trip.restaurant(meal.restaurantId)?.name ?: meal.dish)
+                }
+                button("×", "ghost sheet-close") { close() }.setAttribute("aria-label", texts.close)
+            }
+            sheet.add("p", "field-label", texts.whyNotThisOne)
+            sheet.add("div", "chips") {
                 SwapReason.entries.forEach { reason ->
                     button(texts.swapReason(reason), "chip answer" + if (reason in swap.reasons) " picked" else "") {
                         changed({ it.copy(reasons = if (reason in it.reasons) it.reasons - reason else it.reasons + reason) }, redraw = true)
@@ -1679,12 +1808,12 @@ class App(
                 }
             }
             if (SwapReason.DISH in swap.reasons || SwapReason.FOOD in swap.reasons) {
-                box.add("p", "field-label", texts.whatInstead)
+                sheet.add("p", "field-label", texts.whatInstead)
                 // The dishes the stop is known for at this meal, as answers to tap.
                 val stop = trip.stopOn(meal.day)?.name
                 val dishes = trip.dishes.filter { it.stop == stop && MealTime.of(it.meal) == meal.time && !it.name.equals(meal.dish, ignoreCase = true) }
                 if (dishes.isNotEmpty()) {
-                    box.add("div", "chips") {
+                    sheet.add("div", "chips") {
                         dishes.forEach { dish ->
                             button(dish.name, "chip answer" + if (swap.instead == dish.name) " picked" else "") {
                                 changed({ it.copy(instead = if (it.instead == dish.name) "" else dish.name) }, redraw = true)
@@ -1692,45 +1821,70 @@ class App(
                         }
                     }
                 }
-                box.textInput(swap.instead, texts.insteadPlaceholder, texts.whatInstead) { text -> changed({ it.copy(instead = text) }, redraw = false) }
+                sheet.textInput(swap.instead, texts.insteadPlaceholder, texts.whatInstead) { text -> changed({ it.copy(instead = text) }, redraw = false) }
             }
             if (SwapReason.CLOSER in swap.reasons) {
-                box.add("p", "field-label", texts.closerToWhat)
+                sheet.add("p", "field-label", texts.closerToWhat)
                 val sleeping = trip.stopOn(meal.day)?.let { listOf(it.stayName) + it.stays.map { stay -> stay.name } }.orEmpty().filter { it.isNotBlank() }
                 if (sleeping.isNotEmpty()) {
-                    box.add("div", "chips") {
+                    sheet.add("div", "chips") {
                         sleeping.forEach { place ->
                             button(place, "chip answer" + if (swap.near == place) " picked" else "") { changed({ it.copy(near = if (it.near == place) "" else place) }, redraw = true) }
                         }
                     }
                 }
-                box.textInput(swap.near, texts.closerPlaceholder, texts.closerToWhat) { text -> changed({ it.copy(near = text) }, redraw = false) }
+                sheet.textInput(swap.near, texts.closerPlaceholder, texts.closerToWhat) { text -> changed({ it.copy(near = text) }, redraw = false) }
             }
-            box.textInput(swap.note, texts.swapNotePlaceholder, texts.swapNotePlaceholder, "swap-note") { text -> changed({ it.copy(note = text) }, redraw = false) }
-            box.add("div", "actions") {
-                button(swapLabel(), "primary swap-send") {
-                    val ready = swaps.values.filter { it.said }.sortedWith(compareBy({ it.day }, { it.time }))
-                    if (ready.isNotEmpty()) resume { it.swapped(ready) }
-                }
-                button(texts.cancel, "ghost") {
-                    swaps = swaps - key
-                    draw()
-                    relabelSwaps()
-                }
+            sheet.textInput(swap.note, texts.swapNotePlaceholder, texts.swapNotePlaceholder, "swap-note") { text -> changed({ it.copy(note = text) }, redraw = false) }
+            sheet.add("div", "actions") {
+                button(swapLabel(), "primary swap-send") { sendSwaps() }
+                button(texts.alsoChangeAnother, "ghost") { close() }
             }
-            box.add("p", "hint small", texts.swapTogetherHint)
         }
         draw()
     }
 
+    private fun closeSheet() {
+        root.querySelector(".sheet")?.remove()
+        root.querySelector(".sheet-backdrop")?.remove()
+        document.body?.classList?.remove("sheet-open")
+    }
+
+    /** Sends the places the traveller marked, with what they said: the route stays on the screen while the agent finds others. */
+    private fun sendSwaps() {
+        val ready = swaps.values.filter { it.said }.sortedWith(compareBy({ it.day }, { it.time }))
+        if (ready.isEmpty()) return
+        closeSheet()
+        changing = ready.map { it.day to it.time }.toSet()
+        day = ready.first().day
+        ShownDay.save(day)
+        revise { it.swapped(ready) }
+    }
+
     private fun swapLabel(): String = swaps.values.count { it.said }.let { if (it > 1) texts.changeThesePlaces(it) else texts.findAnotherPlace }
 
-    /** The send buttons of the open sheets say how many places they change: all the sheets where the traveller said something. */
+    /** The send buttons say how many places they change: all the places where the traveller said something. */
     private fun relabelSwaps() {
         val label = swapLabel()
         root.querySelectorAll(".swap-send").let { buttons -> (0 until buttons.length).forEach { (buttons.item(it) as? HTMLElement)?.textContent = label } }
     }
 
+    /** The marked places changed: their cards and the bar that sends them are drawn again. */
+    private fun swapsChanged() {
+        val trip = trip ?: return
+        dayList?.let {
+            it.clear()
+            it.fillDay(trip)
+        }
+        drawSendBar()
+    }
+
+    /** The bar at the bottom that sends the marked places, while there are any. */
+    private fun drawSendBar() {
+        root.querySelector(".send-bar")?.remove()
+        if (phase != Phase.REVIEW || swaps.values.none { it.said }) return
+        root.add("div", "send-bar") { button(swapLabel(), "primary swap-send") { sendSwaps() } }
+    }
 
     private companion object {
         /** The media type of a KML file. */

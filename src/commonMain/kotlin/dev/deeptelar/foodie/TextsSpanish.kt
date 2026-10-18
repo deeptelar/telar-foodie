@@ -430,7 +430,13 @@ object Spanish : Texts {
     override val findAnotherPlace = "Buscar otro sitio"
 
     override fun changeThesePlaces(count: Int) = "Cambiar estos $count sitios"
-    override val swapTogetherHint = "Para cambiar varios sitios a la vez, ábrelos todos antes de pulsar."
+    override val alsoChangeAnother = "Cambiar también otro sitio"
+    override val markedToChange = "Marcado para cambiar"
+    override val editSwap = "Editar"
+    override val keepThisPlace = "Mantenerlo"
+    override val changingTheRoute = "Cambiando la ruta"
+    override val lookingForOthers = "Buscando otros sitios…"
+    override val stopChanging = "Detener"
     override val nearStay = "Cerca de donde duermes"
     override val nearStayHint = "Toca las comidas que quieres cerca de donde duermes."
 
