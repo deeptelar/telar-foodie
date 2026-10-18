@@ -103,6 +103,7 @@ class Wikivoyage(
                         website = listing["url"],
                         hours = plain(listing["hours"]),
                         price = plain(listing["price"]),
+                        phone = plain(listing["phone"]),
                         note = plain(listing["content"]),
                         sources = setOf(Source.GUIDE),
                     )

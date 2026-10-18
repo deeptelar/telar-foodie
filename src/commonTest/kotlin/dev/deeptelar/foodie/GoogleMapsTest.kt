@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 
 class GoogleMapsTest {
     private val palma = "Palma de Mallorca, Spain"
-    private val pages = Restaurant(id = "r1", stop = palma, name = "Celler Pagès", lat = 39.5696, lon = 2.6457, address = "Carrer de Felip Bauzà, 2, 07012 Palma", googleId = "ChIJpages")
+    private val pages = Restaurant(id = "r1", stop = palma, name = "Celler Pagès", lat = 39.5696, lon = 2.6457, address = "Carrer de Felip Bauzà, 2, 07012 Palma", googleId = "ChIJpages", phone = "+34 971 72 17 81", reservation = "recommended")
     private val joan = Restaurant(id = "r2", stop = palma, name = "Ca'n Joan de s'Aigo", lat = 39.5699, lon = 2.6526, googleId = "ChIJjoan")
     private val julio = Restaurant(id = "r3", stop = palma, name = "Casa Julio", lat = 39.5698, lon = 2.6509, address = "C de la Previsió 4")
     private val trip =
@@ -60,6 +60,7 @@ class GoogleMapsTest {
         assertTrue("Order: escaldums" in kml, kml)
         assertTrue("⚠ No wine &lt;for&gt; her &amp; no sobrassada." in kml, kml)
         assertTrue("<coordinates>2.6457,39.5696</coordinates>" in kml, kml)
+        assertTrue("Booking recommended · +34 971 72 17 81" in kml, kml)
         assertEquals("foodie-route-palma-de-mallorca-2026-10-18.kml", kmlName(trip, "2026-10-18"))
     }
 }

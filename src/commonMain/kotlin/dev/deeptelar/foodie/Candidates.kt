@@ -44,6 +44,8 @@ fun List<Restaurant>.merged(found: List<Restaurant>): List<Restaurant> {
                     website = known.website.ifBlank { new.website },
                     hours = known.hours.ifBlank { new.hours },
                     price = known.price.ifBlank { new.price },
+                    phone = known.phone.ifBlank { new.phone },
+                    reservation = known.reservation.ifBlank { new.reservation },
                     note = known.note.ifBlank { new.note },
                     googleId = known.googleId.ifBlank { new.googleId },
                     rating = known.rating ?: new.rating,
@@ -154,6 +156,7 @@ fun Trip.line(restaurant: Restaurant): String =
             rating?.let { append(" · ").append(it).append(" stars") }
             ratings?.let { append(" (").append(it).append(" ratings)") }
             if (price.isNotBlank()) append(" · price: ").append(price)
+            if (reservation.isNotBlank()) append(" · bookings: ").append(reservation)
             if (address.isNotBlank()) append(" · ").append(address)
             nextToASight(restaurant)?.let { (sight, metres) -> append(" · ").append(metres).append(" m from ").append(sight.name) }
             if (note.isNotBlank()) append(" · guide: \"").append(note.take(NOTE_LENGTH)).append('"')

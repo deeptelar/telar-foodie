@@ -181,6 +181,13 @@ data class Restaurant(
     val website: String = "",
     val hours: String = "",
     val price: String = "",
+    /** A phone number, as the source writes it: to book a table, or to ask. */
+    val phone: String = "",
+    /**
+     * Whether to book, as the street map tags it: "required", "recommended", "yes" (it takes
+     * bookings) or "no" (it takes none). Empty when no source says.
+     */
+    val reservation: String = "",
     /** What a source says about the place in words: the guide's description. */
     val note: String = "",
     /** The id Google Maps knows the place by, when Google found it: a link opens exactly that place. */

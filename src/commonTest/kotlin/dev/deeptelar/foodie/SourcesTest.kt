@@ -80,7 +80,7 @@ class SourcesTest {
 
         * {{eat
         | name=Restaurante Santa Rita | alt= | url=https://example.org/santa-rita | email=
-        | address=Rua de São Mamede 24c | lat=38.711364 | long=-9.134798 | directions=
+        | address=Rua de São Mamede 24c | lat=38.711364 | long=-9.134798 | directions= | phone=+351 21 887 1022
         | hours=12:00-22:00 | price=Mains €5-9 (May 2017)
         | lastedit=2022-05-01
         | content=Authentic, cheap [[Portugal|Portuguese]] dishes in a very busy, shared-table restaurant.
@@ -103,6 +103,7 @@ class SourcesTest {
         assertEquals("Rua de São Mamede 24c", santaRita.address)
         assertEquals("https://example.org/santa-rita", santaRita.website)
         assertEquals("Mains €5-9 (May 2017)", santaRita.price)
+        assertEquals("+351 21 887 1022", santaRita.phone)
         assertEquals("Authentic, cheap Portuguese dishes in a very busy, shared-table restaurant.", santaRita.note)
         assertEquals(setOf(Source.GUIDE), santaRita.sources)
         assertEquals(-9.1340794, found[1].lon)
@@ -182,7 +183,8 @@ class SourcesTest {
         """
         {"elements":[
           {"type":"node","id":1,"lat":38.7111,"lon":-9.1401,"tags":{"amenity":"restaurant","cuisine":"regional;fish_and_chips","name":"O Sacramento",
-            "addr:street":"Calçada do Sacramento","addr:housenumber":"46","website":"https://example.org","opening_hours":"Mo-Su 12:00-23:00"}},
+            "addr:street":"Calçada do Sacramento","addr:housenumber":"46","website":"https://example.org","opening_hours":"Mo-Su 12:00-23:00",
+            "phone":"+351 21 342 0572;+351 91 000 0000","reservation":"recommended"}},
           {"type":"way","id":2,"center":{"lat":38.7135,"lon":-9.1338},"tags":{"amenity":"restaurant","cuisine":"portuguese","name":"Casa do Leão"}},
           {"type":"node","id":3,"lat":38.71,"lon":-9.13,"tags":{"amenity":"restaurant","cuisine":"regional","name":"Chão do Loureiro","operational_status":"closed"}}
         ]}
@@ -196,6 +198,10 @@ class SourcesTest {
         assertEquals("regional, fish and chips", found[0].cuisine)
         assertEquals("Calçada do Sacramento 46", found[0].address)
         assertEquals("Mo-Su 12:00-23:00", found[0].hours)
+        // Of several numbers, the first; and whether to book, as the map says it.
+        assertEquals("+351 21 342 0572", found[0].phone)
+        assertEquals("recommended", found[0].reservation)
+        assertEquals("", found[1].reservation)
         // A building has no position of its own: the middle of its outline is used.
         assertEquals(Location(38.7135, -9.1338), found[1].location)
         assertEquals(setOf(Source.MAP), found[1].sources)
@@ -367,7 +373,7 @@ class SourcesTest {
                     respond(
                         """
                         {"places":[
-                          {"id":"ChIJze","displayName":{"text":"Zé da Mouraria"},"formattedAddress":"R. João do Outeiro 24, Lisboa","location":{"latitude":38.7155,"longitude":-9.1362},
+                          {"id":"ChIJze","internationalPhoneNumber":"+351 21 886 5436","displayName":{"text":"Zé da Mouraria"},"formattedAddress":"R. João do Outeiro 24, Lisboa","location":{"latitude":38.7155,"longitude":-9.1362},
                            "rating":4.6,"userRatingCount":3200,"priceLevel":"PRICE_LEVEL_MODERATE","websiteUri":"https://example.org/ze",
                            "primaryTypeDisplayName":{"text":"Portuguese restaurant"}},
                           {"displayName":{"text":"No position"}}
@@ -382,7 +388,7 @@ class SourcesTest {
                 listOf(
                     Restaurant(
                         stop = "Lisbon", name = "Zé da Mouraria", lat = 38.7155, lon = -9.1362, cuisine = "Portuguese restaurant",
-                        address = "R. João do Outeiro 24, Lisboa", website = "https://example.org/ze", price = "medium", googleId = "ChIJze",
+                        address = "R. João do Outeiro 24, Lisboa", website = "https://example.org/ze", price = "medium", googleId = "ChIJze", phone = "+351 21 886 5436",
                         rating = 4.6, ratings = 3200, sources = setOf(Source.REVIEWS),
                     ),
                 ),
@@ -437,6 +443,7 @@ class SourcesTest {
         assertEquals(listOf(specialist, guide, bySight), trip.restaurants.sortedByDescending { trip.evidence(it) })
         assertEquals(listOf(specialist, guide), trip.best("Porto", 2))
         assertTrue(" · known for: Francesinha" in trip.line(specialist), trip.line(specialist))
+        assertTrue(" · bookings: required" in trip.line(guide.copy(reservation = "required")))
         assertTrue(Regex(" · \\d+ m from Praça da Ribeira").containsMatchIn(trip.line(bySight)), trip.line(bySight))
     }
 

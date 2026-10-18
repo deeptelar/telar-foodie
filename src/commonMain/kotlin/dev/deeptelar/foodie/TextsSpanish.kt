@@ -372,6 +372,14 @@ object Spanish : Texts {
     override val stepSpecialists = "Los sitios conocidos por cada plato"
     override fun lookingForSpecialists(stop: String) = "Buscando los sitios conocidos por los platos de $stop"
     override fun knownForDish(dish: String) = "Conocido por: $dish"
+    override fun booking(reservation: String) =
+        when (reservation) {
+            "required" -> "Hay que reservar"
+            "recommended" -> "Mejor reservar"
+            "yes" -> "Acepta reservas"
+            "no" -> "Sin reservas: ve directamente"
+            else -> null
+        }
     override val dayInGoogleMaps = "Recorre este día en Google Maps"
     override val saveForMyMaps = "Guardar los sitios para Google Maps"
     override val myMapsHintBefore = "Para tenerlos todos en Google Maps: en "

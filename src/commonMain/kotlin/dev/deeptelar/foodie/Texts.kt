@@ -335,6 +335,9 @@ interface Texts {
     /** On the card of a meal at a place known for a dish of its stop. */
     fun knownForDish(dish: String): String
 
+    /** What the street map says about booking a table, by its `reservation` tag, or `null` for a value it does not have. */
+    fun booking(reservation: String): String?
+
     // The route in Google Maps
 
     /** The link under a day that opens its meals as a walk. */

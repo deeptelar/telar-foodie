@@ -85,6 +85,7 @@ fun Trip.toKml(): String {
                         meal.why,
                         meal.caution.takeIf { it.isNotBlank() }?.let { "⚠ $it" },
                         place.address.takeIf { it.isNotBlank() },
+                        listOfNotNull(texts.booking(place.reservation), place.phone.takeIf { it.isNotBlank() }).joinToString(" · ").takeIf { it.isNotBlank() },
                         place.website.takeIf { it.isNotBlank() },
                     ).filterNotNull()
                 appendLine("<Placemark>")

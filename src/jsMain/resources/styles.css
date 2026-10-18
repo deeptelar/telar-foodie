@@ -416,6 +416,17 @@ h3.day {
     color: var(--soft);
 }
 
+/* Whether to book, and the number to call. */
+.booking {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* A number broken over two lines is hard to read out on the phone. */
+.booking a {
+    white-space: nowrap;
+}
+
 .why {
     font-style: italic;
 }

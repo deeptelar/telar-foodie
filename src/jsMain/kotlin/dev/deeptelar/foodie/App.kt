@@ -1348,6 +1348,14 @@ class App(
                 }
                 val facts = listOf(restaurant.cuisine, restaurant.address, restaurant.price, restaurant.hours).filter { it.isNotBlank() }
                 if (facts.isNotEmpty()) add("p", "facts", facts.joinToString(" · "))
+                val booking = texts.booking(restaurant.reservation)
+                if (booking != null || restaurant.phone.isNotBlank()) {
+                    add("p", "booking") {
+                        booking?.let { add("span", text = it) }
+                        if (booking != null && restaurant.phone.isNotBlank()) add("span", text = " · ")
+                        if (restaurant.phone.isNotBlank()) phoneLink(restaurant.phone)
+                    }
+                }
                 add("div", "links") {
                     if (restaurant.website.isNotBlank()) link(texts.website, restaurant.website)
                     link(texts.openInGoogleMaps, restaurant.googleMapsLink())

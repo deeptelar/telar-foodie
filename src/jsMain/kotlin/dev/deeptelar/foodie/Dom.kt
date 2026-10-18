@@ -43,6 +43,13 @@ fun Element.link(label: String, address: String, classes: String = ""): HTMLElem
     }
 }
 
+/** A link that calls [number] on a phone. A number without digits gets no link. */
+fun Element.phoneLink(number: String, classes: String = ""): HTMLElement {
+    val dial = number.filter { it.isDigit() || it == '+' }
+    if (dial.none { it.isDigit() }) return add("span", classes, number)
+    return (add("a", classes, "📞 $number") as HTMLAnchorElement).apply { href = "tel:$dial" }
+}
+
 /** A labelled input. [onChange] gets every change of its text. */
 fun Element.field(label: String, value: String, type: String = "text", placeholder: String = "", onChange: (String) -> Unit): HTMLInputElement {
     val wrapper = add("label", "field")

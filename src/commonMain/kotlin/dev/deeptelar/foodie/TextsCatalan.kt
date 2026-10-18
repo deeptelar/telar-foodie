@@ -372,6 +372,14 @@ object Catalan : Texts {
     override val stepSpecialists = "Els llocs coneguts per cada plat"
     override fun lookingForSpecialists(stop: String) = "Buscant els llocs coneguts pels plats de $stop"
     override fun knownForDish(dish: String) = "Conegut per: $dish"
+    override fun booking(reservation: String) =
+        when (reservation) {
+            "required" -> "Cal reservar"
+            "recommended" -> "Millor reservar"
+            "yes" -> "Accepta reserves"
+            "no" -> "Sense reserves: hi vas directament"
+            else -> null
+        }
     override val dayInGoogleMaps = "Recorre aquest dia a Google Maps"
     override val saveForMyMaps = "Desa els llocs per a Google Maps"
     override val myMapsHintBefore = "Per tenir-los tots a Google Maps: a "

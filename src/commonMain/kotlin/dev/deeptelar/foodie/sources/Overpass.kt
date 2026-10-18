@@ -149,6 +149,9 @@ class Overpass(
             return kept
         }
 
+        /** The values of the map's `reservation` tag that the page knows how to say. */
+        private val RESERVATIONS = setOf("required", "recommended", "yes", "no")
+
         /** The size of a cell of [spread], in degrees: about 400 metres. */
         private const val CELL = 0.004
 
@@ -182,6 +185,8 @@ class Overpass(
                     address = listOf(tags.text("addr:street"), tags.text("addr:housenumber")).filter { it.isNotBlank() }.joinToString(" "),
                     website = tags.text("website").ifBlank { tags.text("contact:website") },
                     hours = tags.text("opening_hours"),
+                    phone = tags.text("phone").ifBlank { tags.text("contact:phone") }.substringBefore(';').trim(),
+                    reservation = tags.text("reservation").takeIf { it in RESERVATIONS }.orEmpty(),
                     sources = setOf(Source.MAP),
                 )
             }
