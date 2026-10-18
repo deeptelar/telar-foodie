@@ -160,7 +160,7 @@ object English : Texts {
             Topic.DIET -> Question(topic, "Is there anything you do not eat?", listOf("I eat everything", "Vegetarian", "Pescatarian", "Halal", "No pork"), alone = listOf("I eat everything"))
             Topic.DATES -> Question(topic, "When are you going?", listOf("Spring", "Summer", "Autumn", "Winter"))
             Topic.PARTY -> Question(topic, "Who is eating with you?", listOf("Just me", "Two of us", "Family with children", "Group of friends"), alone = listOf("Just me"))
-            Topic.STAY -> Question(topic, "Where are you staying in each place? A neighbourhood or the name of the hotel is enough.")
+            Topic.STAY -> Question(topic, "Where are you staying in each place, and from which day if you change hotels? A neighbourhood or the name of the hotel is enough. Tell me too if you want a meal close to it, such as breakfast.")
             Topic.MEALS -> Question(topic, "Which meals should the route plan?", listOf("Breakfast", "Lunch", "Snack", "Dinner"))
             Topic.BUDGET ->
                 Question(topic, "What would you like to spend on a meal?", listOf("As little as possible", "Mid-range", "Mid-range, and one special dinner", "Money is no object"), alone = listOf("As little as possible", "Mid-range", "Mid-range, and one special dinner", "Money is no object"))
@@ -386,4 +386,32 @@ object English : Texts {
             "Open it here again later, or share it to show how the planner chose."
     override val notAPlanFile = "This file is not a plan of Foodie Route."
     override val planFromANewerPage = "A newer version of the page saved this plan. Reload the page and open it again."
+
+    override val changeThisPlace = "Change this place"
+    override val whyNotThisOne = "Why not this one?"
+
+    override fun swapReason(reason: SwapReason) =
+        when (reason) {
+            SwapReason.DISH -> "I don't fancy this dish"
+            SwapReason.FOOD -> "Another kind of food"
+            SwapReason.CLOSER -> "Closer to somewhere"
+            SwapReason.CHEAPER -> "Something cheaper"
+            SwapReason.SPECIAL -> "Something special"
+            SwapReason.TOURISTY -> "Looks touristy"
+            SwapReason.KNOWN -> "I know it already"
+            SwapReason.CLOSED -> "Closed or full that day"
+        }
+    override val whatInstead = "What would you like instead?"
+    override val insteadPlaceholder = "A dish or a kind of food"
+    override val closerToWhat = "Closer to what?"
+    override val closerPlaceholder = "Your hotel, a beach, a museum…"
+    override val swapNotePlaceholder = "Anything else? (optional)"
+    override val findAnotherPlace = "Find another place"
+
+    override fun changeThesePlaces(count: Int) = "Change these $count places"
+    override val swapTogetherHint = "To change several places together, open them all before you press."
+    override val nearStay = "Near where you sleep"
+    override val nearStayHint = "Tap the meals you want close to where you sleep."
+
+    override fun sleepingAt(place: String) = "You sleep at $place"
 }

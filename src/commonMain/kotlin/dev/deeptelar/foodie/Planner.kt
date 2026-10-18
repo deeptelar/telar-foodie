@@ -285,12 +285,21 @@ private suspend fun located(brief: Brief, sources: Sources, texts: Texts): Pair<
         } else {
             val days = stop.days.coerceIn(1, MAX_DAYS)
             // Where the traveller sleeps is a help, not a need: a place the map does not know is left out.
-            val stay =
-                stop.stay.trim().takeIf { it.isNotEmpty() }?.let { stay ->
-                    reportProgress(Activity(texts.findingOnTheMap(stay)))
-                    sources.geocoder.locate("$stay, ${stop.place}")?.takeIf { metresBetween(it, location) <= STAY_REACH }
+            suspend fun sleeping(place: String): Location? {
+                reportProgress(Activity(texts.findingOnTheMap(place)))
+                return sources.geocoder.locate("$place, ${stop.place}")?.takeIf { metresBetween(it, location) <= STAY_REACH }
+            }
+            val stay = stop.stay.trim().takeIf { it.isNotEmpty() }?.let { sleeping(it) }
+            // A later hotel counts by its night of this stop; one the map does not know is left out, and the one before it goes on.
+            val stays =
+                stop.moves.filter { it.place.isNotBlank() && it.fromDay - day + 1 in 2..days }.sortedBy { it.fromDay }.mapNotNull { move ->
+                    sleeping(move.place.trim())?.let { Stay(move.place.trim(), move.fromDay - day + 1, it.lat, it.lon) }
                 }
-            stops += Stop(stop.place, days, firstDay = day, lat = location.lat, lon = location.lon, cuisines = stop.cuisines, stay = stay, shown = stop.shown.trim())
+            stops +=
+                Stop(
+                    stop.place, days, firstDay = day, lat = location.lat, lon = location.lon, cuisines = stop.cuisines, stay = stay, shown = stop.shown.trim(),
+                    stayName = if (stay == null) "" else stop.stay.trim(), stays = stays,
+                )
             day += days
         }
     }
@@ -349,12 +358,12 @@ private suspend fun guideNotes(trip: Trip, pages: Shared<String, GuidePage>): Ma
 private fun Trip.with(found: Found): Trip =
     copy(restaurants = restaurants.merged(found.restaurants), guideNotes = guideNotes + found.guideNotes, notes = notes + found.notes, sights = sights + found.sights)
 
-/** The meals in the order they are eaten, each with the walk from the meal before it on the same day, or from where the traveller sleeps. */
+/** The meals in the order they are eaten, each with the walk from the meal before it on the same day, or from where the traveller slept. */
 internal fun ordered(trip: Trip): List<Meal> {
     val sorted = trip.route.sortedWith(compareBy({ it.day }, { it.time }))
     return sorted.mapIndexed { index, meal ->
         val before = sorted.getOrNull(index - 1)?.takeIf { it.day == meal.day }
-        val from = if (before == null) trip.stopOn(meal.day)?.stay else trip.restaurant(before.restaurantId)?.location
+        val from = if (before == null) trip.stayFor(meal.day, meal.time) else trip.restaurant(before.restaurantId)?.location
         val to = trip.restaurant(meal.restaurantId)
         meal.copy(walk = if (from != null && to != null) metresBetween(from, to.location) else null)
     }
@@ -373,7 +382,7 @@ internal const val MAP_RADIUS = 3000
 internal val LOCAL_CUISINES = listOf("regional", "local")
 
 /** Where the traveller sleeps counts only this close to the stop, in metres: a hotel of the same name in another town does not. */
-private const val STAY_REACH = 30_000
+internal const val STAY_REACH = 30_000
 
 /** A trip is planned for at most this many days at one stop. */
 internal const val MAX_DAYS = 10

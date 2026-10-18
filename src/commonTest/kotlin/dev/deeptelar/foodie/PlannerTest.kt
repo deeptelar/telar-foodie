@@ -48,6 +48,7 @@ class PlannerTest {
             when {
                 place.startsWith("Lisbon") -> Location(38.7078, -9.1366)
                 place.startsWith("Alfama") -> Location(38.7118, -9.1300)
+                place.startsWith("Baixa") -> Location(38.7114, -9.1367)
                 // A hotel of that name, but in another town.
                 place.startsWith("Hotel Avenida") -> Location(41.1496, -8.6110)
                 else -> null
@@ -985,6 +986,107 @@ class PlannerTest {
 
             assertEquals(Location(38.7118, -9.1300), trip.stops.single().stay)
             assertTrue(trip.route.single().walk in 400..700, "walk was ${trip.route.single().walk}")
+        }
+
+    @Test
+    fun `a traveller who changes hotels walks from the place of each night, and to breakfast from the night before`() =
+        runTest {
+            val moves = listOf(BriefStay("Baixa", fromDay = 3), BriefStay("Hotel Avenida", fromDay = 2))
+            val model =
+                ScriptedChatModel {
+                    answers(Brief(stops = listOf(BriefStop(lisbon, days = 3, cuisines = listOf("portuguese"), stay = "Alfama", moves = moves))))
+                    answers(menu)
+                    says("Nothing to plan.")
+                }
+
+            val trip = planner(model, sources()).invoke(interviewed("Three days in Lisbon"), config()).state
+
+            val stop = trip.stops.single()
+            assertEquals("Alfama", stop.stayName)
+            // The hotel that the map finds in another town is left out, and the one before it goes on.
+            assertEquals(listOf(Stay("Baixa", 3, 38.7114, -9.1367)), stop.stays)
+            assertEquals(Location(38.7118, -9.1300), trip.stayFor(2, MealTime.DINNER))
+            assertEquals(Location(38.7118, -9.1300), trip.stayFor(3, MealTime.BREAKFAST))
+            assertEquals(Location(38.7114, -9.1367), trip.stayFor(3, MealTime.DINNER))
+            val first = model.requests[2].messages.first().text
+            assertTrue("- Days 1 to 3: $lisbon, sleeping at Alfama, from the night of day 3 at Baixa\n" in first, first)
+        }
+
+    @Test
+    fun `a meal the traveller wants near where they sleep is pointed out to the agent when it is far`() {
+        val trip =
+            Trip(
+                "One day in Lisbon",
+                profile = Profile(nearStay = listOf(MealTime.BREAKFAST)),
+                stops = listOf(Stop(lisbon, 1, 1, 38.7078, -9.1366, stay = Location(38.7118, -9.1300), stayName = "Alfama")),
+                restaurants = listOf(zeDaMouraria.copy(id = "r1", lat = 38.7125, lon = -9.1310), santaRitaOnMap.copy(id = "r2", lat = 38.7300, lon = -9.1500)),
+                route = listOf(Meal(1, MealTime.BREAKFAST, "r1", "", ""), Meal(1, MealTime.LUNCH, "r2", "", "")),
+            )
+        // The breakfast is a short walk away, and the lunch need not be.
+        assertEquals("", trip.farFromStay(trip.route))
+
+        val far = trip.copy(route = listOf(Meal(1, MealTime.BREAKFAST, "r2", "", "")))
+        val told = far.farFromStay(far.route)
+        assertTrue(told.startsWith("\nDay 1 breakfast at Santa Rita is "), told)
+        assertTrue(told.endsWith(" m from Alfama, but the traveller wants it near where they sleep: choose a place within 700 m, and search with near \"Alfama\" if no candidate is."), told)
+    }
+
+    @Test
+    fun `a search near a place looks around it, and says how far each place is from it`() =
+        runTest {
+            var searched: Pair<Location, Int>? = null
+            val map =
+                StreetMap { _, near, _, radius ->
+                    if (radius != MAP_RADIUS) searched = near to radius
+                    listOf(santaRitaOnMap, zeDaMouraria)
+                }
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("search_map", MapLookup(lisbon, cuisine = "portuguese", near = "Alfama"))
+                    calls("set_meal", MealChoice(1, "lunch", "r2", "caldo verde", "Near Alfama."))
+                    says("Planned.")
+                }
+
+            planner(model, sources(map = map)).invoke(interviewed("One day in Lisbon"), config())
+
+            assertEquals(Location(38.7118, -9.1300) to 1000, searched)
+            val listed = model.requests[3].messages.filterIsInstance<ChatMessage.ToolResult>().last().text
+            assertTrue(Regex("""\[r2\] Zé da Mouraria .* · \d+ m from Alfama""").containsMatchIn(listed), listed)
+        }
+
+    @Test
+    fun `a place the traveller wants changed is replaced for their reasons, and not chosen again`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it."))
+                    says("Salt cod for lunch.")
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "Still the best."))
+                    calls("set_meal", MealChoice(1, "lunch", "r2", "caldo verde", "The map lists it as Portuguese."))
+                    says("Soup instead.")
+                }
+            val config = config()
+            val planner = planner(model, sources())
+            planner.invoke(interviewed("One day in Lisbon"), config)
+
+            val swap = MealSwap(1, MealTime.LUNCH, listOf(SwapReason.DISH, SwapReason.CLOSER), instead = "caldo verde", near = "Alfama")
+            val changed = planner.resume(config) { it.swapped(listOf(swap)) }.state
+
+            assertEquals(listOf("r2"), changed.route.map { it.restaurantId })
+            assertEquals(listOf("r1"), changed.rejected)
+            val asked = model.requests[4].messages.last { it is ChatMessage.User }.text
+            assertTrue("- Day 1 lunch, now Restaurante Santa Rita [r1] with bacalhau à brás.\n" in asked, asked)
+            assertTrue("Why not: the traveller does not fancy this dish; wants it closer to somewhere." in asked, asked)
+            assertTrue("Instead, the traveller would like: caldo verde." in asked, asked)
+            assertTrue("Closer to: Alfama. Search with near set to it." in asked, asked)
+            val refused = model.requests[5].messages.filterIsInstance<ChatMessage.ToolResult>().last()
+            assertTrue(refused.isError)
+            assertEquals("The traveller asked to change Restaurante Santa Rita: choose another place.", refused.text)
+            assertEquals(0, model.remaining)
         }
 
     @Test

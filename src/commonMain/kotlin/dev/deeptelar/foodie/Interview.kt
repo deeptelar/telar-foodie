@@ -26,7 +26,7 @@ enum class Topic(
     DIET("Diet"),
     DATES("When"),
     PARTY("Who is coming"),
-    STAY("Where you stay"),
+    STAY("Where you stay each night, and which meals should be near it"),
     MEALS("Which meals"),
     BUDGET("Budget"),
     TASTE("Taste"),
@@ -78,6 +78,8 @@ data class Profile(
     val party: String = "",
     @Description("The meals the traveller wants planned. Empty if not said.")
     val meals: List<MealTime> = emptyList(),
+    @Description("The meals the traveller wants close to where they sleep, for example a breakfast near the hotel. Empty if not said.")
+    val nearStay: List<MealTime> = emptyList(),
     @Description("What the traveller wants to spend: \"low\", \"medium\" or \"high\". \"medium\" if not said.")
     val budget: String = "medium",
     @Description("Whether the traveller wants one special, more expensive meal on the trip.")
@@ -251,6 +253,7 @@ private fun Profile.tidied(): Profile =
         season = season.trim(),
         party = party.trim(),
         meals = meals.distinct().sorted(),
+        nearStay = nearStay.distinct().sorted(),
         taste = taste.trim(),
         drinks = drinks.trim(),
         wishes = wishes.trim(),

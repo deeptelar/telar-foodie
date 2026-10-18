@@ -139,7 +139,7 @@ private const val MIN_RATINGS = 50
  * it with the most evidence, and then the others with the most evidence, [limit] in all.
  */
 fun Trip.best(stop: String, limit: Int): List<Restaurant> {
-    val here = restaurants.filter { it.stop.equals(stop, ignoreCase = true) }.sortedByDescending { evidence(it) }
+    val here = restaurants.filter { it.stop.equals(stop, ignoreCase = true) && it.id !in rejected }.sortedByDescending { evidence(it) }
     val specialists = dishes.filter { it.stop.equals(stop, ignoreCase = true) }.flatMap { dish -> here.filter { speciality(it) == dish }.take(2) }
     return (specialists + here).distinctBy { it.id }.take(limit)
 }

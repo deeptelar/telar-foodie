@@ -26,6 +26,11 @@ data class CandidateSearch(
     val stop: String,
     @Description("Words to look for in the name, the cuisine or the description, for example \"seafood\" or \"market\". Empty lists the best of the stop.")
     val words: String = "",
+    @Description(
+        "A place to search around, within about a kilometre, instead of the middle of the stop: a neighbourhood, a street, a sight, " +
+            "or where the traveller sleeps, as the list of days names it. Empty for the whole stop.",
+    )
+    val near: String = "",
 )
 
 @Serializable
@@ -36,6 +41,11 @@ data class MapLookup(
     val cuisine: String = "",
     @Description("A word in the name of the place, for example \"tasca\" or \"mercado\". Leave empty to search by cuisine.")
     val name: String = "",
+    @Description(
+        "A place to search around, within about a kilometre, instead of the middle of the stop: a neighbourhood, a street, a sight, " +
+            "or where the traveller sleeps, as the list of days names it. Empty for the whole stop.",
+    )
+    val near: String = "",
 )
 
 @Serializable
@@ -52,6 +62,11 @@ data class ReviewSearch(
     val stop: String,
     @Description("What to search for, as a person would type it, for example \"best pastel de nata\" or \"family-run seafood restaurant\".")
     val query: String,
+    @Description(
+        "A place to search around, within about a kilometre, instead of the middle of the stop: a neighbourhood, a street, a sight, " +
+            "or where the traveller sleeps, as the list of days names it. Empty for the whole stop.",
+    )
+    val near: String = "",
 )
 
 @Serializable
@@ -127,8 +142,14 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
             val stop = trip.knownStop(search.stop)
             val words = search.words.lowercase().split(' ', ',').filter { it.isNotBlank() }
             if (words.any { it.length < 3 }) throw IllegalArgumentException("Search for a word of at least three letters, such as a dish or a cuisine.")
-            val matching = trip.restaurants.filter { it.stop == stop.name && it.matches(words) }.sortedByDescending { trip.evidence(it) }
-            ToolOutcome(trip, trip.listed(matching, "No candidate in ${stop.name} matches \"${search.words}\". Search the map or the guide."))
+            val around = trip.around(stop, search.near, sources)
+            val matching =
+                trip.restaurants
+                    .filter { it.stop == stop.name && it.id !in trip.rejected && it.matches(words) }
+                    .filter { around == null || metresBetween(it.location, around.second) <= NEAR_RADIUS }
+                    .sortedByDescending { trip.evidence(it) }
+            val nothing = "No candidate in ${stop.name} matches \"${search.words}\"" + (around?.let { " near ${it.first}" } ?: "") + ". Search the map or the guide."
+            ToolOutcome(trip, trip.listed(matching, nothing, around))
         },
         StateTool<Trip, MapLookup>("search_map", "Searches the street map around a stop, by cuisine or by a word in the name. What it finds joins the candidates.") { trip, lookup ->
             val stop = trip.knownStop(lookup.stop)
@@ -138,8 +159,10 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
                     lookup.cuisine.isNotBlank() -> MapSearch.Cuisine(listOf(lookup.cuisine))
                     else -> throw IllegalArgumentException("Give a cuisine or a name to search for.")
                 }
-            reportProgress(Activity(trip.language.texts.searchingTheMap(stop.title, lookup.name.ifBlank { lookup.cuisine })))
-            trip.found(sources.map.restaurants(stop.name, stop.location, search, MAP_RADIUS), "The map has no such place in ${stop.name}.")
+            val around = trip.around(stop, lookup.near, sources)
+            reportProgress(Activity(trip.language.texts.searchingTheMap(around?.first ?: stop.title, lookup.name.ifBlank { lookup.cuisine })))
+            val found = sources.map.restaurants(stop.name, around?.second ?: stop.location, search, if (around == null) MAP_RADIUS else NEAR_RADIUS)
+            trip.found(found, "The map has no such place in ${stop.name}" + (around?.let { " near ${it.first}" } ?: "") + ".", around)
         },
         StateTool<Trip, GuideLookup>("read_guide", "Reads another page of the travel guide. Returns what it says about the food, and adds the restaurants it lists to the candidates of the stop.") { trip, lookup ->
             val stop = trip.knownStop(lookup.stop)
@@ -153,8 +176,9 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
         sources.reviews?.let { reviews ->
             StateTool<Trip, ReviewSearch>("search_reviews", "Searches Google for places at a stop, with their ratings. What it finds joins the candidates.") { trip, search ->
                 val stop = trip.knownStop(search.stop)
-                reportProgress(Activity(trip.language.texts.searchingReviews(stop.title, search.query)))
-                trip.found(reviews.search(stop.name, search.query, stop.location), "Google found nothing for \"${search.query}\".")
+                val around = trip.around(stop, search.near, sources)
+                reportProgress(Activity(trip.language.texts.searchingReviews(around?.first ?: stop.title, search.query)))
+                trip.found(reviews.search(stop.name, search.query, around?.second ?: stop.location), "Google found nothing for \"${search.query}\".", around)
             }
         },
     )
@@ -190,6 +214,7 @@ private val routeEditors: List<StateTool<Trip>> =
                     if (problems.isNotEmpty()) append("\nNot on the route:\n" + problems.joinToString("\n"))
                     if (twice.isNotEmpty()) append("\nMore than once on the route: ${twice.joinToString()}. Use a restaurant once.")
                     append(" " + after.openMeals())
+                    append(after.farFromStay(after.route.filter { meal -> plan.meals.any { it.day == meal.day && MealTime.of(it.meal) == meal.time } }))
                     if (plan.message.isNotBlank()) {
                         append(if (after.finishedBy(plan)) " The route is done, and the traveller reads your message." else " Your message is not shown yet: fix this, then send the message again.")
                     }
@@ -204,7 +229,8 @@ private val routeEditors: List<StateTool<Trip>> =
                 after,
                 "Day ${choice.day}, ${mealTime(choice.meal).label.lowercase()}: ${restaurant.name}." +
                     (if (twice) " It is on the route more than once now." else "") +
-                    " " + after.openMeals(),
+                    " " + after.openMeals() +
+                    after.farFromStay(after.route.filter { it.day == choice.day && it.time == mealTime(choice.meal) }),
             )
         },
         StateTool<Trip, MealSlot>("remove_meal", "Takes a meal off the route.") { trip, slot ->
@@ -336,6 +362,7 @@ private fun Trip.withMeal(choice: MealChoice): Trip {
     val stop = stopOn(choice.day) ?: throw IllegalArgumentException("The trip has $days days. There is no day ${choice.day}. To make a stay longer, call set_days first.")
     val restaurant = restaurant(choice.restaurant) ?: throw IllegalArgumentException("There is no candidate with the id \"${choice.restaurant}\". Use an id from the list.")
     if (restaurant.stop != stop.name) throw IllegalArgumentException("${restaurant.name} is in ${restaurant.stop}, but day ${choice.day} is in ${stop.name}.")
+    if (restaurant.id in rejected) throw IllegalArgumentException("The traveller asked to change ${restaurant.name}: choose another place.")
     val meal = Meal(choice.day, time, restaurant.id, choice.dish.trim(), choice.why.trim(), choice.caution.trim())
     return copy(route = route.filterNot { it.day == meal.day && it.time == meal.time } + meal)
 }
@@ -401,19 +428,53 @@ private fun Restaurant.matches(words: List<String>): Boolean {
 }
 
 /** The trip with [found] among its candidates, and the found restaurants as text, with the ids they have now. */
-private fun Trip.found(found: List<Restaurant>, nothing: String): ToolOutcome<Trip> {
+private fun Trip.found(found: List<Restaurant>, nothing: String, around: Pair<String, Location>? = null): ToolOutcome<Trip> {
     val after = copy(restaurants = restaurants.merged(found))
     // Looked up in the merged list: a restaurant that was already known keeps its id.
-    val listed = found.mapNotNull { new -> after.restaurants.firstOrNull { it.isSamePlaceAs(new) } }
-    return ToolOutcome(after, after.listed(listed.distinctBy { it.id }.sortedByDescending { after.evidence(it) }, nothing))
+    val listed = found.mapNotNull { new -> after.restaurants.firstOrNull { it.isSamePlaceAs(new) } }.filter { it.id !in rejected }
+    return ToolOutcome(after, after.listed(listed.distinctBy { it.id }.sortedByDescending { after.evidence(it) }, nothing, around))
 }
 
-private fun Trip.listed(found: List<Restaurant>, nothing: String): String =
+/** [found] as lines for the model, each with how far it is from the place [around], when the search was near one. */
+private fun Trip.listed(found: List<Restaurant>, nothing: String, around: Pair<String, Location>? = null): String =
     if (found.isEmpty()) {
         nothing
     } else {
-        found.take(SHOWN).joinToString("\n") { line(it) } + if (found.size > SHOWN) "\n(${found.size - SHOWN} more. Search with other words to see them.)" else ""
+        found.take(SHOWN).joinToString("\n") { restaurant ->
+            line(restaurant) + (around?.let { (name, place) -> " · ${metresBetween(restaurant.location, place)} m from $name" } ?: "")
+        } + if (found.size > SHOWN) "\n(${found.size - SHOWN} more. Search with other words to see them.)" else ""
     }
+
+/**
+ * The place a search of [stop] is [near], with its name: a place where the traveller sleeps, by
+ * the name the list of days gives it, or else what the map finds by that name at the stop. `null`
+ * for a search of the whole stop.
+ *
+ * @throws IllegalArgumentException when the map does not know the place at the stop.
+ */
+private suspend fun Trip.around(stop: Stop, near: String, sources: Sources): Pair<String, Location>? {
+    val name = near.trim().takeIf { it.isNotEmpty() } ?: return null
+    val sleeping = listOfNotNull(stop.stay?.let { stop.stayName to it }) + stop.stays.map { it.name to it.location }
+    sleeping.firstOrNull { it.first.equals(name, ignoreCase = true) }?.let { return it }
+    val place =
+        sources.geocoder.locate("$name, ${stop.name}")?.takeIf { metresBetween(it, stop.location) <= STAY_REACH }
+            ?: throw IllegalArgumentException("The map does not know \"$name\" in ${stop.name}. Name a neighbourhood, a street or a sight there.")
+    return name to place
+}
+
+/** What the model is told about [meals] that the traveller wants near where they sleep, and that are not. Empty when all are. */
+internal fun Trip.farFromStay(meals: List<Meal>): String =
+    meals.filter { it.time in profile.nearStay }.mapNotNull { meal ->
+        val (name, stay) = sleepingPlace(meal.day, meal.time) ?: return@mapNotNull null
+        val place = restaurant(meal.restaurantId) ?: return@mapNotNull null
+        val metres = metresBetween(place.location, stay)
+        if (metres <= NEAR_STAY) {
+            null
+        } else {
+            "\nDay ${meal.day} ${meal.time.label.lowercase()} at ${place.name} is $metres m from $name, but the traveller wants it near where they sleep: " +
+                "choose a place within $NEAR_STAY m, and search with near \"$name\" if no candidate is."
+        }
+    }.joinToString("")
 
 /** The meals of every day: the ones the traveller asked for, or a lunch and a dinner. */
 internal val Trip.dailyMeals: List<MealTime> get() = profile.meals.distinct().sorted().ifEmpty { listOf(MealTime.LUNCH, MealTime.DINNER) }
@@ -426,6 +487,12 @@ internal fun Trip.openMeals(): String {
         }
     return if (open.isEmpty()) "Every day has its ${dailyMeals.joinToString(" and ") { it.label.lowercase() }}." else "Still open: ${open.joinToString()}."
 }
+
+/** How far around a place a search `near` it looks, in metres. */
+private const val NEAR_RADIUS = 1000
+
+/** A meal the traveller wants near where they sleep is this close to it, in metres: a short walk. */
+internal const val NEAR_STAY = 700
 
 /** A restaurant of another page of the guide is a candidate of a stop when it is within this distance of it, in metres. */
 private const val GUIDE_REACH = 40_000

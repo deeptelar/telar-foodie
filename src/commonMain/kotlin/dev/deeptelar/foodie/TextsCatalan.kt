@@ -161,7 +161,7 @@ object Catalan : Texts {
             Topic.DIET -> Question(topic, "Hi ha res que no mengis?", listOf("Menjo de tot", "Vegetarià", "Piscivegetarià", "Halal", "Sense porc"), alone = listOf("Menjo de tot"))
             Topic.DATES -> Question(topic, "Quan hi vas?", listOf("Primavera", "Estiu", "Tardor", "Hivern"))
             Topic.PARTY -> Question(topic, "Amb qui menges?", listOf("Només jo", "Dues persones", "Família amb nens", "Grup d'amics"), alone = listOf("Només jo"))
-            Topic.STAY -> Question(topic, "On t'allotges a cada lloc? N'hi ha prou amb el barri o el nom de l'hotel.")
+            Topic.STAY -> Question(topic, "On t'allotges a cada lloc, i des de quin dia si canvies d'hotel? N'hi ha prou amb el barri o el nom de l'hotel. Digues-me també si vols algun àpat a prop, com l'esmorzar.")
             Topic.MEALS -> Question(topic, "Quins àpats ha de planificar la ruta?", listOf("Esmorzar", "Dinar", "Berenar", "Sopar"))
             Topic.BUDGET ->
                 Question(topic, "Quant vols gastar per àpat?", listOf("Com menys millor", "Preu mitjà", "Preu mitjà i un sopar especial", "Els diners no importen"), alone = listOf("Com menys millor", "Preu mitjà", "Preu mitjà i un sopar especial", "Els diners no importen"))
@@ -404,4 +404,32 @@ object Catalan : Texts {
             "El pots tornar a obrir aquí més endavant, o compartir-lo per mostrar com va triar el planificador."
     override val notAPlanFile = "Aquest fitxer no és un pla de Foodie Route."
     override val planFromANewerPage = "Una versió més nova de la pàgina va desar aquest pla. Torna a carregar la pàgina i obre'l de nou."
+
+    override val changeThisPlace = "Canvia aquest lloc"
+    override val whyNotThisOne = "Per què no aquest?"
+
+    override fun swapReason(reason: SwapReason) =
+        when (reason) {
+            SwapReason.DISH -> "No em ve de gust aquest plat"
+            SwapReason.FOOD -> "Un altre tipus de menjar"
+            SwapReason.CLOSER -> "Més a prop d'algun lloc"
+            SwapReason.CHEAPER -> "Alguna cosa més barata"
+            SwapReason.SPECIAL -> "Alguna cosa especial"
+            SwapReason.TOURISTY -> "Sembla turístic"
+            SwapReason.KNOWN -> "Ja el conec"
+            SwapReason.CLOSED -> "Tancat o ple aquell dia"
+        }
+    override val whatInstead = "Què et ve de gust, en canvi?"
+    override val insteadPlaceholder = "Un plat o un tipus de menjar"
+    override val closerToWhat = "Més a prop de què?"
+    override val closerPlaceholder = "El teu hotel, una platja, un museu…"
+    override val swapNotePlaceholder = "Res més? (opcional)"
+    override val findAnotherPlace = "Busca un altre lloc"
+
+    override fun changeThesePlaces(count: Int) = "Canvia aquests $count llocs"
+    override val swapTogetherHint = "Per canviar diversos llocs alhora, obre'ls tots abans de prémer."
+    override val nearStay = "A prop d'on dorms"
+    override val nearStayHint = "Toca els àpats que vols a prop d'on dorms."
+
+    override fun sleepingAt(place: String) = "Dorms a $place"
 }

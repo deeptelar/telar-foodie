@@ -101,6 +101,7 @@ How to choose:
 - Never put a dish on the route that the traveller's allergies or diet rule out. With an allergy, say in `caution` what in the dish or the kitchen may contain it and what to tell the staff.
 - When someone on the trip is pregnant, choose dishes they can eat, and say in `caution` what to leave out or ask for at a place whose food often has it: raw or undercooked fish, meat or eggs, unpasteurised cheese, cured meats, fish high in mercury, alcohol.
 - Choose each meal for its dish, not for being near the meal before: the traveller is on holiday, and goes across town for the right place. The places of a day need not be close to each other. Only between two places that are as good, take the one that fits the day better.
+- A meal the traveller wants near where they sleep is a short walk from the place of that night, and a breakfast from the place of the night before; the list of days says where they sleep. List or search the candidates with `near` set to it.
 - When the candidates have no good place for a dish, search for one with the tools before you settle for less.
 
 How to work:
@@ -129,7 +130,10 @@ internal fun planPrompt(trip: Trip): String =
         appendLine("The days:")
         trip.stops.forEach { stop ->
             val last = stop.firstDay + stop.days - 1
-            appendLine("- ${if (last == stop.firstDay) "Day ${stop.firstDay}" else "Days ${stop.firstDay} to $last"}: ${stop.name}")
+            append("- ${if (last == stop.firstDay) "Day ${stop.firstDay}" else "Days ${stop.firstDay} to $last"}: ${stop.name}")
+            if (stop.stayName.isNotBlank()) append(", sleeping at ${stop.stayName}")
+            stop.stays.forEach { append(", from the night of day ${stop.firstDay + it.night - 1} at ${it.name}") }
+            appendLine()
         }
         trip.stops.forEach { stop ->
             appendLine()
@@ -170,6 +174,28 @@ internal fun asidePrompt(text: String): String =
     "While you worked, I paused you to say this:\n\n${text.trim()}\n\n" +
         "Plan the route with it in mind: change what it changes, keep what still fits, and go on."
 
+/** What the agent is told when the traveller asks to change the places of some meals, and why. */
+internal fun swapPrompt(trip: Trip, swaps: List<MealSwap>): String =
+    buildString {
+        appendLine("Change the place of these meals, and keep every other meal of the route as it is:")
+        swaps.forEach { swap ->
+            val meal = trip.route.firstOrNull { it.day == swap.day && it.time == swap.time }
+            val place = meal?.let { trip.restaurant(it.restaurantId) }
+            append("- Day ${swap.day} ${swap.time.label.lowercase()}")
+            if (meal != null && place != null) append(", now ${place.name} [${place.id}] with ${meal.dish}")
+            appendLine(".")
+            if (swap.reasons.isNotEmpty()) appendLine("  Why not: the traveller " + swap.reasons.joinToString("; ") { it.label } + ".")
+            if (swap.instead.isNotBlank()) appendLine("  Instead, the traveller would like: ${swap.instead.trim()}.")
+            if (swap.near.isNotBlank()) appendLine("  Closer to: ${swap.near.trim()}. Search with near set to it.")
+            if (swap.note.isNotBlank()) appendLine("  In the traveller's words: ${swap.note.trim()}")
+        }
+        appendLine()
+        append(
+            "The traveller does not want these places on the route again. Choose a new place for each meal from the candidates, or search for one, " +
+                "then tell the traveller in one or two sentences what changed.",
+        )
+    }
+
 /** The profile for a model, one line for each thing the traveller said. */
 private fun profileLines(profile: Profile): List<String> =
     listOfNotNull(
@@ -177,6 +203,7 @@ private fun profileLines(profile: Profile): List<String> =
         "Diet: " + profile.diet.ifBlank { "none said" },
         if (profile.pregnant) "Pregnancy: $PREGNANCY_RULE" else null,
         "Budget: ${profile.budget}" + if (profile.splurge) ", with one special meal" else "",
+        profile.nearStay.takeIf { it.isNotEmpty() }?.let { meals -> "Near where they sleep, within $NEAR_STAY m: " + meals.sorted().joinToString { it.label.lowercase() } },
         profile.party.takeIf { it.isNotBlank() }?.let { "Who eats: $it" },
         profile.season.takeIf { it.isNotBlank() }?.let { "When: $it" },
         profile.taste.takeIf { it.isNotBlank() }?.let { "Taste: $it" },

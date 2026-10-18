@@ -370,6 +370,31 @@ interface Texts {
     val savedFileHint: String
     val notAPlanFile: String
     val planFromANewerPage: String
+
+    // Changing one place of the route
+
+    val changeThisPlace: String
+    val whyNotThisOne: String
+
+    fun swapReason(reason: SwapReason): String
+    val whatInstead: String
+    val insteadPlaceholder: String
+    val closerToWhat: String
+    val closerPlaceholder: String
+    val swapNotePlaceholder: String
+    val findAnotherPlace: String
+
+    /** The button that sends the changes of [count] places at once. */
+    fun changeThesePlaces(count: Int): String
+    val swapTogetherHint: String
+
+    // Where the traveller sleeps
+
+    /** The meals the traveller wants near where they sleep, in the profile. */
+    val nearStay: String
+    val nearStayHint: String
+
+    fun sleepingAt(place: String): String
 }
 
 /** A step of a how-to, with a [link] to where it is done when there is one. */

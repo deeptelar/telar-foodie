@@ -28,10 +28,11 @@ fun Restaurant.googleMapsLink(): String {
  * are unless Google found each one.
  */
 fun Trip.dayInGoogleMaps(day: Int): String? {
-    val places = route.filter { it.day == day }.sortedBy { it.time }.mapNotNull { restaurant(it.restaurantId) }
+    val meals = route.filter { it.day == day }.sortedBy { it.time }
+    val places = meals.mapNotNull { restaurant(it.restaurantId) }
     if (places.isEmpty()) return null
     // Without where the traveller sleeps, the walk starts at the first meal.
-    val stay = stopOn(day)?.stay
+    val stay = stayFor(day, meals.first().time)
     val first = places.first().takeIf { stay == null }
     val visits = if (first == null) places else places.drop(1)
     val last = visits.lastOrNull() ?: return places.first().googleMapsLink()

@@ -147,6 +147,9 @@ class App(
 
     /** The profile as the traveller is changing it, before it is sent. `null` until the profile is shown. */
     private var editing: ProfileDraft? = null
+
+    /** The meals the traveller opened to change, by their day and time, with what they said so far. */
+    private var swaps = emptyMap<Pair<Int, MealTime>, MealSwap>()
     private var job: Job? = null
     private var map: RouteMap? = null
     private var runPanel: HTMLElement? = null
@@ -220,6 +223,7 @@ class App(
     private fun run(events: () -> Flow<GraphEvent<Trip>>) {
         phase = Phase.RUNNING
         drafts = emptyMap()
+        swaps = emptyMap()
         editing = null
         failure = ""
         writing = ""
@@ -1138,6 +1142,16 @@ class App(
             }
             if (profile.meals.isEmpty()) add("p", "hint small", texts.mealsIfNone)
         }
+        editRow(texts.nearStay) {
+            add("div", "chips") {
+                MealTime.entries.forEach { time ->
+                    button(texts.meal(time), "chip answer" + if (time in profile.nearStay) " picked" else "") {
+                        changed { it.copy(nearStay = if (time in it.nearStay) it.nearStay - time else (it.nearStay + time).sorted()) }
+                    }
+                }
+            }
+            if (profile.nearStay.isEmpty()) add("p", "hint small", texts.nearStayHint)
+        }
         editRow(texts.budget) {
             add("div", "chips") {
                 BUDGETS.forEach { word ->
@@ -1228,6 +1242,7 @@ class App(
             profile.season.takeIf { it.isNotBlank() }?.let { texts.whenLabel to it },
             profile.party.takeIf { it.isNotBlank() }?.let { texts.who to it },
             profile.meals.takeIf { it.isNotEmpty() }?.let { meals -> texts.meals to meals.sorted().joinToString { texts.meal(it).lowercase() } },
+            profile.nearStay.takeIf { it.isNotEmpty() }?.let { meals -> texts.nearStay to meals.sorted().joinToString { texts.meal(it).lowercase() } },
             texts.budget to texts.budget(profile.budget) + if (profile.splurge) texts.withASpecialMeal else "",
             profile.taste.takeIf { it.isNotBlank() }?.let { texts.taste to it },
             profile.drinks.takeIf { it.isNotBlank() }?.let { texts.drinks to it },
@@ -1258,6 +1273,7 @@ class App(
             (1..trip.days).forEach { day ->
                 val meals = trip.route.filter { it.day == day }
                 add("h3", "day ${RouteMap.dayClass(day)}", texts.dayAt(day, trip.stopOn(day)?.title.orEmpty()))
+                trip.sleepingPlace(day, MealTime.DINNER)?.first?.takeIf { it.isNotBlank() }?.let { add("p", "hint small sleeping", texts.sleepingAt(it)) }
                 if (meals.isEmpty()) add("p", "hint", texts.nothingPlannedThisDay)
                 // A day of one meal is no walk: its card has the link to the place.
                 if (meals.size > 1) trip.dayInGoogleMaps(day)?.let { add("p", "day-link") { link(texts.dayInGoogleMaps, it) } }
@@ -1423,8 +1439,95 @@ class App(
                     link(texts.openInGoogleMaps, restaurant.googleMapsLink())
                     link("OpenStreetMap", "https://www.openstreetmap.org/?mlat=${restaurant.lat}&mlon=${restaurant.lon}#map=18/${restaurant.lat}/${restaurant.lon}")
                 }
+                // The agent changes the route only while it waits for the traveller.
+                if (phase == Phase.REVIEW) swapSheet(trip, meal)
             }
         }
+    }
+
+    /**
+     * The button that opens the questions about changing the place of [meal], or the questions: why
+     * not this one, and what instead or near what, when the answer needs it. Only the sheet is drawn
+     * again after a tap.
+     */
+    private fun HTMLElement.swapSheet(trip: Trip, meal: Meal) {
+        val key = meal.day to meal.time
+        val box = add("div", "swap")
+        fun draw() {
+            box.clear()
+            val swap = swaps[key]
+            if (swap == null) {
+                box.button(texts.changeThisPlace, "link") {
+                    swaps = swaps + (key to MealSwap(meal.day, meal.time))
+                    draw()
+                    relabelSwaps()
+                }
+                return
+            }
+            fun changed(change: (MealSwap) -> MealSwap, redraw: Boolean) {
+                swaps[key]?.let { swaps = swaps + (key to change(it)) }
+                if (redraw) draw()
+                relabelSwaps()
+            }
+            box.add("p", "field-label", texts.whyNotThisOne)
+            box.add("div", "chips") {
+                SwapReason.entries.forEach { reason ->
+                    button(texts.swapReason(reason), "chip answer" + if (reason in swap.reasons) " picked" else "") {
+                        changed({ it.copy(reasons = if (reason in it.reasons) it.reasons - reason else it.reasons + reason) }, redraw = true)
+                    }
+                }
+            }
+            if (SwapReason.DISH in swap.reasons || SwapReason.FOOD in swap.reasons) {
+                box.add("p", "field-label", texts.whatInstead)
+                // The dishes the stop is known for at this meal, as answers to tap.
+                val stop = trip.stopOn(meal.day)?.name
+                val dishes = trip.dishes.filter { it.stop == stop && MealTime.of(it.meal) == meal.time && !it.name.equals(meal.dish, ignoreCase = true) }
+                if (dishes.isNotEmpty()) {
+                    box.add("div", "chips") {
+                        dishes.forEach { dish ->
+                            button(dish.name, "chip answer" + if (swap.instead == dish.name) " picked" else "") {
+                                changed({ it.copy(instead = if (it.instead == dish.name) "" else dish.name) }, redraw = true)
+                            }
+                        }
+                    }
+                }
+                box.textInput(swap.instead, texts.insteadPlaceholder, texts.whatInstead) { text -> changed({ it.copy(instead = text) }, redraw = false) }
+            }
+            if (SwapReason.CLOSER in swap.reasons) {
+                box.add("p", "field-label", texts.closerToWhat)
+                val sleeping = trip.stopOn(meal.day)?.let { listOf(it.stayName) + it.stays.map { stay -> stay.name } }.orEmpty().filter { it.isNotBlank() }
+                if (sleeping.isNotEmpty()) {
+                    box.add("div", "chips") {
+                        sleeping.forEach { place ->
+                            button(place, "chip answer" + if (swap.near == place) " picked" else "") { changed({ it.copy(near = if (it.near == place) "" else place) }, redraw = true) }
+                        }
+                    }
+                }
+                box.textInput(swap.near, texts.closerPlaceholder, texts.closerToWhat) { text -> changed({ it.copy(near = text) }, redraw = false) }
+            }
+            box.textInput(swap.note, texts.swapNotePlaceholder, texts.swapNotePlaceholder, "swap-note") { text -> changed({ it.copy(note = text) }, redraw = false) }
+            box.add("div", "actions") {
+                button(swapLabel(), "primary swap-send") {
+                    val ready = swaps.values.filter { it.said }.sortedWith(compareBy({ it.day }, { it.time }))
+                    if (ready.isNotEmpty()) resume { it.swapped(ready) }
+                }
+                button(texts.cancel, "ghost") {
+                    swaps = swaps - key
+                    draw()
+                    relabelSwaps()
+                }
+            }
+            box.add("p", "hint small", texts.swapTogetherHint)
+        }
+        draw()
+    }
+
+    private fun swapLabel(): String = swaps.values.count { it.said }.let { if (it > 1) texts.changeThesePlaces(it) else texts.findAnotherPlace }
+
+    /** The send buttons of the open sheets say how many places they change: all the sheets where the traveller said something. */
+    private fun relabelSwaps() {
+        val label = swapLabel()
+        root.querySelectorAll(".swap-send").let { buttons -> (0 until buttons.length).forEach { (buttons.item(it) as? HTMLElement)?.textContent = label } }
     }
 
 

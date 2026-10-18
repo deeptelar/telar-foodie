@@ -887,3 +887,25 @@ select.language {
 .step-detail.quiet {
     font-style: italic;
 }
+
+/* Changing one place of the route: the questions open inside its card. */
+.swap {
+    margin-top: 8px;
+}
+
+.swap .field-label {
+    margin: 10px 0 4px;
+}
+
+.swap input {
+    width: 100%;
+    margin-top: 6px;
+}
+
+.swap .actions {
+    margin-top: 10px;
+}
+
+.sleeping {
+    margin: -4px 0 6px;
+}

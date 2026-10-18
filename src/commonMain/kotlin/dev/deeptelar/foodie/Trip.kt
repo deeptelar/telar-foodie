@@ -48,6 +48,8 @@ data class Trip(
     val approved: Boolean = false,
     /** What did not work but did not stop the run, such as a source that gave no answer. */
     val notes: List<String> = emptyList(),
+    /** The ids of the restaurants the traveller asked to change: the agent may not put them on the route again. */
+    val rejected: List<String> = emptyList(),
 ) {
     fun stop(name: String): Stop? = stops.firstOrNull { it.name.equals(name.trim(), ignoreCase = true) }
 
@@ -58,6 +60,21 @@ data class Trip(
 
     /** The stop the traveller is at on [day], which counts from 1. */
     fun stopOn(day: Int): Stop? = stops.firstOrNull { day in it.firstDay until it.firstDay + it.days }
+
+    /**
+     * Where the traveller sleeps before [time] of [day], when the map found it: for a breakfast, the
+     * place of the night before, as long as that night is at the same stop; for the other meals, the
+     * place of that night.
+     */
+    fun stayFor(day: Int, time: MealTime): Location? = sleepingPlace(day, time)?.second
+
+    /** The name and the place of where the traveller sleeps before [time] of [day], as [stayFor] finds it. */
+    fun sleepingPlace(day: Int, time: MealTime): Pair<String, Location>? {
+        val stop = stopOn(day) ?: return null
+        val night = (day - stop.firstDay + 1).let { if (time == MealTime.BREAKFAST && it > 1) it - 1 else it }
+        val moved = stop.stays.lastOrNull { it.night <= night }
+        return moved?.let { it.name to it.location } ?: stop.stay?.let { stop.stayName to it }
+    }
 
     /** What the agent wrote when it had finished the route. */
     val summary: String get() = (messages.lastOrNull() as? ChatMessage.Assistant)?.text ?: finishingPlan?.message.orEmpty()
@@ -87,9 +104,22 @@ data class BriefStop(
     val cuisines: List<String> = emptyList(),
     @Description(
         "Where the traveller sleeps in this place, as a map names it: a neighbourhood, a street, a square or a hotel, without words such as \"near\", " +
-            "for example \"Piazza Garibaldi\". Empty if not said.",
+            "for example \"Piazza Garibaldi\". The first place, when they move. Empty if not said.",
     )
     val stay: String = "",
+    @Description(
+        "Only when the traveller changes where they sleep in this place: each later place, as a map names it, with the day of the whole trip " +
+            "they first sleep there, counted from 1 at the start of the trip. Empty otherwise.",
+    )
+    val moves: List<BriefStay> = emptyList(),
+)
+
+@Serializable
+data class BriefStay(
+    @Description("Where the traveller sleeps, as a map names it, for example a hotel or a neighbourhood.")
+    val place: String,
+    @Description("The day of the whole trip the traveller first sleeps there, counted from 1 at the start of the trip.")
+    val fromDay: Int,
 )
 
 /** A place of the itinerary that was found on the map. */
@@ -108,10 +138,26 @@ data class Stop(
     val stay: Location? = null,
     /** The place as the traveller's language names it. Empty when it is [name]. */
     val shown: String = "",
+    /** [stay] as the traveller named it, such as the hotel. */
+    val stayName: String = "",
+    /** Where the traveller sleeps later here, when they change hotels, in the order of the nights. */
+    val stays: List<Stay> = emptyList(),
 ) {
     /** The place as the traveller reads it. */
     val title: String get() = shown.ifBlank { name }
 
+    val location: Location get() = Location(lat, lon)
+}
+
+/** A place the traveller sleeps at from a night of a stop on, when they change hotels there. */
+@Serializable
+data class Stay(
+    val name: String,
+    /** The first night here, counted from 1 at the first night of the stop. */
+    val night: Int,
+    val lat: Double,
+    val lon: Double,
+) {
     val location: Location get() = Location(lat, lon)
 }
 
