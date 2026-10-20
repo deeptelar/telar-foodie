@@ -55,7 +55,7 @@ class Overpass(
             val index = (preferred + offset) % servers.size
             val answer =
                 try {
-                    withTimeoutOrNull(patience) { client.submitForm(servers[index], parameters { append("data", query) }).jsonFrom("The street map") }
+                    withTimeoutOrNull(patience) { client.submitForm(servers[index], parameters { append("data", query) }).jsonFrom("The street map").withoutError() }
                 } catch (e: Throwable) {
                     if (!e.isFailure()) throw e
                     failure = e.message.orEmpty()
@@ -147,6 +147,17 @@ class Overpass(
             val kept = mutableListOf<Restaurant>()
             while (kept.size < limit) cells.forEach { if (it.hasNext() && kept.size < limit) kept += it.next() }
             return kept
+        }
+
+        /**
+         * This answer, unless the server says it failed. A busy server that runs out of time or
+         * memory still answers with 200 and a list, an empty one or a part, and says so in `remark`:
+         * read as it is, a city would have no restaurants.
+         */
+        internal fun JsonElement.withoutError(): JsonElement {
+            val remark = (this as? JsonObject)?.text("remark").orEmpty()
+            if ("error" in remark) throw SourceException("The street map failed: $remark")
+            return this
         }
 
         /** The values of the map's `reservation` tag that the page knows how to say. */

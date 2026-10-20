@@ -279,6 +279,16 @@ class SourcesTest {
         }
 
     @Test
+    fun `a server of the map that ran out of time says so in a remark, and the next one is asked`() =
+        runTest {
+            val timedOut = """{"elements": [], "remark": "runtime error: Query timed out in \"query\" at line 1 after 26 seconds."}"""
+            val client = client { request -> respond(if (request.url.host == "first.example") timedOut else mapAnswer) }
+            val map = Overpass(client, servers = listOf("https://first.example/api", "https://second.example/api"))
+
+            assertEquals(2, map.restaurants("Lisbon", lisbon, MapSearch.Cuisine(listOf("regional")), 3000).size)
+        }
+
+    @Test
     fun `a server of the map that a browser cannot reach is skipped too`() =
         runTest {
             val asked = mutableListOf<String>()
