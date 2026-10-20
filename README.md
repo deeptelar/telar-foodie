@@ -69,6 +69,27 @@ stateDiagram-v2
 | `order` | Sorts the meals and measures the walks between them, the first of a day from where the traveller sleeps. | A plain node |
 | `review` | The run waits here for the traveller. A change goes back to the agent; a yes ends the run. | `interruptBefore`, `resume` with an update, a conditional edge that loops |
 
+The sources run at the same time without a reducer. Each is a node with a `work`, the slow part,
+which runs for all of them together, and an update, which adds what it found to the state one node
+after the other, so no two updates meet. `effect` saves what a source answered with the step, so it
+is not asked again after a reload. From `Planner.kt`, shortened:
+
+```kotlin
+val guide =
+    node(
+        Nodes.GUIDE,
+        work = { trip ->
+            gather(trip, trip.language.texts.theGuide) { stop ->
+                val page = effect("guide ${stop.name}") { pages.get(stop.name) }
+                Found(page.restaurants, guideNotes = mapOf(stop.name to page.text))
+            }
+        },
+    ) { trip, found -> trip.with(found) }
+
+// The brief leads to each source, and each source to the specialists, which run once after all of them.
+listOfNotNull(guide, map, reviews, dishes).forEach { node -> brief then node then specialists }
+```
+
 Around the graph:
 
 - **The plan survives a reload.** Every step is saved with `LocalStorageCheckpointer`. Close the
