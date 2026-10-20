@@ -84,7 +84,7 @@ object Catalan : Texts {
     override val stepPlan = "Triant on menjar"
     override val stepOrder = "Posant els dies en ordre"
     override val reviewsNotUsed = "No s'utilitza. Afegeix una clau de Google a Configuració per veure valoracions."
-    override val sampleRunning = "Això és l'exemple: un guió fa de model. Les fonts que consulta són reals."
+    override val sampleRunning = "Això és l'exemple: un guió fa de model. El que responen les fonts és real: la guia de viatge i el mapa, consultats una vegada i desats."
     override val cancel = "Cancel·la"
 
     override fun places(count: Int) = if (count == 1) "1 lloc" else "$count llocs"

@@ -84,7 +84,7 @@ object Spanish : Texts {
     override val stepPlan = "Eligiendo dónde comer"
     override val stepOrder = "Ordenando los días"
     override val reviewsNotUsed = "No se usa. Añade una clave de Google en Ajustes para ver valoraciones."
-    override val sampleRunning = "Esto es el ejemplo: un guion hace de modelo. Las fuentes que consulta son reales."
+    override val sampleRunning = "Esto es el ejemplo: un guion hace de modelo. Lo que responden las fuentes es real: la guía de viaje y el mapa, consultados una vez y guardados."
     override val cancel = "Cancelar"
 
     override fun places(count: Int) = if (count == 1) "1 lugar" else "$count lugares"

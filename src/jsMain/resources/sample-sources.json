@@ -1,0 +1,4013 @@
+{
+    "places": {
+        "Lisbon, Portugal": {
+            "lat": 38.7077507,
+            "lon": -9.1365919
+        }
+    },
+    "guides": {
+        "Lisbon, Portugal": {
+            "text": "Portuguese dining rituals tend to follow the Mediterranean siesta body clock. Most restaurants are very small, family-run and generally inexpensive. Some of them have a sheet on the door with the pratos do dia (dishes of the day) written on it – these dishes are usually cheaper and fresher than the rest of menu there, and unless you're looking for something specific, they're the right choice. During the dinner the waiter will probably bring you some unrequested starter dishes (called couvert); as those are not free, don't feel obliged to touch them and they will not be charged on your bill (but check it!).\nTraditional Portuguese restaurants are in Bairro Alto, scattered abundantly through its quirky narrow streets, and for Portuguese traditional cuisine at its finest, head to the area of Chiado. Tour groups primarily feel at home in Alfama. Tourist traps with laminated menus and meal deals are mostly concentrated in the Baixa area; one exception to this is the Rua das Portas de Santo Antão, a 'seafood strip' northeast from and parallel to Praça dos Restauradores. If you feel like eating with the local people, try the Castelo neighborhood, the smaller family run places serve a fixed daily menu and are not expensive, getting up there by foot will open an appetite, or else go in the elétrico. For a familiar taste at one of the many chain eateries, head to Doca de Santo Amaro (train/tram 15 station Alcantara-Mar) and Parque das Nações (metro Oriental). All the culinary and clubbing kudos is right now concentrated in Doca de Jardim de Tabaco (piece of river waterfront right under Castelo de Sao Jorge). Quality dishes for a high price are in well-to-do Lapa. The Pastel De Nata is one of Portugal's most well known foods, with this delightful custard egg tart best found in Belem.\nTry the magnificent pastéis de nata at any pastry shop.\nNever ask a taxi driver about which restaurant you should go to – they will take you to an expensive tourist-oriented restaurant, where they will receive a commission.\nYou will find traditional meals served in small coffee shops and restaurants, especially in the old parts of town. Some will be better than others, just check if there are a lot of locals eating there! They will be very cheap (as little as €5 for a full meal) and home-style cooking. The owners probably won't speak English and the menu will probably be in Portuguese only!",
+            "restaurants": [
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Restaurante Tascardoso",
+                    "lat": 38.71599,
+                    "lon": -9.1477,
+                    "address": "Rua de O Século, 242",
+                    "hours": "Mon-Fri 12:00-24:00",
+                    "price": "Small dishes for €3 (May 2017)",
+                    "phone": "+351 21 342 7578",
+                    "note": "Standing-room only, this place serves simple and affordable Portuguese dishes, including grilled sardines. Toilets available.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Taberna Minhota",
+                    "lat": 38.7135664,
+                    "lon": -9.1437582,
+                    "address": "R. de São Pedro de Alcântara 13",
+                    "note": "A tapas restaurant",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Sabores na Travessa",
+                    "lat": 38.7128737,
+                    "lon": -9.1446004,
+                    "address": "Tv. da Queimada 36",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Restaurante Cantinho da Rosa",
+                    "lat": 38.7145427,
+                    "lon": -9.1458429,
+                    "address": "R. da Rosa 224",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Hawaii Poke-In",
+                    "lat": 38.7166528,
+                    "lon": -9.1453313,
+                    "address": "R. das Taipas 37",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Lusitânia Tony",
+                    "lat": 38.7167179,
+                    "lon": -9.1439885,
+                    "address": "Rua da Glória 22B",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "A Cabana da Estrela",
+                    "lat": 38.7127169,
+                    "lon": -9.1585425,
+                    "address": "R. da Bela Vista à Lapa 20",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "A Loja do Sr. Rocha",
+                    "lat": 38.7127266,
+                    "lon": -9.1569908,
+                    "address": "Calçada da Estrela 68",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Boutique Doce",
+                    "lat": 38.7107062,
+                    "lon": -9.1591621,
+                    "address": "R. da Lapa 22",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Nova Lapa",
+                    "lat": 38.7105816,
+                    "lon": -9.1592405,
+                    "address": "R. da Lapa 23A",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Churrasqueira Central Da Lapa",
+                    "lat": 38.7104908,
+                    "lon": -9.1594779,
+                    "address": "R. da Lapa nº25A",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Time Out Market",
+                    "lat": 38.706944,
+                    "lon": -9.145556,
+                    "address": "Av. 24 de Julho 49",
+                    "website": "http://www.timeoutmarket.com/en/",
+                    "hours": "Sun-Wed 10:00-24:00, Thu-Sat 10:00-02:00",
+                    "phone": "+351 21 395 1274",
+                    "note": "The late 19th-century market was closed in 2000, and in 2014 the publisher Time Out Portugal transformed the space into a gourmet food court with 40 kiosks, including restaurants, bars, and shops. A number of Lisbon's top chefs have stands here, making this an ideal place to sample some of their food for lower prices than at their established restaurants.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Rosa da Rua Restaurante",
+                    "lat": 38.71469,
+                    "lon": -9.14598,
+                    "address": "Rua da Rosa, 265, Bairro Alto",
+                    "website": "http://www.rosadarua-restaurante.blogspot.com/",
+                    "hours": "Mon-Fri 12:00-15:30 19:30-22:30, Sat 19:30-22:30",
+                    "price": "€10 for buffet lunch; €25 for 3-course dinner (May 2017)",
+                    "phone": "+351 21 343 2195",
+                    "note": "A traditional restaurant offering an interesting mix of Portuguese, Indian, and Cape Verdean flavours. The lunch-time buffet offers excellent value for money and great quality food. Staff are patient with English speakers.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Faca & Garfo",
+                    "lat": 38.71251,
+                    "lon": -9.14098,
+                    "address": "R. da Condessa, 2",
+                    "hours": "Mon-Sat 08:00-24:00",
+                    "price": "Mains €6-8 (May 2017)",
+                    "phone": "+351 21 346 8068",
+                    "note": "A cozy and affordable restaurant which offers tasty grilled Portuguese specialities of meat and fish.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Bengal Tandoori",
+                    "lat": 38.7176,
+                    "lon": -9.1462,
+                    "address": "Rua da Alegria 20",
+                    "website": "https://bengaltandoori.pt/",
+                    "hours": "11:30–23:30 daily",
+                    "price": "{{EUR|15-20}}",
+                    "phone": "+351 21 347 9918",
+                    "note": "Cuisine of East Bengal, India, using a tandoor oven.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Cervejaria da Trindade",
+                    "lat": 38.71244,
+                    "lon": -9.14242,
+                    "address": "R. Nova da Trindade 20C",
+                    "website": "http://www.cervejariatrindade.pt/trindade_english.html",
+                    "hours": "Sun-Thu 12:00-24:00, Fri Sat 12:00-01:00",
+                    "price": "€15-25",
+                    "phone": "+351 21 342 3506",
+                    "note": "This excellent restaurant-brewery in a former monastery has several kinds of Sagres beer and Guinness. The appetizer that is charged for each item that is consumed separately. Nice codfish plates.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Os Tibetanos",
+                    "lat": 38.7197,
+                    "lon": -9.14873,
+                    "address": "Rua do Salitre, 117",
+                    "website": "http://tibetanos.com/en/",
+                    "hours": "Mon-Fri 12:15-14:45 19:30-22:30, Sat 12:45-15:30 20:00-23:00, Sun and holidays 19:30-22:30",
+                    "price": "Inexpensive",
+                    "phone": "+351 213 142 038",
+                    "note": "Vegetarian restaurant affiliated with a Buddhist center. Vegan friendly. Juice bar.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Tamarind",
+                    "lat": 38.71676,
+                    "lon": -9.14426,
+                    "address": "Rua da Gloria 43-45",
+                    "website": "http://tamarindrestaurantes.com/",
+                    "hours": "Tue-Sun 11:30-15:00 18:30-23:30, Mon 18:30-23:30",
+                    "price": "Avg bill per person €30",
+                    "phone": "+351 21 346 6080",
+                    "note": "Small Indian restaurant. Reservations can be made online.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Restaurante Brasuca",
+                    "lat": 38.71204,
+                    "lon": -9.1473,
+                    "address": "Rua João Pereira da Rosa, 7",
+                    "website": "http://restaurantebrasuca.com/",
+                    "hours": "Tue-Sun 12:00-15:00 19:00-23:00",
+                    "phone": "+351 21 322 0740",
+                    "note": "Great Brazilian food served by friendly staff.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Restaurante Calcutá 2",
+                    "lat": 38.71128,
+                    "lon": -9.14478,
+                    "address": "Rua da Atalaia, 28",
+                    "website": "http://restaurantcalcuta.com/",
+                    "hours": "Daily 18:30-23:30",
+                    "price": "€25 (two courses with house wine)",
+                    "phone": "+351 21 346 8165",
+                    "note": "The second of two restaurants operated by the same owners. Decent Indian food, but far from the best. The location is great though for starting a night out on the town. Ask for the shoot drinks!",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Restaurante Lisboa À Noite",
+                    "lat": 38.71216,
+                    "lon": -9.14346,
+                    "address": "Rua as Gaveas, 69",
+                    "website": "http://www.lisboanoite.com/en/homepage/",
+                    "hours": "Mon-Thu 19:30-24:00, Fri Sat and holidays 19:30-01:00",
+                    "phone": "+351 21 346 8557",
+                    "note": "A restaurant with a variety of traditional Portuguese dishes very appreciated by the tourists. Friendly environment, great service. Make sure you try the appetizers.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Restaurante Sacramento do Chiado",
+                    "lat": 38.71147,
+                    "lon": -9.14025,
+                    "address": "Calçada Sacramento, 44",
+                    "website": "http://www.tablegroup.pt/sacramento.html",
+                    "hours": "Mon-Fri 12:30-15:00 19:30-24:00, Sat Sun 19:30-24:00",
+                    "price": "€40 (appetizer, main, wine and desert)",
+                    "phone": "+351 21 342 0572",
+                    "note": "A popular locals' place in palace stables from the 18th-century . The atmosphere and the food are excellent. Service is very good and the recommendations by the staff are outstanding. The writing on the menu is very small and difficult to read in the subdued lighting.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Restaurante Sinal Vermelho",
+                    "lat": 38.71237,
+                    "lon": -9.14349,
+                    "address": "R. das Gáveas, 89",
+                    "website": "https://www.facebook.com/RestauranteSinalVermelho",
+                    "hours": "Mon 19:00-00:30, Tue-Fri 12:30-00:30, Sat 19:00-00:30",
+                    "price": "Mains €8-12",
+                    "phone": "+351 21 346 1252",
+                    "note": "Good traditional Portuguese at reasonable prices.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Restaurante Terra",
+                    "lat": 38.71473,
+                    "lon": -9.14909,
+                    "address": "Rua da Palmeira, 15",
+                    "website": "http://www.restauranteterra.pt/English/Welcome.html",
+                    "hours": "Tue-Sun 12:30-15:30 19:30-24:00",
+                    "price": "€15-20 (buffet plus drink and/or dessert)",
+                    "phone": "+351 707 108 108",
+                    "note": "Probably the best vegetarian restaurant in Lisbon and also the nicest in terms of ambience and service. They have a menu in English and will help with vegan choices or people with other dietary restrictions. Reservations are recommended, especially on weekends but you will always be served even if you arrive with the place full and have to wait for a while. Weather permitting try to get a table outside, which means a wonderful and secluded back terrace.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Come Prima",
+                    "lat": 38.70486,
+                    "lon": -9.16632,
+                    "address": "Rua do Olival, 258",
+                    "website": "http://www.comeprima.pt/index_en.php",
+                    "hours": "Mon-Fri 12:00-15:00 19:00-23:00, Fri Sat 19:00-24:00",
+                    "price": "€18",
+                    "phone": "+351 213 902 457",
+                    "note": "Traditional Italian fresh pasta dishes, various starters, risottos, meats and wood-oven pizzas are produced from a wide selection of prime quality fresh ingredients. Extensive wine list procured from both national and Italian producers and a delightful choice of desserts carefully picked from the Italian classics.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Café Buenos Aires",
+                    "lat": 38.7134,
+                    "lon": -9.1416,
+                    "address": "Calçada do Duque 31B",
+                    "website": "http://www.cafebuenosaires.pt/",
+                    "hours": "Mon–Fri 16:00–23:00, Sat 12:00–16:00, closed Sun",
+                    "price": "Mid-range",
+                    "phone": "+351 21 342 0739",
+                    "note": "A good and selected combination of cheap and mid range dishes. The owners are very friendly and speak English, as well as Portuguese. It is a good restaurant if you want to eat South American grilled meat.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Belcanto",
+                    "lat": 38.71,
+                    "lon": -9.1414,
+                    "address": "Rua Serpa Pinto 10A, Bairro Alto (Chiado)",
+                    "website": "https://belcanto.pt/",
+                    "hours": "Tue–Fri 12:30–15:00 & 19:00–22:30, Sat 12:30–15:00, closed Sun Mon",
+                    "price": "{{EUR|95-185}}",
+                    "phone": "+351 213 420 607",
+                    "note": "Contemporary Portuguese cuisine with two Michelin stars.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Alma",
+                    "lat": 38.7101,
+                    "lon": -9.1411,
+                    "address": "Rua Anchieta 15, Chiado",
+                    "website": "https://www.almalisboa.pt/",
+                    "hours": "Tue–Sun 12:30–15:30 & 19:00–22:30, closed Mon",
+                    "price": "{{EUR|65-120}}",
+                    "phone": "+351 21 347 0650",
+                    "note": "Two-Michelin-star fine dining by chef Henrique Sá Pessoa, blending traditional Portuguese cuisine with Asian influences. Choose from two tasting menus or order à la carte.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Loco Restaurante",
+                    "lat": 38.7125,
+                    "lon": -9.1606,
+                    "address": "Rua dos Navegantes 53B",
+                    "website": "https://www.loco.pt/en/",
+                    "hours": "Mon–Fri 19:00–23:00, closed Sat Sun",
+                    "price": "{{EUR|113}}",
+                    "phone": "+351 21 395 1861",
+                    "note": "Michelin-starred restaurant offering two tasting menus using local ingredients by chef Alexandre Silva, who won the first series of Top Chef de Portugal.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "100 Maneiras",
+                    "lat": 38.7147,
+                    "lon": -9.145,
+                    "address": "Rua do Teixeira 39",
+                    "website": "https://www.100maneiras.com/",
+                    "hours": "Thu–Mon 19:00–22:30, closed Tue Wed",
+                    "price": "{{EUR|95-125}}",
+                    "phone": "+351 910 918 181",
+                    "note": "Michelin-starred restaurant by Bosnian chef Ljubomir Stanisic, who blends influences from his homeland, his adopted country, and elsewhere around the globe.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Epur",
+                    "lat": 38.7088,
+                    "lon": -9.1399,
+                    "address": "Largo da Academia Nacional de Belas Artes 14",
+                    "website": "https://www.epur.pt/",
+                    "hours": "Tue–Sat 19:30–23:00, closed Sun Mon",
+                    "price": "{{EUR|70-125}}",
+                    "phone": "+351 21 346 0519",
+                    "note": "Michelin-starred restaurant by French chef Vincent Farges, who prepares an edgy surprise menu centred on visual elegance and purity of flavours.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Restaurante Santa Rita",
+                    "lat": 38.711364,
+                    "lon": -9.134798,
+                    "address": "Rua de São Mamede 24c",
+                    "website": "https://www.facebook.com/Santa-Rita-Restaurante-112716822133458/",
+                    "price": "Mains €5-9 (May 2017)",
+                    "phone": "+351 21 808 4412",
+                    "note": "Authentic, cheap Portuguese dishes in a very busy, shared-table restaurant.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Velha Gaiteira",
+                    "lat": 38.710594,
+                    "lon": -9.134412,
+                    "address": "R. Pedras Negras 17",
+                    "note": "A charming spot with a welcoming host. A delicious prix fixe meal was €12.50.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "O Trigueirinho",
+                    "lat": 38.7138223,
+                    "lon": -9.1357078,
+                    "address": "Largo dos Trigueiros 17",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Café Parreirinha",
+                    "lat": 38.7159988,
+                    "lon": -9.1340794,
+                    "address": "R. da Guia 4B",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "As Bifanas do Afonso",
+                    "lat": 38.711485,
+                    "lon": -9.1356911,
+                    "address": "Portugal, R. da Madalena 146",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Taste of Pakistan",
+                    "lat": 38.7146372,
+                    "lon": -9.135904,
+                    "address": "R. de São Pedro Mártir 46",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Chapitô à Mesa",
+                    "lat": 38.7116,
+                    "lon": -9.134,
+                    "address": "Costa do Castelo 7",
+                    "website": "https://chapito.org/",
+                    "hours": "Mon–Fri 12:00–00:00, Sat Sun 19:30–24:00",
+                    "price": "{{EUR|15-35}}",
+                    "phone": "+351 21 887 5077",
+                    "note": "Great views are the main feature if you reserve terrace seat in advance. Good atmosphere; international-menu food is tasty but nothing special.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Farol de Santa Luzia",
+                    "lat": 38.71178,
+                    "lon": -9.13063,
+                    "address": "Largo de Santa Luzia, 5",
+                    "hours": "Mon-Sat 17:30-23:00",
+                    "price": "~ €20/person",
+                    "phone": "+351 21 886 3884",
+                    "note": "Great place to have typical Portuguese food before climbing to Castelo S. Jorge.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Malmequer Bemmequer",
+                    "lat": 38.7109,
+                    "lon": -9.1293,
+                    "address": "Rua de São Miguel 23-25",
+                    "hours": "Tue 19:00–21:00, Wed–Sun 12:00–15:00 & 19:00–21:00",
+                    "price": "Mid-range",
+                    "phone": "+351 21 887 6535",
+                    "note": "Friendly and inexpensive; long menu of traditional Portuguese dishes.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Portuel Kosher Store",
+                    "lat": 38.7271,
+                    "lon": -9.1416,
+                    "address": "Rua Gomes Freire 146A",
+                    "website": "https://portuel-kosher-portugal.pt",
+                    "hours": "Mon–Thu 12:00–19:00, Fri 10:00–15:00, closed Sat Sun",
+                    "phone": "+351 21 354 0460",
+                    "note": "Lisbon's source for kosher groceries.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Zambeze",
+                    "lat": 38.712266,
+                    "lon": -9.135154,
+                    "address": "Calçada Marquês de Tancos",
+                    "website": "https://zambezerestaurante.pt/en/home",
+                    "phone": "+351 21 887 7056",
+                    "note": "A Mozambique restaurant on a \"miradouro\", viewing spot, offering a great view of the river, the Baixa area, and beyond. An elevator can bring you up and down the deep slopes, making it easily reachable from the nearby Baixa area.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Eneko Lisboa",
+                    "lat": 38.7037,
+                    "lon": -9.1765,
+                    "address": "Rua Maria Luisa Holstein 15",
+                    "website": "https://www.enekoatxalisboa.com/",
+                    "hours": "Wed–Sat 19:00–22:30, closed Sun–Tue",
+                    "price": "{{EUR|110-125}}",
+                    "phone": "+351 21 583 3275",
+                    "note": "Michelin-starred restaurant by Spanish Basque chef Eneko Atxa. Attached to a more laid-back space called \"Basque\".",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Feitoria",
+                    "lat": 38.6934,
+                    "lon": -9.2105,
+                    "address": "Doca do Bom Sucesso",
+                    "website": "https://www.restaurantefeitoria.com/",
+                    "hours": "Tue–Sat 19:00–22:30, closed Sun Mon",
+                    "price": "{{EUR|120-140}}",
+                    "phone": "+351 21 040 0208",
+                    "note": "Michelin-starred seafood restaurant by the docks.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "A Marítima do Restelo",
+                    "lat": 38.6953,
+                    "lon": -9.2124,
+                    "address": "Rua Bartolomeu Dias 110",
+                    "website": "https://maritimadorestelo.negocio.site/",
+                    "hours": "Tue–Sat 12:00–15:30 & 19:00–22:30, Sun 12:00–15:30, closed Mon",
+                    "price": "Mid-range",
+                    "phone": "+351 21 301 0577",
+                    "note": "Seafood restaurant by the water.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Prova - Enoteca",
+                    "lat": 38.6984,
+                    "lon": -9.2186,
+                    "address": "Rua Duarte Pacheco Pereira 9E",
+                    "website": "https://www.facebook.com/ProvaEnoteca/",
+                    "hours": "Tue–Sat 11:00–15:00 & 18:00–22:00, Sun 11:00–15:00, closed Mon",
+                    "price": "{{EUR|9-40}}",
+                    "phone": "+351 21 581 9080",
+                    "note": "Modern, urban wine bar serving seafood and sausage & cheese platters in a convivial atmosphere.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Taberna dos Ferreiros",
+                    "lat": 38.6976,
+                    "lon": -9.2019,
+                    "address": "Travessa Ferreiros a Belém 5",
+                    "website": "https://www.facebook.com/Taberna-dos-Ferreiros-171245370157256/",
+                    "hours": "Tue–Sat 12:00–16:30 & 19:00–22:00, Sun 12:00–16:30, closed Mon",
+                    "price": "{{EUR|10-25}}",
+                    "phone": "+351 21 587 3837",
+                    "note": "A fresh take on Mediterranean cuisine.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Leitaria Camponeza",
+                    "lat": 38.71165,
+                    "lon": -9.13858,
+                    "address": "Rua dos Sapateiros, 155",
+                    "hours": "Daily 19:00-23:00",
+                    "price": "€15-30",
+                    "phone": "+351 923 132 488",
+                    "note": "On the location of a historical café (the leitaria), this place focuses on only a short number of dishes (meats, fish and seafood) but makes up for this in quality and portion size. For an atmospheric presentation ask for one of their espetadas. The wines complement the dishes and you can end the meal with a dessert. For someone looking for great value for their buck (no compromises on quality), it's a good place to start or end an evening.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Mercado da Praça da Figueira",
+                    "lat": 38.7141,
+                    "lon": -9.1372,
+                    "address": "Praça da Figueira 10B",
+                    "website": "https://varn.pt/mercado-da-praca-da-figueira/",
+                    "hours": "Mon–Sat 08:30–20:00, closed Sun",
+                    "phone": "+351 211 450 650",
+                    "note": "From the pavement looks like a small convenience shop, on walking in you realize the deception when confronted by the large cavernous meandering interior space, replete with everything expected from a well stocked supermarket. Although there isn't a restaurant as such, the ready to eat items on offer are tasty, fresh, inexpensive and varied. The sandwiches and hamburgers are superb.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Mercado Oriental",
+                    "lat": 38.716,
+                    "lon": -9.1369,
+                    "address": "R. Palma 41 A",
+                    "hours": "12:00–22:30",
+                    "price": "Small dishes €3",
+                    "phone": "+351 962 733 482",
+                    "note": "A food court serving Asian street food and the only place in Lisbon where you can try Macanese cuisine (at a stall called \"Taberna Macau\").",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Néctar WineBar",
+                    "lat": 38.71031,
+                    "lon": -9.13632,
+                    "address": "R. dos Douradores, 33",
+                    "hours": "Mon-Sat 13:00-24:00",
+                    "price": "€25-35",
+                    "phone": "+351 912633368",
+                    "note": "A place dedicated to the promotion of Portugal's wine and gastronomic culture, and featuring a daily lunch menu of Portuguese and Mediterranean cuisine. The wine list comprises – in its vast majority – a selection of Portuguese wines which best represent the country. Wine can be bought by the glass, and it is served at the appropriate temperatures and in suitable glasses. Dishes – served in portions for 2 – easily replace a main course meal. Homemade-style desserts, for which sweet wines can be suggested. A modern and cosy atmosphere.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Restaurante Bonjardim",
+                    "lat": 38.715933,
+                    "lon": -9.140602,
+                    "address": "Tv. de Santo Antão 11",
+                    "hours": "Daily 12:00-23:00",
+                    "phone": "+351 21 342 4389",
+                    "note": "Appropriately nicknamed Rei dos Frangos, this is home to the best greasy spit-roasted chicken this side of Louisiana.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Restaurante Gambrinus",
+                    "lat": 38.7153,
+                    "lon": -9.13977,
+                    "address": "Rua das Portas de Santo Antao, 23",
+                    "website": "http://www.gambrinuslisboa.com/",
+                    "hours": "Daily 12:00-01:30",
+                    "phone": "+351 21 342 1466",
+                    "note": "A restaurant-bar which is one of the most chic places in the city. Highly recognized in Lisbon as something of an institution, it attracts an eclectic crowd where the appeal is food and a great selection of beers, wines and spirits. Features smoking room, private parking with a doorman.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "A Avó Tinha",
+                    "lat": 38.759,
+                    "lon": -9.096,
+                    "address": "Porta do Mar 3B",
+                    "website": "https://www.facebook.com/aavotinha/",
+                    "hours": "Daily 12:00–15:30 & 18:00-23:30",
+                    "price": "{{EUR|11-23}}",
+                    "phone": "+351 924 216 029",
+                    "note": "A modern take on traditional Portuguese dishes.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "D'Bacalhau",
+                    "lat": 38.7713,
+                    "lon": -9.0925,
+                    "address": "Rua da Pimenta 45",
+                    "website": "https://restaurantebacalhau.com/",
+                    "hours": "Daily 12:00–17:00 & 19:00–23:00",
+                    "price": "{{EUR|13-17}}",
+                    "phone": "+351 21 894 1296",
+                    "note": "Specializing in cod, they also serve steaks and other fish. It's along the river with nice views from the upstairs dining room.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Fifty Seconds",
+                    "lat": 38.7746,
+                    "lon": -9.0918,
+                    "address": "Cais das Naus, Lote 2.21.01",
+                    "website": "https://www.fiftysecondsexperience.com/",
+                    "hours": "Tue–Thu 19:00–21:30, Fri Sat 12:30–14:00 & 19:00–21:30, closed Sun Mon",
+                    "price": "{{EUR|130-185}}",
+                    "phone": "+351 21 152 5380",
+                    "note": "Michelin-starred restaurant by Spanish chef Martín Berasategui, in the Myriad Sana Hotel {{m|120}} up the Vasco da Gama Tower, offering spectacular views.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Oásis Vegetariano",
+                    "lat": 38.7754,
+                    "lon": -9.0941,
+                    "address": "Rua Cais das Naus 12A",
+                    "website": "https://www.facebook.com/OasisVegetariano",
+                    "hours": "Mon 12:00–16:00, Tue–Sat 10:00–15:30 & 19:30–23:00, closed Sun",
+                    "price": "Mid-range",
+                    "phone": "+351 21 587 6997",
+                    "note": "Vegetarian and vegan dishes.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Páteo Restaurante",
+                    "lat": 38.7637,
+                    "lon": -9.0985,
+                    "address": "Edifício Adamastor, Avenida Dom João II 11B",
+                    "website": "https://www.pateorestaurante.pt/",
+                    "hours": "Mon–Fri 12:00–15:30 & 19:00–22:30, Sat 12:00–15:30, closed Sun",
+                    "price": "{{EUR|10-25}}",
+                    "phone": "+351 21 868 7208",
+                    "note": "Traditional Portuguese cuisine.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "O Cubo",
+                    "lat": 38.729,
+                    "lon": -9.1582,
+                    "address": "Rua Dom Francisco Manuel de Melo 16B",
+                    "website": "https://www.facebook.com/restauranteocubo/",
+                    "hours": "Mon–Sat 07:15–22:00, closed Sun",
+                    "price": "{{€|5-20}}",
+                    "phone": "+351 21 388 2004",
+                    "note": "A place for a family meal or a business lunch.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Eleven",
+                    "lat": 38.7307,
+                    "lon": -9.1559,
+                    "address": "Rua Marquês de Fronteira",
+                    "website": "https://www.restauranteleven.com/",
+                    "hours": "Daily 12:30–14:30 & 19:30–22:30",
+                    "price": "{{€|35-185}}",
+                    "phone": "+351 21 386 2211",
+                    "note": "Michelin-starred restaurant in Jardim Amália Rodrigues with views of Parque Eduardo VII.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Fábrica Imperial",
+                    "lat": 38.7296,
+                    "lon": -9.1582,
+                    "address": "Rua Marquês da Fronteira 113A",
+                    "website": "https://www.facebook.com/fabricaimperial15/",
+                    "hours": "Mon–Thu 11:00–16:00, Fri 11:00–16:00 & 20:00–00:00, Sat 20:00–00:00, closed Sun",
+                    "price": "{{€|7-20}}",
+                    "phone": "+351 910 117 104",
+                    "note": "They say they serve grandma's cooking with the love of a grandchild.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                },
+                {
+                    "stop": "Lisbon, Portugal",
+                    "name": "Il Gattopardo",
+                    "lat": 38.7249,
+                    "lon": -9.1604,
+                    "address": "Avenida Eng. Duarte Pacheco 24, 3F",
+                    "website": "https://www.dompedro.com/en/restaurants/il-gattopardo-italian-restaurant/",
+                    "hours": "Daily 07:30–10:00 (Sat Sun until 10:30), 12:30–15:00, 19:30–22:00",
+                    "price": "{{EUR|52-78}}",
+                    "phone": "+351 21 389 6622",
+                    "note": "An elegant restaurant serving fashionable gourmet Italian.",
+                    "sources": [
+                        "GUIDE"
+                    ]
+                }
+            ]
+        }
+    },
+    "restaurants": {
+        "Lisbon, Portugal · 387078,-91366 · cuisine portuguese,regional,seafood · 3000 m": [
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Brasileira",
+                "lat": 38.7106819,
+                "lon": -9.1420119,
+                "cuisine": "portuguese, coffee shop",
+                "kind": "cafe",
+                "address": "Rua Garrett 120/122",
+                "hours": "Mo-Su 08:00-02:00",
+                "phone": "+351 21 346 9541",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Restaurante As Velhas",
+                "lat": 38.7174766,
+                "lon": -9.1444252,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua da Conceição da Glória 21",
+                "website": "https://www.asvelhaslisboa.com/",
+                "phone": "+351 21 342 2490",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Os Ferreiras",
+                "lat": 38.7195925,
+                "lon": -9.1375745,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua de São Lázaro 150",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Caldo Verde",
+                "lat": 38.7078941,
+                "lon": -9.1555841,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua da Esperança",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Vale do Rio",
+                "lat": 38.6875479,
+                "lon": -9.14819,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Lovely Castello",
+                "lat": 38.7134995,
+                "lon": -9.1340171,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "cozinha da Estaçāo",
+                "lat": 38.7140059,
+                "lon": -9.140936,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Cervejaria Marisqueira Alto Mar",
+                "lat": 38.7330123,
+                "lon": -9.1347681,
+                "cuisine": "seafood",
+                "kind": "restaurant",
+                "address": "Rua José Falcão 62-64",
+                "hours": "Mo-We,Fr-Su 12:00-01:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Tasca do Chico",
+                "lat": 38.7116311,
+                "lon": -9.144132,
+                "cuisine": "portuguese",
+                "kind": "pub",
+                "address": "Rua do Diário de Notícias 39",
+                "website": "https://www.tascadochico.com",
+                "hours": "Su-Th 19:00-02:00; Fr-Sa 19:00-04:00",
+                "phone": "+351 961 339696",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pão de Canela",
+                "lat": 38.7149701,
+                "lon": -9.1519567,
+                "cuisine": "regional",
+                "kind": "cafe",
+                "address": "Praça das Flores 25-29",
+                "website": "https://www.paodecanela.pt/",
+                "hours": "Mo-Su 08:30-24:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Cardoso do Estrela de Ouro",
+                "lat": 38.7206681,
+                "lon": -9.1301963,
+                "cuisine": "regional, local, seafood, portuguese",
+                "kind": "restaurant",
+                "hours": "Mo-Fr 12:00-15:00, 18:30-21:30; Sa 12:00-16:00",
+                "phone": "+351 21 886 5230",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Solar dos Presuntos",
+                "lat": 38.717748,
+                "lon": -9.1417309,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua das Portas de Santo Antão 150",
+                "website": "https://www.solardospresuntos.com/",
+                "hours": "Mo-Su 12:00-15:30, 19:00-23:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tascardoso",
+                "lat": 38.7159853,
+                "lon": -9.1477194,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua de O Século 242",
+                "hours": "Mo-Sa 12:00-15:00, 19:00-23:00",
+                "phone": "+351 21 342 7578",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Taberna da Esperança",
+                "lat": 38.7081205,
+                "lon": -9.1550012,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua da Esperança 112",
+                "phone": "+351 925 059 289",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Canecão",
+                "lat": 38.6848404,
+                "lon": -9.1472958,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Avenida 25 de Abril de 1974 3A",
+                "website": "https://www.facebook.com/RestauranteoCanecao/",
+                "hours": "Tu-Su 09:00-22:00",
+                "phone": "+351 21 274 0776",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Último Porto",
+                "lat": 38.7012514,
+                "lon": -9.1626002,
+                "cuisine": "seafood",
+                "kind": "restaurant",
+                "hours": "Mo-Sa 12:00-15:30",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Martinho da Arcada",
+                "lat": 38.7086891,
+                "lon": -9.1358477,
+                "cuisine": "regional, local, seafood, portuguese",
+                "kind": "cafe",
+                "address": "Praça do Comércio 3",
+                "hours": "Mo-Sa 07:00-23:00",
+                "phone": "+351 21 887 9259",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pateo 13 (Casa de Fado)",
+                "lat": 38.7118769,
+                "lon": -9.1275485,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Alfama Grill (Casa de Fado)",
+                "lat": 38.7118,
+                "lon": -9.1283837,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Fado na Morgadinha (Casa de Fado)",
+                "lat": 38.7122347,
+                "lon": -9.1288756,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Baloicinho",
+                "lat": 38.7255694,
+                "lon": -9.1625763,
+                "cuisine": "regional",
+                "kind": "cafe",
+                "address": "Rua Professor Sousa da Câmara 158",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Chiado",
+                "lat": 38.7110588,
+                "lon": -9.1390688,
+                "cuisine": "regional, portuguese, european, mediterranean",
+                "kind": "restaurant",
+                "address": "Rua do Crucifixo 104",
+                "hours": "Mo-Sa 18:30-22:30",
+                "phone": "+351 213 422086",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Cervejaria Ramiro",
+                "lat": 38.7201981,
+                "lon": -9.1357063,
+                "cuisine": "seafood",
+                "kind": "restaurant",
+                "address": "Avenida Almirante Reis 104",
+                "website": "https://www.cervejariaramiro.pt/",
+                "hours": "Tu-Su 12:00-00:30",
+                "phone": "+351 21 884 1025",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria 1800",
+                "lat": 38.7198916,
+                "lon": -9.1543634,
+                "cuisine": "portuguese, regional, cake, sandwich",
+                "kind": "pastry",
+                "address": "Largo do Rato 7",
+                "hours": "Mo-Fr 06:00-21:00; Sa 09:00-18:00",
+                "phone": "+351213882631",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Ritalinos",
+                "lat": 38.711262,
+                "lon": -9.1664887,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua do Possolo 2",
+                "phone": "+351 213 952 496",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Dione",
+                "lat": 38.7193774,
+                "lon": -9.1562469,
+                "cuisine": "sandwich, coffee shop, regional",
+                "kind": "restaurant",
+                "address": "Avenida Pedro Álvares Cabral 16 B",
+                "website": "https://Avenida Alvares Cabral",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Solar do Kadete",
+                "lat": 38.7067639,
+                "lon": -9.1420654,
+                "cuisine": "fish, regional",
+                "kind": "restaurant",
+                "address": "Cais do Sodré 2",
+                "hours": "Mo-Sa 07:00-0:00",
+                "phone": "+351 213 427 255",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "\"O Alfredo\"",
+                "lat": 38.7257162,
+                "lon": -9.1189705,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Avenida Afonso III 67A",
+                "phone": "+351 910 350 863",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Telex",
+                "lat": 38.7305519,
+                "lon": -9.1464448,
+                "cuisine": "regional",
+                "kind": "cafe",
+                "address": "Rua Tomás Ribeiro 45-A/B",
+                "hours": "Mo-Sa 07:00-21:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pioneiro, Loja Gourmet",
+                "lat": 38.7137476,
+                "lon": -9.1368092,
+                "cuisine": "regional",
+                "kind": "cafe",
+                "address": "Poço do Borratem",
+                "website": "http://www.pioneiro.pt",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Via Graça",
+                "lat": 38.7184376,
+                "lon": -9.132756,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua Damasceno Monteiro 9",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Vitral",
+                "lat": 38.7310842,
+                "lon": -9.1368115,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua Passos Manuel 126E",
+                "website": "https://ovitral.com/",
+                "hours": "Mo-Sa 12:00-15:00,19:00-23:00",
+                "phone": "+351213545061",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Imperial",
+                "lat": 38.7341002,
+                "lon": -9.1361307,
+                "cuisine": "regional, snack",
+                "kind": "restaurant",
+                "address": "Rua António Pereira Carrilho 21",
+                "hours": "Mo-Su 07:00-20:30",
+                "phone": "+351 218 461 019",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Tachadas",
+                "lat": 38.7076686,
+                "lon": -9.1561987,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua da Esperança 176",
+                "hours": "Tu-Su,PH 09:00-15:00,18:30-23:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Casa de Pasto São Sebastião",
+                "lat": 38.7297164,
+                "lon": -9.1489531,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua de São Sebastião da Pedreira 36",
+                "hours": "Mo-Fr 08:00-21:00; Sa 08:00-15:00; Su off",
+                "phone": "+351 218 079 457",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Clube de Jornalistas",
+                "lat": 38.7100837,
+                "lon": -9.1593027,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua das Trinas 129",
+                "website": "https://www.restauranteclubedejornalistas.com/",
+                "hours": "Mo-Sa 12:30-14:30,19:30-22:30",
+                "phone": "+351 21 39 77 138",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Churrasqueira Quionga",
+                "lat": 38.7328536,
+                "lon": -9.1319012,
+                "cuisine": "barbecue, chicken, regional",
+                "kind": "restaurant",
+                "address": "Rua Heróis de Quionga 69",
+                "hours": "Mo-Fr,Su 12:00-15:00, 18:00-22:00; Sa,PH off",
+                "phone": "+351 218 148 541",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Casa de Pasto Ideal",
+                "lat": 38.7296606,
+                "lon": -9.134161,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua Marques da Silva 28",
+                "hours": "Mo-Sa 12:00-15:30,18:30-22:30;Su, PH off",
+                "phone": "+351 21 812 1628",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Satélite",
+                "lat": 38.7174102,
+                "lon": -9.1296204,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "hours": "PH,Tu-Su 09:00-01:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Restaurante Os Unidos",
+                "lat": 38.7154761,
+                "lon": -9.1262956,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Campo de Santa Clara 120",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Cervejaria O Zapata",
+                "lat": 38.7104458,
+                "lon": -9.1503461,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua do Poço dos Negros 47",
+                "hours": "PH,We-Mo 12:00-24:00",
+                "phone": "+351213908942",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Confeitaria Cister",
+                "lat": 38.7175384,
+                "lon": -9.1511315,
+                "cuisine": "portuguese, cake, coffee shop, local",
+                "kind": "restaurant",
+                "address": "Rua da Escola Politécnica",
+                "hours": "Mo-Sa 07:00-21:00; Su 07:00-18:30",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Eira",
+                "lat": 38.7262099,
+                "lon": -9.1343172,
+                "cuisine": "regional",
+                "kind": "cafe",
+                "address": "Rua de Angola 15A",
+                "hours": "Mo-Sa 07:00-19:00",
+                "phone": "+351 21 814 36 64",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Confeitaria Vitória",
+                "lat": 38.7313643,
+                "lon": -9.1409736,
+                "cuisine": "regional",
+                "kind": "pastry",
+                "address": "Rua de Dona Estefânia",
+                "hours": "Mo-Sa 06:30-22:30",
+                "phone": "+351 213 543 742",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Favela Lx",
+                "lat": 38.7155823,
+                "lon": -9.1217878,
+                "cuisine": "burger, regional",
+                "kind": "cafe",
+                "address": "Rua da Bica do Sapato 50C",
+                "hours": "14:00-22:30",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Leitaria Pomar",
+                "lat": 38.7146436,
+                "lon": -9.1521399,
+                "cuisine": "portuguese",
+                "kind": "cafe",
+                "address": "Rua Nova da Piedade 20",
+                "phone": "+351 21 395 2644",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tempero e Paladar",
+                "lat": 38.7060689,
+                "lon": -9.1676033,
+                "cuisine": "burger, regional, sandwich",
+                "kind": "restaurant",
+                "address": "Avenida Infante Santo 32C",
+                "website": "https://www.pai.pt/paginas/293338-tempero-e-paladar",
+                "hours": "Mo-Su 10:00-22:00",
+                "phone": "+351 21 390 0947",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Sabores",
+                "lat": 38.733174,
+                "lon": -9.1478421,
+                "cuisine": "indian, portuguese",
+                "kind": "restaurant",
+                "address": "Rua Pinheiro Chagas 9A",
+                "phone": "+351 213 157 768",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Ideal de Santa Bárbara",
+                "lat": 38.7269944,
+                "lon": -9.1364374,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Largo de Santa Bárbara",
+                "hours": "Mo-Fr 07:30-23:00;Sa 09:00-17:00;Su off",
+                "phone": "+351 213 571 894",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Bar da Estefânia",
+                "lat": 38.7321212,
+                "lon": -9.1408061,
+                "cuisine": "regional",
+                "kind": "cafe",
+                "address": "Rua de Dona Estefânia 62",
+                "hours": "Mo-Sa 07:00-24:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Sessenta",
+                "lat": 38.7323307,
+                "lon": -9.1504989,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua Tomás Ribeiro 60",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Sabor da Panela",
+                "lat": 38.7252529,
+                "lon": -9.1156559,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Padaria Bandeira",
+                "lat": 38.7196183,
+                "lon": -9.1225573,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Ponto mais doce da cidade",
+                "lat": 38.7166704,
+                "lon": -9.1615037,
+                "cuisine": "brazilian, portuguese",
+                "kind": "cafe",
+                "address": "Rua Saraiva de Carvalho 120A",
+                "hours": "Mo-Sa 12:00-19:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pap'Açorda",
+                "lat": 38.706737,
+                "lon": -9.1460606,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Avenida 24 de Julho 49",
+                "website": "https://www.papacorda.com/",
+                "hours": "Tu-Th 12:00-00:00; Fr-Su 12:00-02:00",
+                "phone": "+351213464811",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Lisbonita",
+                "lat": 38.7256012,
+                "lon": -9.1300062,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua da Penha de França 151",
+                "hours": "Wed-Sun 12:00-23:30",
+                "phone": "+351 920 096 591",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Puro",
+                "lat": 38.7258723,
+                "lon": -9.1447052,
+                "cuisine": "regional, francesinha",
+                "kind": "restaurant",
+                "address": "Rua Luciano Cordeiro 74",
+                "hours": "Mo-Sa 07:00-20:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Manaus",
+                "lat": 38.7047807,
+                "lon": -9.1688085,
+                "kind": "pastry",
+                "address": "Rua do Sacramento a Alcântara 52",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mad Mary",
+                "lat": 38.7220012,
+                "lon": -9.1459279,
+                "cuisine": "burger, coffee shop, portuguese",
+                "kind": "restaurant",
+                "address": "Rua Rodrigues Sampaio 27-29",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Churrasqueira de Sapadores",
+                "lat": 38.7210592,
+                "lon": -9.1270743,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua de Sapadores 65",
+                "hours": "Mo-Sa 08:00-00:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Xandite",
+                "lat": 38.7178916,
+                "lon": -9.1657614,
+                "kind": "pastry",
+                "address": "Rua Tomás da Anunciação 51A",
+                "hours": "Mo-Su 06:30-20:00",
+                "phone": "+351 21 386 7712",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Sol e Ponte",
+                "lat": 38.7281795,
+                "lon": -9.127991,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Avenida Coronel Eduardo Galhardo",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Brasileiro",
+                "lat": 38.7248776,
+                "lon": -9.1267774,
+                "cuisine": "regional",
+                "kind": "cafe",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Geographia",
+                "lat": 38.7055368,
+                "lon": -9.1617404,
+                "cuisine": "african, brazilian, international, portuguese",
+                "kind": "restaurant",
+                "address": "Rua do Conde 1",
+                "website": "https://restaurantegeographia.pt/",
+                "hours": "Mo-Sa 12:30-15:00, 19:30-23:30",
+                "phone": "+351 213 960 036",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Xenu Restaurante",
+                "lat": 38.7237729,
+                "lon": -9.1504038,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "R. Duque de Palmela 27",
+                "website": "http://restaurantexenu.pt/menu.html",
+                "phone": "+351 213578406",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mini Mercado e Frutaria",
+                "lat": 38.7205004,
+                "lon": -9.1619956,
+                "kind": "marketplace",
+                "address": "Rua de Campo de Ourique 34A",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Café Wundergarten",
+                "lat": 38.7211065,
+                "lon": -9.14105,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Campo dos Mártires da Pátria 37",
+                "hours": "Mo-Fr 09:00-19:00; Sa 09:00-17:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Pudim Rei",
+                "lat": 38.7221556,
+                "lon": -9.1521488,
+                "kind": "pastry",
+                "address": "Rua Braamcamp",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Oriental",
+                "lat": 38.7254778,
+                "lon": -9.1211121,
+                "kind": "pastry",
+                "address": "Rua Lopes 52",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Chikapa",
+                "lat": 38.715531,
+                "lon": -9.165105,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "busca mercado",
+                "lat": 38.7295071,
+                "lon": -9.1301221,
+                "kind": "marketplace",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Saúde",
+                "lat": 38.7131357,
+                "lon": -9.1594653,
+                "kind": "pastry",
+                "address": "Rua de João de Deus 11",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Monte Mar Lisboa",
+                "lat": 38.7058054,
+                "lon": -9.1484567,
+                "cuisine": "seafood, portuguese",
+                "kind": "restaurant",
+                "address": "Rua da Cintura do Porto de Lisboa 65",
+                "website": "https://www.mmlisboa.pt",
+                "hours": "Tu-Su 12:00-23:00",
+                "phone": "+351 213 220 160",
+                "reservation": "recommended",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Anfibio",
+                "lat": 38.7074926,
+                "lon": -9.1323558,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Avenida Infante Dom Henrique",
+                "website": "https://anfibio.pt/",
+                "phone": "+351 210 529 565",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Aqui há Peixe",
+                "lat": 38.7119452,
+                "lon": -9.1417003,
+                "cuisine": "seafood",
+                "kind": "restaurant",
+                "address": "Rua da Trindade 18A",
+                "website": "https://aquihapeixe.pt/",
+                "hours": "Tu-Sa 12:00-22:30",
+                "phone": "+351 910 161 444",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Quermesse",
+                "lat": 38.717062,
+                "lon": -9.1446518,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua da Glória 85",
+                "website": "https://quermesse-restaurante.com",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Local Restaurant",
+                "lat": 38.7183961,
+                "lon": -9.1365941,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Solar Beirão",
+                "lat": 38.6869233,
+                "lon": -9.1482201,
+                "cuisine": "seafood",
+                "kind": "restaurant",
+                "address": "Rua Cândido dos Reis 17",
+                "hours": "Tu-Su 00:00-00:00; Mo off",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Trigueirinho",
+                "lat": 38.7138114,
+                "lon": -9.135718,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Largo dos Trigueiros 17",
+                "hours": "Mo-Fr 12:00-15:00, 20:00-22:30; Sa 12:00-15:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Marques",
+                "lat": 38.7153142,
+                "lon": -9.1403107,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Travessa do Forno 11",
+                "phone": "+351 21 346 8070",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tasquinha da Filipa",
+                "lat": 38.732862,
+                "lon": -9.1359311,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua Alves Torgo 7",
+                "hours": "Mo-Su 09:00-22:00",
+                "phone": "+351 211 364 662",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Manolo Bakes",
+                "lat": 38.7106759,
+                "lon": -9.1454042,
+                "kind": "pastry",
+                "address": "Largo do Calhariz 2;3",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Churrasqueira da Paz",
+                "lat": 38.712366,
+                "lon": -9.151795,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua da Paz 80",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Olha que Dois",
+                "lat": 38.7235707,
+                "lon": -9.1292487,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua da Penha de França 94",
+                "hours": "Tu-Su 7:00-23:00",
+                "phone": "+351 21 816 2108",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tasquinha do Poeta",
+                "lat": 38.7191693,
+                "lon": -9.1429807,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua de São José 64",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Brasil",
+                "lat": 38.7143761,
+                "lon": -9.1442849,
+                "kind": "confectionery",
+                "hours": "Su-We 08:00-24:00, Th-Sa 08:00-02:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Frade dos Mares",
+                "lat": 38.7084602,
+                "lon": -9.1532096,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Avenida Dom Carlos I 55-A",
+                "website": "http://www.fradedosmares.com",
+                "phone": "+351 213 909 418",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Tasca da Sé",
+                "lat": 38.7100764,
+                "lon": -9.1331854,
+                "cuisine": "regional, portuguese, local",
+                "kind": "restaurant",
+                "address": "Rua Augusto Rosa 62",
+                "hours": "Mo-Sa 12:00-12:00, 22:00-22:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Ti Camila (Casa de Fado)",
+                "lat": 38.7113532,
+                "lon": -9.1278742,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "hours": "Mo-Sa 09:00-22:30",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Taverna d'El Rey (Casa de Fado)",
+                "lat": 38.7112031,
+                "lon": -9.1282974,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O‘Prego",
+                "lat": 38.7143474,
+                "lon": -9.1310619,
+                "cuisine": "breakfast, portuguese",
+                "kind": "cafe",
+                "address": "Largo Rodrigues de Freitas 14",
+                "hours": "Mo-Su 09:00-22:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A bela morácea",
+                "lat": 38.7251916,
+                "lon": -9.1620202,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Leitaria A Camponeza",
+                "lat": 38.7117403,
+                "lon": -9.1385979,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua dos Sapateiros 155",
+                "hours": "Mo-Su 19:00-23:00",
+                "phone": "+351 923 132488",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Marisqueira do Lis",
+                "lat": 38.7224372,
+                "lon": -9.1355258,
+                "cuisine": "seafood",
+                "kind": "restaurant",
+                "address": "Avenida Almirante Reis 27B",
+                "hours": "We-Mo 09:00-02:00",
+                "phone": "+351 218 850739",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Rodas",
+                "lat": 38.7198252,
+                "lon": -9.1548515,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Largo do Rato 10-A",
+                "hours": "Mo-Su 12:00-16:30; 18:30-22:45",
+                "phone": "+351 21 385 8455",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tá-Tá",
+                "lat": 38.710287,
+                "lon": -9.1653031,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Avenida Infante Santo 70E",
+                "hours": "Mo-Fr 08:00-21:00; Sa 08:00-18:00",
+                "phone": "+351 213 903 949",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Povo",
+                "lat": 38.7072352,
+                "lon": -9.1436519,
+                "cuisine": "regional, local, seafood",
+                "kind": "restaurant",
+                "address": "Rua Nova do Carvalho 32",
+                "website": "https://povolisboa.com/",
+                "hours": "Tu-Sa 18:00-04:00; Mo 18:00-02:00; Su 18:00-00:00",
+                "phone": "+351 213 473403",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "\"Listriglo\"",
+                "lat": 38.7257724,
+                "lon": -9.1189808,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Avenida Afonso III 69A",
+                "phone": "+351 21 191 9279",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Restaurante Tentações",
+                "lat": 38.7292503,
+                "lon": -9.1456472,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua Andrade Corvo",
+                "website": "https://www.facebook.com/pastelaria.restaurante.tentacoes",
+                "phone": "+351 213 523 259",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Carmelita",
+                "lat": 38.712431,
+                "lon": -9.1395721,
+                "kind": "confectionery",
+                "address": "Rua do Carmo 88",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Continental",
+                "lat": 38.7182642,
+                "lon": -9.1359825,
+                "cuisine": "regional",
+                "kind": "cafe",
+                "address": "Rua da Palma 187",
+                "hours": "Mo-Fr 07:00-20:00; Sa 07:00-19:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Delícia de Arroios",
+                "lat": 38.7306431,
+                "lon": -9.1363495,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua de Arroios 137",
+                "website": "http://www.facebook.com/pages/Delicia-de-Arroios/",
+                "hours": "Tu-Sa 12:00-15:00, 19:00-23:00; Su 12:00-16:00",
+                "phone": "+351 213 159 322",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tasca do Sekuras (Armando)",
+                "lat": 38.7337381,
+                "lon": -9.1361878,
+                "cuisine": "regional",
+                "kind": "cafe",
+                "address": "Travessa das Amoreiras 20",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Arêgos",
+                "lat": 38.7075188,
+                "lon": -9.156355,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua da Esperança 180-186",
+                "website": "https://m.facebook.com/O-AREGOS-228324060514305",
+                "hours": "Mo-Sa 12:00-15:00,19:00-23:00;Su,PH off",
+                "phone": "+351 213 965 034",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Roseiral",
+                "lat": 38.7315024,
+                "lon": -9.1500973,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua Filipe Folque 7E",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Da Noi",
+                "lat": 38.7088001,
+                "lon": -9.1561437,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua do Machadinho 44",
+                "hours": "Mo-Sa 18:00-01:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Flor do Imperio Pastelaria",
+                "lat": 38.7326394,
+                "lon": -9.1307091,
+                "kind": "pastry",
+                "address": "Rua Morais Soares 91",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Bio Restaurante Vegetariano",
+                "lat": 38.7314252,
+                "lon": -9.1337108,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua Francisco Sanches 39",
+                "hours": "Mo-Sa 12:00-16:00,19:30-23:30",
+                "phone": "+351 21 812 2848",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O João",
+                "lat": 38.7186344,
+                "lon": -9.1305789,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "hours": "Mo-Sa 10:00-15:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Novo Conceito",
+                "lat": 38.7124615,
+                "lon": -9.1256135,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua do Jardim do Tabaco 8",
+                "phone": "+351 21 886 6480",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Polo Cultural",
+                "lat": 38.7093601,
+                "lon": -9.1510028,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Franguinho do Principe",
+                "lat": 38.7174536,
+                "lon": -9.1516549,
+                "cuisine": "chicken, grill, portuguese",
+                "kind": "restaurant",
+                "address": "Rua da Imprensa Nacional 116",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Taverna Amadeu",
+                "lat": 38.7267946,
+                "lon": -9.1336612,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua da Guiné 12",
+                "hours": "Mo-Sa 08:00-23:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Coffelux",
+                "lat": 38.7297909,
+                "lon": -9.1406345,
+                "cuisine": "regional",
+                "kind": "cafe",
+                "address": "Rua de Dona Estefânia 83-B",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Faz Figura",
+                "lat": 38.714074,
+                "lon": -9.1239681,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua do Paraíso 15",
+                "hours": "Mo-Sa 12:30-15:30, 19:00-22:30; Su 12:30-15:30",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Maravilha de São Bento",
+                "lat": 38.7141289,
+                "lon": -9.152952,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua Nova da Piedade 87",
+                "website": "https://m.facebook.com/people/Maravilha-de-S%C3%A3o-Bento/100068564755171/",
+                "phone": "+351 21 822 1894",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Bifanas de Vendas Novas",
+                "lat": 38.7331135,
+                "lon": -9.1447779,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Quequinho da Bárbara",
+                "lat": 38.726905,
+                "lon": -9.1365299,
+                "cuisine": "regional",
+                "kind": "cafe",
+                "address": "Largo de Santa Bárbara 8-B",
+                "hours": "Mo-Fr 07:00-20:00;Sa,Su 07:00-19:00",
+                "phone": "+351 213 151 947",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mãe",
+                "lat": 38.7339319,
+                "lon": -9.1411586,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "phone": "+351 21 585 1792",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O caçador",
+                "lat": 38.7257391,
+                "lon": -9.1125358,
+                "cuisine": "portuguese, cervejaria",
+                "kind": "restaurant",
+                "address": "Rua de Xabregas 81",
+                "hours": "mo-su 07:00-22:00 sa closed",
+                "phone": "+351 21 812 1251",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tabernário do Bairro",
+                "lat": 38.7195634,
+                "lon": -9.1226736,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua Afonso Domingues 2A",
+                "hours": "Mo,We,Sa 19:00-22:00; Tu,Th,Fr 12:00-15:00,19:00-22:00",
+                "reservation": "yes",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Padaria do Povo",
+                "lat": 38.717969,
+                "lon": -9.1630332,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "hours": "Mo-Su 12:00-23:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Taberna Tosca",
+                "lat": 38.7075136,
+                "lon": -9.1444591,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Praça de São Paulo 21",
+                "hours": "Mo-Su 12:00-02:00",
+                "phone": "+351 21 803 4563",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Riso",
+                "lat": 38.726145,
+                "lon": -9.1285587,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "União",
+                "lat": 38.7253251,
+                "lon": -9.1462454,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua do Conde de Redondo 96",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Paparoka",
+                "lat": 38.7061815,
+                "lon": -9.1702722,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Taberna Anti Dantas",
+                "lat": 38.7207157,
+                "lon": -9.1443263,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua de São José 196",
+                "website": "https://tabernaantidantas.eatbu.com",
+                "hours": "Mo 19:00-00:00; Tu 12:00-00:00; We 12:00-00:00; Th 12:00-02:00; Fr 12:00-02:00; Sa 19:00-02:00; Su 19:00-02:00",
+                "phone": "+351917494749",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Amor aos Pedaços",
+                "lat": 38.7184753,
+                "lon": -9.1647196,
+                "cuisine": "cake, coffee",
+                "kind": "pastry",
+                "hours": "Mo-Su 11:00-19:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Limbo",
+                "lat": 38.7297263,
+                "lon": -9.1240362,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua Morais Soares 7",
+                "phone": "+351936622987",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Marias de Vinho Tinto",
+                "lat": 38.7065516,
+                "lon": -9.1621654,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua do Conde 75",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Herculano - Pastelaria e Almoços",
+                "lat": 38.7223566,
+                "lon": -9.149731,
+                "kind": "pastry",
+                "address": "R. Alexandre Herculano 29 A",
+                "phone": "+351 213570350",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Rampa",
+                "lat": 38.7234707,
+                "lon": -9.1434649,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua Nogueira e Sousa 14",
+                "phone": "+351 21 354 5808",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Ratoeira Minhota",
+                "lat": 38.720067,
+                "lon": -9.1536049,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua do Salitre 180",
+                "phone": "+351 21 385 3508",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado frutaria",
+                "lat": 38.7289508,
+                "lon": -9.1296303,
+                "kind": "marketplace",
+                "address": "32",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Sacramento",
+                "lat": 38.7116274,
+                "lon": -9.1403926,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Calçada do Sacramento 46-44",
+                "website": "https://www.sacramentodochiado.com/",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Florestra do Salitre",
+                "lat": 38.7197875,
+                "lon": -9.1464515,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua do Salitre 42d",
+                "hours": "mo-fr 12:00-15:00 19:00-22:00",
+                "phone": "+351213547605",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Copélia",
+                "lat": 38.7190308,
+                "lon": -9.1368924,
+                "cuisine": "breakfast, portuguese",
+                "kind": "cafe",
+                "address": "Rua de São Lázaro 120",
+                "hours": "Mo-Su 06:30-18:00",
+                "phone": "+351 935 521 156",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Os Cunhados",
+                "lat": 38.6870322,
+                "lon": -9.1482738,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua Cândido dos Reis",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Malagueta Bar and Food",
+                "lat": 38.7121534,
+                "lon": -9.1344807,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Costa do Castelo 26;26A",
+                "hours": "12:00-02:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Faca & Garfo",
+                "lat": 38.7125201,
+                "lon": -9.1409942,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua da Condessa 2",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Namaste Restaurante",
+                "lat": 38.7320396,
+                "lon": -9.1333392,
+                "cuisine": "indian, nepalese, regional",
+                "kind": "restaurant",
+                "address": "Rua Francisco Sanches 140;142",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "SeaMe Peixaria Moderna",
+                "lat": 38.7106073,
+                "lon": -9.1442434,
+                "cuisine": "seafood",
+                "kind": "restaurant",
+                "address": "Rua do Loreto 21",
+                "website": "https://www.peixariamoderna.com/",
+                "phone": "+351 21 346 1564",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tasquinha dos Arcos",
+                "lat": 38.7145805,
+                "lon": -9.150999,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua de São Marçal 58",
+                "hours": "Mo-Su 11:00-15:30",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Restaurante 1° de Janeiro",
+                "lat": 38.7204183,
+                "lon": -9.1300898,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "address": "Rua da Graça 40,42",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tabik Restaurant",
+                "lat": 38.7169652,
+                "lon": -9.1434144,
+                "cuisine": "regional, international",
+                "kind": "restaurant",
+                "address": "Avenida da Liberdade 29A",
+                "website": "https://www.tabikrestaurant.com/",
+                "hours": "Mo-Su 10:30-00:00",
+                "phone": "+351213470549",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tapisco",
+                "lat": 38.7156883,
+                "lon": -9.1466399,
+                "cuisine": "regional, spanish, tapas",
+                "kind": "restaurant",
+                "address": "Rua Dom Pedro V 81",
+                "website": "https://tapisco.pt/lisboa.html",
+                "hours": "Mo-Su 12:00-0:00",
+                "phone": "+351 213 420 681",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Madragoa Cafe",
+                "lat": 38.7080439,
+                "lon": -9.155397,
+                "cuisine": "regional, portuguese",
+                "kind": "restaurant",
+                "address": "Rua da Esperança 136",
+                "hours": "Mo,We-Su,PH 19:00-24:00",
+                "phone": "+351 21 397 8567",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Casa de Pasto Estrela da Sé",
+                "lat": 38.7099463,
+                "lon": -9.1342384,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Muralha Tasca Tipica",
+                "lat": 38.7115954,
+                "lon": -9.127277,
+                "cuisine": "portuguese",
+                "kind": "restaurant",
+                "address": "Rua do Jardim do Tabaco 112",
+                "hours": "Mo-Sa 12:00-23:00",
+                "phone": "+351 218 867 089",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Maria da Fonte (Casa de Fado)",
+                "lat": 38.7111488,
+                "lon": -9.1285109,
+                "cuisine": "regional",
+                "kind": "restaurant",
+                "sources": [
+                    "MAP"
+                ]
+            }
+        ],
+        "Lisbon, Portugal · 387078,-91366 · cuisine pastry · 3000 m": [
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Manolo Bakes",
+                "lat": 38.7106759,
+                "lon": -9.1454042,
+                "kind": "pastry",
+                "address": "Largo do Calhariz 2;3",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria 1800",
+                "lat": 38.7198916,
+                "lon": -9.1543634,
+                "cuisine": "portuguese, regional, cake, sandwich",
+                "kind": "pastry",
+                "address": "Largo do Rato 7",
+                "hours": "Mo-Fr 06:00-21:00; Sa 09:00-18:00",
+                "phone": "+351213882631",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Brasil",
+                "lat": 38.7143761,
+                "lon": -9.1442849,
+                "kind": "confectionery",
+                "hours": "Su-We 08:00-24:00, Th-Sa 08:00-02:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Carmelita",
+                "lat": 38.712431,
+                "lon": -9.1395721,
+                "kind": "confectionery",
+                "address": "Rua do Carmo 88",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Candy Lisa",
+                "lat": 38.7122629,
+                "lon": -9.1392507,
+                "kind": "confectionery",
+                "address": "Rua Áurea 257",
+                "hours": "Mo-Su 09:30-22:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Casa Brasileira",
+                "lat": 38.7126046,
+                "lon": -9.1385344,
+                "kind": "restaurant",
+                "address": "Rua Augusta 267",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Flor do Imperio Pastelaria",
+                "lat": 38.7326394,
+                "lon": -9.1307091,
+                "kind": "pastry",
+                "address": "Rua Morais Soares 91",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Feira da Ladra",
+                "lat": 38.7153925,
+                "lon": -9.1259289,
+                "kind": "marketplace",
+                "website": "http://www.cm-lisboa.pt/equipamentos/equipamento/info/feira-da-ladra",
+                "hours": "Tu 09:00-18:00, Sa 09:00-18:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Santa Cruz",
+                "lat": 38.7304232,
+                "lon": -9.1377777,
+                "kind": "cafe",
+                "address": "Rua José Estevão 117 B",
+                "hours": "Mo-Fr 07:00-19:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria IFNI",
+                "lat": 38.7117545,
+                "lon": -9.1371511,
+                "kind": "pastry",
+                "address": "Rua da Prata",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Casulo",
+                "lat": 38.7151069,
+                "lon": -9.1409009,
+                "kind": "pastry",
+                "address": "Rua 1º de Dezembro",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Casa de Bolos",
+                "lat": 38.7317854,
+                "lon": -9.1515327,
+                "kind": "pastry",
+                "address": "Avenida António Augusto Aguiar 88C",
+                "hours": "Mo-Sa 11:00-19:00",
+                "phone": "+351 213 574 243",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Alcôa",
+                "lat": 38.7107584,
+                "lon": -9.1405402,
+                "kind": "pastry",
+                "address": "Rua Garrett 37",
+                "website": "http://pastelaria-alcoa.com/",
+                "phone": "+351 21 136 7183",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Orion",
+                "lat": 38.7108114,
+                "lon": -9.1463267,
+                "kind": "confectionery",
+                "address": "Calçada do Combro",
+                "hours": "Mo-Tu, Th-Fr 07:00-20:00; We 07:00-19:00; Sa 08:00-20:00",
+                "phone": "+351 21 342 0485",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Santo António",
+                "lat": 38.7114585,
+                "lon": -9.1330726,
+                "kind": "confectionery",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Calçada do Cacau",
+                "lat": 38.7141757,
+                "lon": -9.1251946,
+                "kind": "confectionery",
+                "address": "Campo de Santa Clara 57",
+                "hours": "Tu 10:00-19:30; We-Fr 11:00-19:30; Sa 10:00-19:30; Su 11:00-19:30; Mo off",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pau de Canela",
+                "lat": 38.7108405,
+                "lon": -9.1380254,
+                "kind": "cafe",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Fábrica do Pastel de Feijão",
+                "lat": 38.7119235,
+                "lon": -9.1274201,
+                "kind": "pastry",
+                "address": "Rua dos Remédios 33",
+                "website": "https://facebook.com/FabricaPastelFeijao",
+                "hours": "Mo-Su 09:00-20:00",
+                "phone": "+351967771296",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Candy Lisa",
+                "lat": 38.7122571,
+                "lon": -9.1384311,
+                "kind": "confectionery",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "4 Ases",
+                "lat": 38.7291005,
+                "lon": -9.1497182,
+                "kind": "restaurant",
+                "address": "Avenida António Augusto de Aguiar 11B",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Tentação",
+                "lat": 38.7136344,
+                "lon": -9.1370095,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Berlina",
+                "lat": 38.71834,
+                "lon": -9.1522076,
+                "kind": "pastry",
+                "address": "Rua da Escola Politécnica 90",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Manaus",
+                "lat": 38.7047807,
+                "lon": -9.1688085,
+                "kind": "pastry",
+                "address": "Rua do Sacramento a Alcântara 52",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Nata de Lisboa",
+                "lat": 38.7119511,
+                "lon": -9.1380665,
+                "kind": "confectionery",
+                "address": "Rua Augusta 222",
+                "hours": "08:00-24:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Pousadinha",
+                "lat": 38.7083585,
+                "lon": -9.1459522,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Conde",
+                "lat": 38.7084195,
+                "lon": -9.1523369,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Xandite",
+                "lat": 38.7178916,
+                "lon": -9.1657614,
+                "kind": "pastry",
+                "address": "Rua Tomás da Anunciação 51A",
+                "hours": "Mo-Su 06:30-20:00",
+                "phone": "+351 21 386 7712",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Amor aos Pedaços",
+                "lat": 38.7184753,
+                "lon": -9.1647196,
+                "cuisine": "cake, coffee",
+                "kind": "pastry",
+                "hours": "Mo-Su 11:00-19:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Riso",
+                "lat": 38.726145,
+                "lon": -9.1285587,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Tio Patinhas",
+                "lat": 38.725142,
+                "lon": -9.1284138,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Redação Kelly",
+                "lat": 38.7321914,
+                "lon": -9.1283525,
+                "kind": "pastry",
+                "address": "Rua Morais Soares 52A",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mini Mercado e Frutaria",
+                "lat": 38.7205004,
+                "lon": -9.1619956,
+                "kind": "marketplace",
+                "address": "Rua de Campo de Ourique 34A",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Lagares",
+                "lat": 38.7168383,
+                "lon": -9.1325144,
+                "kind": "pastry",
+                "address": "Rua dos Lagares 40",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Centro Commercial do Mouraria",
+                "lat": 38.7167754,
+                "lon": -9.1353652,
+                "kind": "marketplace",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado da Baixa",
+                "lat": 38.7137196,
+                "lon": -9.1379333,
+                "kind": "marketplace",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Vegan Nata",
+                "lat": 38.7186358,
+                "lon": -9.1649577,
+                "kind": "pastry",
+                "address": "Rua do 4 de Infantaria 29B",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Ourique",
+                "lat": 38.7182913,
+                "lon": -9.1644355,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Camões",
+                "lat": 38.7106051,
+                "lon": -9.1450599,
+                "kind": "pastry",
+                "website": "https://pastelaria-camoes.business.site/",
+                "hours": "Mo-Fr 07:00-19:00; Su 07:00-18:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Crush Doughnuts",
+                "lat": 38.71208,
+                "lon": -9.1374621,
+                "kind": "pastry",
+                "address": "Rua da Prata 223",
+                "hours": "Mo-Su 09:00-22:00",
+                "phone": "+351 21 163 4835",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Crush Doughnuts",
+                "lat": 38.7069339,
+                "lon": -9.1460726,
+                "kind": "pastry",
+                "address": "Avenida 24 de Julho 49",
+                "hours": "Mo-Su 10:00-00:00",
+                "phone": "+351 21 163 4835",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Castro - Atelier de Pastéis de Nata",
+                "lat": 38.7109221,
+                "lon": -9.1404182,
+                "kind": "pastry",
+                "address": "Rua Garrett 38",
+                "website": "https://castropasteisdenata.pt/",
+                "hours": "Mo-Su 08:30-22:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Herculano - Pastelaria e Almoços",
+                "lat": 38.7223566,
+                "lon": -9.149731,
+                "kind": "pastry",
+                "address": "R. Alexandre Herculano 29 A",
+                "phone": "+351 213570350",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Coimbra Lda",
+                "lat": 38.7223145,
+                "lon": -9.1498015,
+                "kind": "pastry",
+                "address": "R. Alexandre Herculano 29 F",
+                "phone": "+351213545666",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pâtisserie Dacquoise",
+                "lat": 38.7195744,
+                "lon": -9.1658018,
+                "kind": "pastry",
+                "phone": "+351 933 203 120",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "O Pudim Rei",
+                "lat": 38.7221556,
+                "lon": -9.1521488,
+                "kind": "pastry",
+                "address": "Rua Braamcamp",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Oriental",
+                "lat": 38.7254778,
+                "lon": -9.1211121,
+                "kind": "pastry",
+                "address": "Rua Lopes 52",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "A Carioca",
+                "lat": 38.7109853,
+                "lon": -9.1430398,
+                "kind": "pastry",
+                "address": "Rua da Misericórdia 9",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Zara by Castro",
+                "lat": 38.7139029,
+                "lon": -9.1386091,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Chikapa",
+                "lat": 38.715531,
+                "lon": -9.165105,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "busca mercado",
+                "lat": 38.7295071,
+                "lon": -9.1301221,
+                "kind": "marketplace",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado frutaria",
+                "lat": 38.7289508,
+                "lon": -9.1296303,
+                "kind": "marketplace",
+                "address": "32",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mini mercado e frutaria",
+                "lat": 38.7303818,
+                "lon": -9.1286717,
+                "kind": "marketplace",
+                "address": "44",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "merceria y cafe",
+                "lat": 38.7308521,
+                "lon": -9.1307196,
+                "kind": "marketplace",
+                "address": "Calçada do Poço dos Mouros 22",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "lyca",
+                "lat": 38.7308363,
+                "lon": -9.1306398,
+                "kind": "marketplace",
+                "address": "Rua Neves Ferreira 22",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "pasteleria oziris",
+                "lat": 38.7311836,
+                "lon": -9.1295173,
+                "kind": "pastry",
+                "address": "Rua Jacinto Nunes 11",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "galeria 80",
+                "lat": 38.732728,
+                "lon": -9.1309741,
+                "kind": "marketplace",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Estrela de Paris",
+                "lat": 38.7330634,
+                "lon": -9.1323306,
+                "kind": "pastry",
+                "address": "Rua Morais Soares 115 e 117",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Nova Lapa",
+                "lat": 38.7105392,
+                "lon": -9.1592483,
+                "kind": "pastry",
+                "address": "Rua da Lapa 23A",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado D´Santos",
+                "lat": 38.7071653,
+                "lon": -9.1572167,
+                "kind": "marketplace",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado D'Santos",
+                "lat": 38.7071373,
+                "lon": -9.157326,
+                "kind": "marketplace",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Ponto de Açaí de Arroios",
+                "lat": 38.732498,
+                "lon": -9.1292904,
+                "kind": "pastry",
+                "address": "Rua Morais Soares 62",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Nilde",
+                "lat": 38.7322609,
+                "lon": -9.1292358,
+                "kind": "pastry",
+                "address": "Rua Morais Soares 61",
+                "hours": "Mo-Fr 06:00-19:00; Sa 06:00-16:00; Su off",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Lisboa Tejo",
+                "lat": 38.7136614,
+                "lon": -9.1239031,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Aloma",
+                "lat": 38.7191731,
+                "lon": -9.1299177,
+                "kind": "pastry",
+                "address": "Rua da Graça 130",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Carrocel",
+                "lat": 38.7116135,
+                "lon": -9.1642592,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Saúde",
+                "lat": 38.7131357,
+                "lon": -9.1594653,
+                "kind": "pastry",
+                "address": "Rua de João de Deus 11",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Voyage",
+                "lat": 38.7087951,
+                "lon": -9.1492889,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Viana",
+                "lat": 38.718197,
+                "lon": -9.1622006,
+                "kind": "pastry",
+                "address": "Rua Silva Carvalho 54A",
+                "hours": "Mo-Fr 07:00-20:00; Sa 07:00-15:00; Sa[-1] off; Su off",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "mercado de camôes",
+                "lat": 38.712027,
+                "lon": -9.1430894,
+                "kind": "marketplace",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Castro",
+                "lat": 38.7122492,
+                "lon": -9.1390611,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Manteigaria Fábrica de Pastéis de Nata",
+                "lat": 38.7171229,
+                "lon": -9.1495333,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria e Padaria Capri",
+                "lat": 38.7228324,
+                "lon": -9.1350874,
+                "kind": "pastry",
+                "address": "Avenida Almirante Reis 24A,24B",
+                "phone": "+351 218148636",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Etma",
+                "lat": 38.7188686,
+                "lon": -9.1620012,
+                "kind": "pastry",
+                "hours": "Mo-Su 08:30-16:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Vegan Nata Chiado",
+                "lat": 38.7109855,
+                "lon": -9.1430395,
+                "kind": "pastry",
+                "address": "Rua da Misericórdia 9",
+                "website": "https://www.vegannata.pt/",
+                "hours": "Mo-Su 09:00-23:00",
+                "phone": "+351 21 162 8143",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Foia",
+                "lat": 38.7225095,
+                "lon": -9.1407678,
+                "kind": "pastry",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pastelaria Emenda",
+                "lat": 38.7106,
+                "lon": -9.1444724,
+                "kind": "pastry",
+                "hours": "Mo-Sa 07:56-20:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Manteigaria",
+                "lat": 38.7143798,
+                "lon": -9.1402311,
+                "kind": "pastry",
+                "address": "Praça Dom Pedro IV 68",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado da Ribeira",
+                "lat": 38.7070611,
+                "lon": -9.1456932,
+                "kind": "marketplace",
+                "address": "Avenida 24 de Julho 49",
+                "hours": "Mo-We 10:00-00:00; Th-Sa 10:00-02:00; Su 10:00-24:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Dona Ajuda",
+                "lat": 38.7213965,
+                "lon": -9.1535708,
+                "kind": "marketplace",
+                "address": "Rua Alexandre Herculano 64",
+                "website": "https://donaajuda.pt",
+                "hours": "Mo-Su 11:00-19:00",
+                "phone": "+351965461901",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado de Santa Clara",
+                "lat": 38.7155331,
+                "lon": -9.1256119,
+                "kind": "marketplace",
+                "hours": "We-Fr 10:00-18:00; Tu,Sa 06:00-18:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado 31 de Janeiro",
+                "lat": 38.7312253,
+                "lon": -9.1444597,
+                "kind": "marketplace",
+                "address": "Rua Engenheiro Vieira da Silva",
+                "website": "https://www.jfarroios.pt/mercados/",
+                "hours": "Mo-Sa 07:00-14:00",
+                "phone": "+351 213 511 616",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado Morais Soares",
+                "lat": 38.7331357,
+                "lon": -9.1315488,
+                "kind": "marketplace",
+                "address": "Rua Edith Cavel 8",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado do Forno do Tijolo",
+                "lat": 38.7217967,
+                "lon": -9.1323718,
+                "kind": "marketplace",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado de Sapadores",
+                "lat": 38.7218156,
+                "lon": -9.1290278,
+                "kind": "marketplace",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado de Campo de Ourique",
+                "lat": 38.7161428,
+                "lon": -9.1667786,
+                "cuisine": "international",
+                "kind": "marketplace",
+                "address": "Rua Coelho da Rocha 104",
+                "website": "https://mercadodecampodeourique.pt/",
+                "hours": "Su,We 10:00-00:00;Mo,Tu 10:00-23:00;Th-Sa 10:00-01:00",
+                "sources": [
+                    "MAP"
+                ]
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Mercado do Forno do Tijolo",
+                "lat": 38.7223558,
+                "lon": -9.1322672,
+                "kind": "marketplace",
+                "address": "Rua Maria da Fonte",
+                "website": "https://jfarroios.pt/equipamentos/mercados/mercado-do-forno-do-tijolo/",
+                "sources": [
+                    "MAP"
+                ]
+            }
+        ]
+    },
+    "sights": {
+        "Lisbon, Portugal · 387078,-91366 · 3000 m": [
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Miradouro de São Pedro de Alcântara",
+                "lat": 38.7154576,
+                "lon": -9.1440371
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Pelourinho de Lisboa",
+                "lat": 38.7080357,
+                "lon": -9.139196
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Miradouro do Torel",
+                "lat": 38.7187379,
+                "lon": -9.1414103
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Miradouro de Santa Luzia",
+                "lat": 38.7117382,
+                "lon": -9.1301295
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Figueira-da-Austrália",
+                "lat": 38.7166789,
+                "lon": -9.1489086
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Figueira-da-Austrália",
+                "lat": 38.7167451,
+                "lon": -9.1489728
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tamareira-do-Senegal",
+                "lat": 38.7096708,
+                "lon": -9.143356
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Bela-sombra",
+                "lat": 38.7258829,
+                "lon": -9.1293729
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tipuana",
+                "lat": 38.7068987,
+                "lon": -9.1545595
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tipuana",
+                "lat": 38.7135465,
+                "lon": -9.1534415
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Tipuana",
+                "lat": 38.7045774,
+                "lon": -9.1625551
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Bela-sombra",
+                "lat": 38.7246347,
+                "lon": -9.1342652
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Panteão Nacional",
+                "lat": 38.714978,
+                "lon": -9.1246825
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Arco do Triunfo da Rua Augusta",
+                "lat": 38.7084385,
+                "lon": -9.1368174
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Igreja de Santo António de Lisboa",
+                "lat": 38.7099745,
+                "lon": -9.1336632
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Basílica da Estrela",
+                "lat": 38.7131744,
+                "lon": -9.1605532
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Igreja de Santa Catarina",
+                "lat": 38.711444,
+                "lon": -9.1483169
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Igreja do Loreto",
+                "lat": 38.710871,
+                "lon": -9.1427635
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Igreja de São Brás e de Santa Luzia",
+                "lat": 38.7118789,
+                "lon": -9.1303102
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Elevador de Santa Justa",
+                "lat": 38.7121169,
+                "lon": -9.1393753
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Fragata Dom Fernando II e Glória",
+                "lat": 38.6865703,
+                "lon": -9.1461634
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Cais das Colunas",
+                "lat": 38.706613,
+                "lon": -9.1361658
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Submarino Barracuda",
+                "lat": 38.6868479,
+                "lon": -9.1466962
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Chafariz d'El Rei",
+                "lat": 38.709717,
+                "lon": -9.129475
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Chafariz da Praça da Armada",
+                "lat": 38.7052516,
+                "lon": -9.1704371
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Praça do Comércio",
+                "lat": 38.7076117,
+                "lon": -9.1365457
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Praça Dom João da Câmara",
+                "lat": 38.7146086,
+                "lon": -9.1404749
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Praça da Alegria",
+                "lat": 38.7178764,
+                "lon": -9.1452008
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Praça Duque de Saldanha",
+                "lat": 38.7337663,
+                "lon": -9.144844
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Praça Dom Pedro IV",
+                "lat": 38.7137701,
+                "lon": -9.1393407
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Praça dos Restauradores",
+                "lat": 38.715703,
+                "lon": -9.1417326
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Elevador do Lavra",
+                "lat": 38.7182422,
+                "lon": -9.1409949
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Elevador do Lavra",
+                "lat": 38.7182345,
+                "lon": -9.1409811
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Elevador da Bica",
+                "lat": 38.7097747,
+                "lon": -9.146245
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Elevador da Bica",
+                "lat": 38.709772,
+                "lon": -9.1462345
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Elevador da Bica",
+                "lat": 38.7086807,
+                "lon": -9.1467317
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Elevador da Bica",
+                "lat": 38.7086832,
+                "lon": -9.1467403
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Castelo de São Jorge",
+                "lat": 38.713928,
+                "lon": -9.1334948
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Cinemateca Portuguesa - Museu do Cinema",
+                "lat": 38.7207424,
+                "lon": -9.1485951
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Igreja de São Vicente de Fora",
+                "lat": 38.7147274,
+                "lon": -9.1274775
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Praça Martim Moniz",
+                "lat": 38.7159992,
+                "lon": -9.136335
+            },
+            {
+                "stop": "Lisbon, Portugal",
+                "name": "Miradouro Sophia de Mello Breyner Andresen",
+                "lat": 38.7163743,
+                "lon": -9.1314599
+            }
+        ]
+    }
+}

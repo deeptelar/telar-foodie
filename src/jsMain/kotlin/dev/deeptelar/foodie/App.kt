@@ -1,6 +1,8 @@
 package dev.deeptelar.foodie
 
+import dev.deeptelar.foodie.sources.Recording
 import dev.deeptelar.foodie.sources.Sources
+import dev.deeptelar.foodie.sources.replay
 import dev.deeptelar.telar.Checkpoint
 import dev.deeptelar.telar.CompiledGraph
 import dev.deeptelar.telar.GraphConfig
@@ -14,6 +16,9 @@ import dev.deeptelar.telar.checkpoint.browser.LocalStorageCheckpointer
 import dev.deeptelar.telar.otel.OtlpObserver
 import dev.deeptelar.telar.serialization.KotlinxStateSerializer
 import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
 import kotlin.js.Date
 import kotlin.js.Promise
 import kotlinx.browser.document
@@ -37,6 +42,7 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
 import org.w3c.dom.HTMLTextAreaElement
+import org.w3c.dom.url.URL
 
 /** Where the page is in the life of a plan. */
 private enum class Phase {
@@ -236,7 +242,16 @@ class App(
     private fun planner(): CompiledGraph<Trip> {
         val model = if (sample) SampleModel() else settings.model(client) ?: SampleModel()
         val planModel = if (sample) model else settings.planModel(client) ?: model
-        return planner(model, Sources.online(client, settings.googleKey), planModel = planModel)
+        // The script plans from what the sources answered once: a visitor's try asks none of the free services.
+        val sources = if (model is SampleModel) replay(::sampleRecording, Sources.online(client)) else Sources.online(client, settings.googleKey)
+        return planner(model, sources, planModel = planModel)
+    }
+
+    /** What the sources answered for the sample, kept in a file next to the page. */
+    private suspend fun sampleRecording(): Recording {
+        val response = client.get(URL("sample-sources.json", document.baseURI).href)
+        check(response.status.isSuccess()) { "The sample's recording answered with ${response.status.value}" }
+        return Recording.fromJson(response.bodyAsText())
     }
 
     private fun start(request: String, sample: Boolean, answers: List<Answer> = emptyList()) {

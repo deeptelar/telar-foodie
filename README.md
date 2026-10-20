@@ -156,8 +156,11 @@ FOODIE_LIVE=1 ./gradlew jvmTest                  # also asks the real guide and 
 ```
 
 On the page, **Try the sample** plans two days in Lisbon without a key: a script stands in for the
-model, and the sources it searches are the real ones. Open the page with `?sample` at the end of
-its address to start the sample at once. For a trip of your own, add a key under **Settings**:
+model, and the sources answer what the real ones answered once, kept in
+[`sample-sources.json`](src/jsMain/resources/sample-sources.json), so that a visitor's try asks
+none of the free services. `FOODIE_RECORD=1 ./gradlew jvmTest --tests '*SampleRecordingTest*'`
+asks them again. Open the page with `?sample` at the end of its address to start the sample at
+once. For a trip of your own, add a key under **Settings**:
 
 - **Claude**, with a key of the Anthropic API.
 - **OpenAI, Gemini, Ollama** or another server with the API of OpenAI: its address, a model and a
@@ -188,4 +191,5 @@ The map is drawn with [Leaflet](https://leafletjs.com/) (BSD 2-Clause), a copy o
 
 [Apache License 2.0](LICENSE). The restaurants come from Wikivoyage
 ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)) and from OpenStreetMap
-([ODbL](https://www.openstreetmap.org/copyright)).
+([ODbL](https://www.openstreetmap.org/copyright)), and so do the answers that the sample keeps in
+`sample-sources.json`, under the same licenses.
