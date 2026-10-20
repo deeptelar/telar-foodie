@@ -79,6 +79,10 @@ p.tagline {
     margin-top: 16px;
 }
 
+.hint code {
+    overflow-wrap: anywhere;
+}
+
 .card, .how {
     background: var(--card);
     border: 1px solid var(--line);

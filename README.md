@@ -161,7 +161,9 @@ its address to start the sample at once. For a trip of your own, add a key under
 
 - **Claude**, with a key of the Anthropic API.
 - **OpenAI, Gemini, Ollama** or another server with the API of OpenAI: its address, a model and a
-  key. A local Ollama needs no key.
+  key. A local Ollama is at `http://localhost:11434/v1` and needs no key, but it has to allow the
+  site of the page, or the browser stops its answers: start it with
+  `OLLAMA_ORIGINS=https://deeptelar.github.io ollama serve`.
 - Optionally a key for **Google Places**, for ratings. **Settings** shows how to get one, step by
   step; it is a key of the Places API (New), best restricted to the site of the page. Google's
   [guide](https://developers.google.com/maps/documentation/places/web-service/get-api-key) has the

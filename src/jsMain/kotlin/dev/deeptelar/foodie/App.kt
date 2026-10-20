@@ -878,6 +878,11 @@ class App(
                     field(texts.apiAddress, settings.openAiUrl, placeholder = "https://api.openai.com/v1") { change(settings.copy(openAiUrl = it)) }
                     field(texts.model, settings.openAiModel, placeholder = "gpt-5") { change(settings.copy(openAiModel = it)) }
                     field(texts.apiKey, settings.openAiKey, type = "password", placeholder = texts.emptyForLocalServer) { change(settings.copy(openAiKey = it)) }
+                    // Ollama allows only pages on the same computer; this one comes from another site.
+                    add("p", "hint small") {
+                        add("span", text = texts.localServerHint + " ")
+                        add("code", text = "OLLAMA_ORIGINS=${window.location.origin} ollama serve")
+                    }
                 }
             }
             field(texts.googleKey, settings.googleKey, type = "password", placeholder = "AIza...") { change(settings.copy(googleKey = it)) }

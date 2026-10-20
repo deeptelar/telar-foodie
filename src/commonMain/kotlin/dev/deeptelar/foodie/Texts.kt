@@ -48,6 +48,9 @@ interface Texts {
     val apiAddress: String
     val apiKey: String
     val emptyForLocalServer: String
+
+    /** That a server on the traveller's own computer has to allow the page's site. The command that starts Ollama so comes after it. */
+    val localServerHint: String
     val googleKey: String
     val googleBills: String
     val howToGetAGoogleKey: String

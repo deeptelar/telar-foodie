@@ -50,6 +50,8 @@ object Catalan : Texts {
     override val apiAddress = "Adreça de l'API"
     override val apiKey = "Clau de l'API"
     override val emptyForLocalServer = "Deixa-la buida per a un servidor local"
+    override val localServerHint =
+        "Un servidor d'aquest ordinador, com Ollama, ha de permetre el lloc d'aquesta pàgina, o el navegador n'atura les respostes. El navegador també pot preguntar si la pàgina pot accedir a la xarxa local. Inicia Ollama amb:"
     override val googleKey = "Clau de Google Places, per a les valoracions (opcional)"
     override val googleBills =
         "Google dona una quantitat de cerques gratis cada mes i cobra la resta al titular de la clau. " +
