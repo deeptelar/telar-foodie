@@ -43,6 +43,8 @@ object English : Texts {
         )
 
     override val keysStayHere = "Keys are stored in this browser only and are sent to nobody but their provider."
+    override val visitsCounted =
+        "The page counts visits and a few steps, such as a plan started or a route ready, with GoatCounter: without cookies, and without anything of the trip."
     override val model = "Model"
     override val openAiProvider = "OpenAI, Gemini, Ollama or another server with the API of OpenAI"
     override val anthropicKey = "Anthropic API key"

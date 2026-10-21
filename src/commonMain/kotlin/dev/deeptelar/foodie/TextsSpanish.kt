@@ -43,6 +43,8 @@ object Spanish : Texts {
         )
 
     override val keysStayHere = "Las claves se guardan solo en este navegador y no se envían a nadie más que a su proveedor."
+    override val visitsCounted =
+        "La página cuenta las visitas y algunos pasos, como un plan empezado o una ruta lista, con GoatCounter: sin cookies y sin nada del viaje."
     override val model = "Modelo"
     override val openAiProvider = "OpenAI, Gemini, Ollama u otro servidor con la API de OpenAI"
     override val anthropicKey = "Clave de la API de Anthropic"

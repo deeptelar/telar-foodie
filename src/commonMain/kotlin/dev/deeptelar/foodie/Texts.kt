@@ -41,6 +41,9 @@ interface Texts {
     // The settings
 
     val keysStayHere: String
+
+    /** That the page counts visits and a few steps, and nothing of the trip. */
+    val visitsCounted: String
     val model: String
     val openAiProvider: String
     val anthropicKey: String

@@ -43,6 +43,8 @@ object Catalan : Texts {
         )
 
     override val keysStayHere = "Les claus es desen només en aquest navegador i no s'envien a ningú més que al seu proveïdor."
+    override val visitsCounted =
+        "La pàgina compta les visites i alguns passos, com un pla començat o una ruta llesta, amb GoatCounter: sense galetes i sense res del viatge."
     override val model = "Model"
     override val openAiProvider = "OpenAI, Gemini, Ollama o un altre servidor amb l'API d'OpenAI"
     override val anthropicKey = "Clau de l'API d'Anthropic"

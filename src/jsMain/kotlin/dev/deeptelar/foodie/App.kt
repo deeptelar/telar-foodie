@@ -261,8 +261,15 @@ class App(
         this.trip = trip
         firstDay()
         tab = Tab.PLAN
+        count(if (scripted) "sample-start" else "trip-start-${settings.provider.name.lowercase()}")
         run { planner().stream(trip, config) }
     }
+
+    /** Whether the sample script plans, and not a model: the sample was asked for, or no model has a key. */
+    private val scripted: Boolean get() = sample || !settings.hasModel
+
+    /** Counts [event] of a visit, apart for the sample, which shows the page and not a trip. */
+    private fun counted(event: String) = count(if (scripted) "sample-$event" else event)
 
     /**
      * Continues the saved run, with [update] applied to its state first. [trip] is then the state
@@ -298,7 +305,8 @@ class App(
      * Continues the run from the route with [update], as [resume] does, while the route stays on
      * the screen. What was saved before is kept, for [stopChange].
      */
-    private fun revise(update: (Trip) -> Trip) {
+    private fun revise(event: String, update: (Trip) -> Trip) {
+        counted(event)
         scope.launch {
             beforeChange =
                 try {
@@ -425,7 +433,10 @@ class App(
                 steps.filter { it.status == Status.DONE }.forEach { it.settled = true }
                 renderRun()
             }
-            is GraphEvent.Interrupted -> show(GraphResult.Interrupted(event.state, event.nextNodes))
+            is GraphEvent.Interrupted -> {
+                if (Nodes.REVIEW in event.nextNodes) counted(if (revising) "change-ready" else "route-ready")
+                show(GraphResult.Interrupted(event.state, event.nextNodes))
+            }
             is GraphEvent.Completed -> show(GraphResult.Completed(event.state))
             // No node of the planner runs for each item of a list, and no subgraph is part of it.
             is GraphEvent.SubgraphEvent, is GraphEvent.ItemCompleted -> Unit
@@ -538,6 +549,7 @@ class App(
             // The browser blocks its storage: the trip on the page is saved, as a run that is over.
             val checkpoint = saved ?: trip?.let { Checkpoint(it, emptyList()) } ?: return@launch
             val now = Date().toISOString()
+            counted("plan-saved")
             download(fileName(checkpoint.state, now.take(10)), checkpoint.toFile(if (sample) "sample" else settings.modelName, now))
         }
     }
@@ -858,6 +870,7 @@ class App(
         add("section", "card settings") {
             add("h2", text = texts.settings)
             add("p", "hint", texts.keysStayHere)
+            add("p", "hint small", texts.visitsCounted)
             add("label", "field") {
                 add("span", "field-label", texts.model)
                 (add("select") as HTMLSelectElement).apply {
@@ -1565,12 +1578,12 @@ class App(
                         wish.focus()
                     } else {
                         closeSheet()
-                        revise { it.copy(messages = it.messages + ChatMessage.User(text)) }
+                        revise("change-sent") { it.copy(messages = it.messages + ChatMessage.User(text)) }
                     }
                 }
                 button(texts.happyWithIt, "ghost") {
                     closeSheet()
-                    revise { it.copy(approved = true) }
+                    revise("plan-approved") { it.copy(approved = true) }
                 }
             }
         }
@@ -1591,6 +1604,7 @@ class App(
             }
             button(texts.saveForMyMaps, "ghost") {
                 val day = Date().toISOString().take(10)
+                counted("maps-saved")
                 download(kmlName(trip, day), trip.toKml(), KML)
             }
             // A phone imports nothing into My Maps: the file goes to a computer, by mail or a chat.
@@ -2054,7 +2068,7 @@ class App(
         changing = ready.map { it.day to it.time }.toSet()
         day = ready.first().day
         ShownDay.save(day)
-        revise { it.swapped(ready) }
+        revise("places-changed") { it.swapped(ready) }
     }
 
     private fun swapLabel(): String = swaps.values.count { it.said }.let { if (it > 1) texts.changeThesePlaces(it) else texts.findAnotherPlace }

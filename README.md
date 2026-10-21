@@ -13,7 +13,10 @@ The whole app is one web page. There is no server behind it: the workflow runs i
 plan is saved in your browser, and the key of your model goes from your browser straight to its
 provider. You can also speak instead of typing: the browser turns your voice into text with its own
 speech service (Chrome's runs on Google's servers), and the page only gets the text. Firefox has
-none, so there the microphone buttons are not shown.
+none, so there the microphone buttons are not shown. The page counts visits and a few steps, such
+as a plan started or a route ready, with [GoatCounter](https://www.goatcounter.com/): without
+cookies, and without anything of the trip
+([`Visits.kt`](src/jsMain/kotlin/dev/deeptelar/foodie/Visits.kt)).
 
 It is built with [Telar](https://github.com/deeptelar/telar), a Kotlin library for AI agents and
 workflows, and is meant as an example of a complete app on it.
