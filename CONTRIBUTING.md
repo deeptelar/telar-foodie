@@ -5,9 +5,8 @@ Thank you for considering a contribution. Foodie Route is a complete app on
 app on Telar is put together. This guide covers the setup, the checks a change must pass, and how
 the project writes its code.
 
-By participating you agree to follow the
-[Code of Conduct of Telar](https://github.com/deeptelar/telar/blob/main/CODE_OF_CONDUCT.md), which
-applies here too.
+By participating you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md), the same as
+Telar's.
 
 ## Where to start
 
