@@ -15,7 +15,7 @@ internal const val INTERVIEW_SYSTEM =
 internal fun languageRule(trip: Trip): String =
     "Write everything the traveller reads in ${trip.language.english}: questions and their answers, descriptions, reasons and your messages. " +
         "Keep in English only the fixed values of the data that the descriptions give in quotes, such as meals, budgets and cuisine tags, " +
-        "and the names of the stops."
+        "and the names of the stops. Speak to the traveller informally, as the page does and as a friend would: in Spanish and Catalan with tú, never usted."
 
 internal fun interviewPrompt(trip: Trip): String =
     buildString {
@@ -72,7 +72,7 @@ internal fun dishesPrompt(trip: Trip): String =
             if (profile.pregnant) appendLine("- $PREGNANCY_RULE")
         }
         profile.taste.takeIf { it.isNotBlank() }?.let { appendLine("\nHow adventurous the traveller is: $it.") }
-        profile.season.takeIf { it.isNotBlank() }?.let { appendLine("The trip is in $it: name what is in season then.") }
+        profile.season.takeIf { it.isNotBlank() }?.let { appendLine("The trip is in $it: name what is in season then, and say in the description of a dish that is made or caught only in another season.") }
         profile.drinks.takeIf { it.isNotBlank() }?.let { appendLine("What the traveller drinks: $it.") }
         profile.wishes.takeIf { it.isNotBlank() }?.let { appendLine("The traveller's wishes: $it.") }
         trip.guideNotes.forEach { (stop, text) ->
@@ -99,6 +99,7 @@ How to choose:
   - A place whose description speaks of tourists, views, a menu in many languages or an international menu is a weak choice.
   - A high rating from many people counts, but a very famous place is often full of visitors: a good rating at a small place counts more.
 - Follow what you know about the traveller: diet, budget, who comes along, how adventurous they are, what they drink and what they wish for. With one special meal, make one dinner of the trip a place to remember.
+- When you know the season of the trip, order dishes of that season: a dish whose description says it is made or caught in another season, such as a seafood out of its season, is no choice then. At a place by the sea or in the mountains that often closes in that season, say in `caution` to check that it is open.
 - Never put a dish on the route that the traveller's allergies or diet rule out. With an allergy, say in `caution` what in the dish or the kitchen may contain it and what to tell the staff.
 - When someone on the trip is pregnant, choose dishes they can eat, and say in `caution` what to leave out or ask for at a place whose food often has it: raw or undercooked fish, meat or eggs, unpasteurised cheese, cured meats, fish high in mercury, alcohol.
 - Choose each meal for its dish, not for being near the meal before: the traveller is on holiday, and goes across town for the right place. The places of a day need not be close to each other. Only between two places that are as good, take the one that fits the day better.
