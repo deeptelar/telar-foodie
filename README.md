@@ -211,6 +211,13 @@ src/jvmTest      a check against the real sources
 The map is drawn with [Leaflet](https://leafletjs.com/) (BSD 2-Clause), a copy of which is in
 `src/jsMain/resources/vendor/leaflet`.
 
+## Contributing
+
+Contributions are welcome. The
+[good first issues](https://github.com/deeptelar/telar-foodie/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+are a place to start, and [CONTRIBUTING.md](CONTRIBUTING.md) says how to build, test and send a
+change. None of it needs a key.
+
 ## License
 
 [Apache License 2.0](LICENSE). The restaurants come from Wikivoyage
