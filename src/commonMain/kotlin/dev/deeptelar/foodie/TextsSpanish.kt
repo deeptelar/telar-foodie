@@ -353,6 +353,11 @@ object Spanish : Texts {
 
     override fun gaveNoAnswer(source: String, stop: String, problem: String) = "$source no ha respondido para $stop: $problem"
 
+    override fun stayNotOnTheMap(place: String, stop: String) =
+        "No he encontrado «$place» de $stop en el mapa, así que ninguna comida se ha elegido por estar cerca de donde duermes. Pide un cambio con una calle o una plaza cercana."
+
+    override val staySaidNowhere = "Quieres algunas comidas cerca de donde duermes, pero no sé dónde es. Pide un cambio con una calle o una plaza cercana."
+
     override val sampleRequest = "Dos días en Lisboa. Me encantan el marisco y los dulces."
     override val sampleStop = "Lisboa"
     override val sampleWishes = "marisco y dulces"

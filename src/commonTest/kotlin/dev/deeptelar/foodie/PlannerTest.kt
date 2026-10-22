@@ -24,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -1010,10 +1011,12 @@ class PlannerTest {
                     says("Planned.")
                 }
 
-            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon, staying in Alfama"), config()).state
+            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon, staying in Alfama", Profile(nearStay = listOf(MealTime.DINNER))), config()).state
 
             assertEquals(Location(38.7118, -9.1300), trip.stops.single().stay)
             assertTrue(trip.route.single().walk in 400..700, "walk was ${trip.route.single().walk}")
+            assertTrue("- Near where they sleep, within 700 m: dinner\n" in model.requests[2].messages.first().text)
+            assertEquals(emptyList(), trip.notes)
         }
 
     @Test
@@ -1082,6 +1085,30 @@ class PlannerTest {
         )
         // A meal whose dish is on the route once is no repetition.
         assertEquals("", trip.repeatedDishes(trip.route.filter { it.time == MealTime.LUNCH }))
+    }
+
+    @Test
+    fun `a dish people eat at breakfast or as a snack is pointed out to the agent at a lunch or a dinner`() {
+        val trip =
+            Trip(
+                "Two days in Lisbon",
+                dishes = listOf(Dish(lisbon, "Pastel de nata", "A custard tart.", "breakfast"), Dish(lisbon, "bifana", "A pork sandwich.", "snack")),
+                route =
+                    listOf(
+                        Meal(1, MealTime.BREAKFAST, "r1", "pastel de nata", ""),
+                        Meal(1, MealTime.LUNCH, "r2", "bacalhau à brás", ""),
+                        Meal(1, MealTime.DINNER, "r3", "A pastel de nata, warm", ""),
+                        Meal(2, MealTime.SNACK, "r4", "bifana", ""),
+                    ),
+            )
+
+        assertEquals(
+            "\nDay 1 dinner orders Pastel de nata, which people there eat at breakfast, not as a dinner. " +
+                "Unless the place makes a meal of it, as a stall of street food does, order a dish people eat at dinner.",
+            trip.lightMeals(trip.route),
+        )
+        // A dish at the meal people eat it at, or one the stop's dishes do not name, is no such meal.
+        assertEquals("", trip.lightMeals(trip.route.filter { it.time != MealTime.DINNER }))
     }
 
     @Test
@@ -1213,7 +1240,7 @@ class PlannerTest {
         }
 
     @Test
-    fun `a place to sleep that the map finds in another town is left out`() =
+    fun `a place to sleep that the map finds in another town is left out, and the traveller hears of it`() =
         runTest {
             val model =
                 ScriptedChatModel {
@@ -1223,10 +1250,30 @@ class PlannerTest {
                     says("Planned.")
                 }
 
-            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon"), config()).state
+            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon", Profile(nearStay = listOf(MealTime.DINNER))), config()).state
 
             assertEquals(null, trip.stops.single().stay)
             assertEquals(null, trip.route.single().walk)
+            assertEquals(listOf(Language.ENGLISH.texts.stayNotOnTheMap("Hotel Avenida", lisbon)), trip.notes)
+            // Nothing can be measured from where they sleep, so the agent is not asked for a dinner near it.
+            val first = model.requests[2].messages.first().text
+            assertFalse("Near where they sleep" in first, first)
+        }
+
+    @Test
+    fun `a traveller who wants a meal near where they sleep, and does not say where, hears of it`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    says("Nothing to plan.")
+                }
+
+            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon", Profile(nearStay = listOf(MealTime.DINNER))), config()).state
+
+            assertEquals(listOf(Language.ENGLISH.texts.staySaidNowhere), trip.notes)
+            assertFalse("Near where they sleep" in model.requests[2].messages.first().text)
         }
 
     @Test

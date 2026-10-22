@@ -97,9 +97,15 @@ data class Brief(
 
 @Serializable
 data class BriefStop(
-    @Description("The city, town or island, with its country, in English as the English Wikipedia names them, for example \"Porto, Portugal\".")
+    @Description(
+        "The city or town, with its country, in English as the English Wikipedia names them, for example \"Porto, Portugal\". " +
+            "For an island or a region, the town in it where the traveller sleeps, or else its main town, for example \"Mahón, Spain\" for Menorca.",
+    )
     val place: String,
-    @Description("The same place as the traveller's language names it, without the country, for example \"Oporto\" in Spanish. Empty if it is the same.")
+    @Description(
+        "The same place as the traveller's language names it, without the country, for example \"Oporto\" in Spanish. " +
+            "For an island or a region, the name the traveller gave with the town, for example \"Menorca (Maó)\". Empty if it is the same.",
+    )
     val shown: String = "",
     @Description("How many days the traveller eats there. 1 if the request does not say.")
     val days: Int = 1,
@@ -109,8 +115,9 @@ data class BriefStop(
     )
     val cuisines: List<String> = emptyList(),
     @Description(
-        "Where the traveller sleeps in this place, as a map names it: a neighbourhood, a street, a square or a hotel, without words such as \"near\", " +
-            "for example \"Piazza Garibaldi\". The first place, when they move. Empty if not said.",
+        "Where the traveller sleeps in this place, as the map of the place names it in the local language: a neighbourhood, a street, a square or a hotel, " +
+            "without words such as \"near\", for example \"Piazza Garibaldi\". For an area that many towns have, such as the old town or the centre, " +
+            "its best-known square, for example \"Piazza del Gesù Nuovo\" for the old town of Naples. The first place, when they move. Empty if not said.",
     )
     val stay: String = "",
     @Description(
@@ -122,7 +129,7 @@ data class BriefStop(
 
 @Serializable
 data class BriefStay(
-    @Description("Where the traveller sleeps, as a map names it, for example a hotel or a neighbourhood.")
+    @Description("Where the traveller sleeps, as the map of the place names it in the local language, for example a hotel or a neighbourhood.")
     val place: String,
     @Description("The day of the whole trip the traveller first sleeps there, counted from 1 at the start of the trip.")
     val fromDay: Int,

@@ -37,7 +37,9 @@ internal fun interviewPrompt(trip: Trip): String =
 internal const val BRIEF_SYSTEM =
     "You read what a traveller wrote about a trip and return its places as data: each place the traveller named, in the order of the trip, " +
         "with its days, where the traveller sleeps there if they said it, and the cuisine words of OpenStreetMap that you know for the place. " +
-        "Do not add places the traveller did not name."
+        "Do not add places the traveller did not name. " +
+        "For an island or a region the traveller named, give one town in it: where they sleep there, or else its main town, " +
+        "because the restaurants are searched around the place."
 
 internal fun briefPrompt(trip: Trip): String = travellerWords(trip) + "\n" + languageRule(trip)
 
@@ -109,7 +111,8 @@ How to choose:
 How to work:
 - Start from the candidates you were given: they are enough for most meals. Write the whole route in one answer, with one call of `set_route` that has every meal of every day and your message to the traveller; nothing is on the route until you call it.
 - Search only for a dish or a kind of place that the candidates lack, with words such as "pastry" or "seafood", and only a few times. A search for a common word finds nothing new.
-- Never name a restaurant that is not a candidate, and never invent an id.
+- Never name a restaurant that is not a candidate, and never invent an id, not even in your message.
+- When the tools find no place for a meal either, leave the meal open. Tell the traveller in a few sentences which meals have no place yet and why, such as a source that gave no answer, and what would help: where they sleep, or trying again later.
 - In `why`, say what speaks for the place, in one sentence, and only what the sources say. If little is known, say so.
 - If `set_route` says that something is wrong, fix it with `set_meal` or `remove_meal`, and then answer the traveller in three to five sentences: what the trip tastes like and what to look forward to. Do not list the restaurants again; the traveller sees the route.
 - When the traveller asks for a change later, change what was asked and leave the rest of the route as it is. When they ask for another place for a meal, offer two or three with `offer_choices`, the one you recommend first, and say why you recommend it.
@@ -127,7 +130,7 @@ internal fun planPrompt(trip: Trip): String =
         appendLine("The traveller wrote: \"${trip.request.trim()}\"")
         appendLine()
         appendLine("What you know about the traveller:")
-        profileLines(trip.profile).forEach { appendLine("- $it") }
+        profileLines(trip.profile, trip.sleepsSomewhereKnown).forEach { appendLine("- $it") }
         appendLine("- Meals of every day: ${trip.dailyMeals.joinToString { it.label.lowercase() }}" + if (trip.profile.meals.isEmpty()) " (not said)" else "")
         appendLine()
         appendLine("The days:")
@@ -147,7 +150,7 @@ internal fun planPrompt(trip: Trip): String =
             appendLine()
             appendLine("Candidates in ${stop.name}, ${shown.size} of $all:")
             shown.forEach { appendLine(trip.line(it)) }
-            if (shown.isEmpty()) appendLine("None yet. Search with the tools.")
+            if (shown.isEmpty()) appendLine("None yet. Search with the tools; if they find none either, leave the meals open.")
         }
         if (trip.notes.isNotEmpty()) {
             appendLine()
@@ -166,7 +169,7 @@ internal fun profileWords(profile: Profile): String =
 internal fun profileChangePrompt(trip: Trip): String =
     buildString {
         appendLine("I changed what you know about me. It is now:")
-        profileLines(trip.profile).forEach { appendLine("- $it") }
+        profileLines(trip.profile, trip.sleepsSomewhereKnown).forEach { appendLine("- $it") }
         appendLine("- Meals of every day: ${trip.dailyMeals.joinToString { it.label.lowercase() }}")
         appendLine()
         append("Change the meals that no longer fit, add or remove meals so that every day has these meals, and keep the rest of the route.")
@@ -200,20 +203,26 @@ internal fun swapPrompt(trip: Trip, swaps: List<MealSwap>): String =
         )
     }
 
-/** The profile for a model, one line for each thing the traveller said. */
-private fun profileLines(profile: Profile): List<String> =
+/**
+ * The profile for a model, one line for each thing the traveller said. The meals near where they
+ * sleep are left out when the map knows no place where they do: nothing could be measured from it.
+ */
+private fun profileLines(profile: Profile, sleeping: Boolean = true): List<String> =
     listOfNotNull(
         if (profile.allergies.isEmpty()) "Allergies: none said" else "Allergies: " + profile.allergies.joinToString { it.line() },
         "Diet: " + profile.diet.ifBlank { "none said" },
         if (profile.pregnant) "Pregnancy: $PREGNANCY_RULE" else null,
         "Budget: ${profile.budget}" + if (profile.splurge) ", with one special meal" else "",
-        profile.nearStay.takeIf { it.isNotEmpty() }?.let { meals -> "Near where they sleep, within $NEAR_STAY m: " + meals.sorted().joinToString { it.label.lowercase() } },
+        profile.nearStay.takeIf { it.isNotEmpty() && sleeping }?.let { meals -> "Near where they sleep, within $NEAR_STAY m: " + meals.sorted().joinToString { it.label.lowercase() } },
         profile.party.takeIf { it.isNotBlank() }?.let { "Who eats: $it" },
         profile.season.takeIf { it.isNotBlank() }?.let { "When: $it" },
         profile.taste.takeIf { it.isNotBlank() }?.let { "Taste: $it" },
         profile.drinks.takeIf { it.isNotBlank() }?.let { "Drinks: $it" },
         profile.wishes.takeIf { it.isNotBlank() }?.let { "Wishes: $it" },
     )
+
+/** Whether the map knows a place where the traveller sleeps on the trip. */
+private val Trip.sleepsSomewhereKnown: Boolean get() = stops.any { it.stay != null || it.stays.isNotEmpty() }
 
 private fun Allergy.line(): String = if (severe) "$food, even traces" else food
 

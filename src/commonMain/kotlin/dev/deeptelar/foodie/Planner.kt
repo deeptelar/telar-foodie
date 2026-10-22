@@ -121,9 +121,11 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                 val brief = answer.value
                 if (brief.stops.isEmpty()) interrupt(read.asking(brief.question.ifBlank { texts.whereQuestion }))
 
-                val (stops, unknown) = located(brief, sources, texts)
+                val (stops, unknown, lost) = located(brief, sources, texts)
                 if (unknown.isNotEmpty()) interrupt(read.asking(texts.notOnTheMap(unknown)))
-                read.copy(stops = stops)
+                // The traveller hears why no meal is near where they sleep, and the agent is not asked for what it cannot measure.
+                val unsaid = trip.profile.nearStay.isNotEmpty() && brief.stops.all { it.stay.isBlank() && it.moves.isEmpty() }
+                read.copy(stops = stops, notes = (read.notes + lost + listOfNotNull(texts.staySaidNowhere.takeIf { unsaid })).distinct())
             }
 
         // The three sources and the dishes. Each is a node with a `work`, the slow part that runs for
@@ -273,10 +275,14 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
 /** The trip with a question about where it goes, the one thing the planner cannot go on without. */
 private fun Trip.asking(question: String): Trip = copy(questions = listOf(Question(Topic.WHERE, question)))
 
-/** The stops of [brief] that the map knows, with their days counted from the first day of the trip, and the places it does not know. */
-private suspend fun located(brief: Brief, sources: Sources, texts: Texts): Pair<List<Stop>, List<String>> {
+/**
+ * The stops of [brief] that the map knows, with their days counted from the first day of the trip,
+ * the places it does not know, and a note for each place where the traveller sleeps that it does not know.
+ */
+private suspend fun located(brief: Brief, sources: Sources, texts: Texts): Triple<List<Stop>, List<String>, List<String>> {
     val stops = mutableListOf<Stop>()
     val unknown = mutableListOf<String>()
+    val lost = mutableListOf<String>()
     var day = 1
     for (stop in brief.stops) {
         reportProgress(Activity(texts.findingOnTheMap(stop.shown.ifBlank { stop.place })))
@@ -288,7 +294,9 @@ private suspend fun located(brief: Brief, sources: Sources, texts: Texts): Pair<
             // Where the traveller sleeps is a help, not a need: a place the map does not know is left out.
             suspend fun sleeping(place: String): Location? {
                 reportProgress(Activity(texts.findingOnTheMap(place)))
-                return sources.geocoder.locate("$place, ${stop.place}")?.takeIf { metresBetween(it, location) <= STAY_REACH }
+                val found = sources.geocoder.locate("$place, ${stop.place}")?.takeIf { metresBetween(it, location) <= STAY_REACH }
+                if (found == null) lost += texts.stayNotOnTheMap(place, stop.shown.trim().ifBlank { stop.place })
+                return found
             }
             val stay = stop.stay.trim().takeIf { it.isNotEmpty() }?.let { sleeping(it) }
             // A later hotel counts by its night of this stop; one the map does not know is left out, and the one before it goes on.
@@ -304,7 +312,7 @@ private suspend fun located(brief: Brief, sources: Sources, texts: Texts): Pair<
             day += days
         }
     }
-    return stops to unknown
+    return Triple(stops, unknown, lost)
 }
 
 /** What one source found for the whole trip. */

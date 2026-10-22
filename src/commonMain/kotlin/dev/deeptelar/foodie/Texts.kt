@@ -345,6 +345,12 @@ interface Texts {
 
     fun gaveNoAnswer(source: String, stop: String, problem: String): String
 
+    /** Where the traveller said they sleep at [stop], which the map does not know. */
+    fun stayNotOnTheMap(place: String, stop: String): String
+
+    /** The traveller wants meals near where they sleep, and did not say where that is. */
+    val staySaidNowhere: String
+
     // The sample, a script in place of a model
 
     val sampleRequest: String
