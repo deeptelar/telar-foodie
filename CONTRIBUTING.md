@@ -12,8 +12,7 @@ Telar's.
 
 - **A first contribution:** the issues labeled
   [good first issue](https://github.com/deeptelar/telar-foodie/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  are small, and each says which files to read first and how to know the work is done. In October
-  they also count for Hacktoberfest.
+  are small, and each says which files to read first and how to know the work is done.
 - **A bug or an idea:** open an issue, with the steps that show it. A saved plan (**Save the plan as
   a file**) helps, but look through it first: it holds the trip and the traveller's answers.
 - **A change to Telar itself,** such as the graph, the agent or a model provider, belongs in
