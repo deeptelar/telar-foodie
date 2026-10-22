@@ -15,7 +15,9 @@ class Nominatim(
     private val client: HttpClient,
     private val baseUrl: String = "https://nominatim.openstreetmap.org",
 ) : Geocoder {
-    override suspend fun locate(place: String): Location? {
+    override suspend fun locate(place: String): Location? = find(place)?.location
+
+    override suspend fun find(place: String): Placed? {
         val found =
             client
                 .get("$baseUrl/search") {
@@ -25,6 +27,12 @@ class Nominatim(
                     parameter("accept-language", "en")
                 }.jsonFrom("The place search")
         val first = (found as? JsonArray)?.firstOrNull() as? JsonObject ?: return null
-        return Location(first.number("lat") ?: return null, first.number("lon") ?: return null)
+        val location = Location(first.number("lat") ?: return null, first.number("lon") ?: return null)
+        return Placed(location, wide = first.text("addresstype") in WIDE)
+    }
+
+    companion object {
+        /** The kinds of place, as Nominatim names them in `addresstype`, that are wider than a town. */
+        private val WIDE = setOf("island", "archipelago", "region", "state", "state_district", "province", "county", "country", "continent")
     }
 }

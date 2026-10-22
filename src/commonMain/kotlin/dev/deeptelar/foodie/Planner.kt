@@ -35,6 +35,7 @@ object Nodes {
     const val DISHES = "dishes"
     const val SPECIALISTS = "specialists"
     const val PLAN = "plan"
+    const val NOTHING = "nothing"
     const val TOOLS = "tools"
     const val ORDER = "order"
     const val REVIEW = "review"
@@ -154,11 +155,11 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                 work = { trip ->
                     gather(trip, trip.language.texts.theMap) { stop ->
                         reportProgress(Activity(trip.language.texts.lookingOnTheMap(stop.cuisines.firstOrNull() ?: "local", stop.title)))
-                        val found = effect("map ${stop.name}") { sources.map.restaurants(stop.name, stop.location, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) }
+                        val found = effect("map ${stop.name}") { sources.map.restaurants(stop.name, stop.centre, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) }
                         // The sights are a help, not a need: without them, or when they are slow, the restaurants are still candidates.
                         val sights =
                             try {
-                                withTimeoutOrNull(SIGHTS_PATIENCE) { effect("sights ${stop.name}") { sources.map.sights(stop.name, stop.location, MAP_RADIUS) } }.orEmpty()
+                                withTimeoutOrNull(SIGHTS_PATIENCE) { effect("sights ${stop.name}") { sources.map.sights(stop.name, stop.centre, MAP_RADIUS) } }.orEmpty()
                             } catch (e: Throwable) {
                                 if (!e.isFailure()) throw e
                                 emptyList()
@@ -175,7 +176,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                     work = { trip ->
                         gather(trip, trip.language.texts.theReviews) { stop ->
                             reportProgress(Activity(trip.language.texts.readingReviews(stop.title)))
-                            Found(effect("reviews ${stop.name}") { reviews.search(stop.name, reviewQuery(stop), stop.location) }, googleSearches = 1)
+                            Found(effect("reviews ${stop.name}") { reviews.search(stop.name, reviewQuery(stop), stop.centre) }, googleSearches = 1)
                         }
                     },
                 ) { trip, found -> trip.with(found) }
@@ -215,7 +216,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                         // A map that does not answer leaves the reviews to search: the map's own step already said that it did not.
                         val onMap =
                             try {
-                                effect("specialists ${stop.name} ${words.hashCode()}") { sources.map.restaurants(stop.name, stop.location, MapSearch.Dishes(words), MAP_RADIUS) }
+                                effect("specialists ${stop.name} ${words.hashCode()}") { sources.map.restaurants(stop.name, stop.centre, MapSearch.Dishes(words), MAP_RADIUS) }
                             } catch (e: Throwable) {
                                 if (!e.isFailure()) throw e
                                 emptyList()
@@ -225,7 +226,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                             sources.reviews?.let { reviews ->
                                 dishes.take(REVIEWED_DISHES).mapNotNull { dish ->
                                     try {
-                                        effect("specialists ${stop.name} ${dish.name}") { reviews.search(stop.name, "best ${dish.name} in ${stop.name}", stop.location) }
+                                        effect("specialists ${stop.name} ${dish.name}") { reviews.search(stop.name, "best ${dish.name} in ${stop.name}", stop.centre) }
                                     } catch (e: Throwable) {
                                         if (!e.isFailure()) throw e
                                         null
@@ -243,6 +244,14 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
         // change starts a new turn of the agent, with a budget of its own.
         // What the traveller chose of the places the agent offered goes before their words.
         val review = node(Nodes.REVIEW) { trip -> trip.copy(turnStart = trip.tokens.total).withPicksTold() }
+
+        // Without a single candidate the agent has nothing to choose from, and a small model writes in places of its own:
+        // the traveller hears from the code why there is no route. The prompt goes first, so that a change asks the agent with it.
+        val nothing =
+            node(Nodes.NOTHING) { trip ->
+                val said = trip.language.texts.nothingToEat(trip.stops.map { it.title }, withReviews = sources.reviews != null)
+                trip.copy(messages = trip.messages + ChatMessage.User(planPrompt(trip)) + ChatMessage.Assistant(said))
+            }
 
         val plan =
             toolLoop(
@@ -267,7 +276,10 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
             if (it.interview.stage == InterviewStage.DONE) brief else interview
         }
         listOfNotNull(guide, map, reviews, dishes).forEach { node -> brief then node then specialists }
-        specialists then plan
+        conditionalEdge(specialists, targets = setOf(plan, nothing), labels = mapOf(plan to "candidates", nothing to "none")) {
+            if (it.restaurants.isEmpty()) nothing else plan
+        }
+        nothing then order
         order then review
         conditionalEdge(review, targets = setOf(plan, NodeRef.END), labels = mapOf(plan to "a change", NodeRef.END to "yes")) { if (it.approved) NodeRef.END else plan }
     }.compile()
@@ -286,15 +298,15 @@ private suspend fun located(brief: Brief, sources: Sources, texts: Texts): Tripl
     var day = 1
     for (stop in brief.stops) {
         reportProgress(Activity(texts.findingOnTheMap(stop.shown.ifBlank { stop.place })))
-        val location = sources.geocoder.locate(stop.place)
-        if (location == null) {
+        val placed = sources.geocoder.find(stop.place)
+        if (placed == null) {
             unknown += stop.place
         } else {
             val days = stop.days.coerceIn(1, MAX_DAYS)
             // Where the traveller sleeps is a help, not a need: a place the map does not know is left out.
             suspend fun sleeping(place: String): Location? {
                 reportProgress(Activity(texts.findingOnTheMap(place)))
-                val found = sources.geocoder.locate("$place, ${stop.place}")?.takeIf { metresBetween(it, location) <= STAY_REACH }
+                val found = sources.geocoder.locate("$place, ${stop.place}")?.takeIf { metresBetween(it, placed.location) <= if (placed.wide) WIDE_REACH else STAY_REACH }
                 if (found == null) lost += texts.stayNotOnTheMap(place, stop.shown.trim().ifBlank { stop.place })
                 return found
             }
@@ -306,8 +318,8 @@ private suspend fun located(brief: Brief, sources: Sources, texts: Texts): Tripl
                 }
             stops +=
                 Stop(
-                    stop.place, days, firstDay = day, lat = location.lat, lon = location.lon, cuisines = stop.cuisines, stay = stay, shown = stop.shown.trim(),
-                    stayName = if (stay == null) "" else stop.stay.trim(), stays = stays,
+                    stop.place, days, firstDay = day, lat = placed.location.lat, lon = placed.location.lon, cuisines = stop.cuisines, stay = stay, shown = stop.shown.trim(),
+                    stayName = if (stay == null) "" else stop.stay.trim(), stays = stays, wide = placed.wide,
                 )
             day += days
         }
@@ -397,6 +409,9 @@ internal val LOCAL_CUISINES = listOf("regional", "local")
 
 /** Where the traveller sleeps counts only this close to the stop, in metres: a hotel of the same name in another town does not. */
 internal const val STAY_REACH = 30_000
+
+/** How far from the middle of an island or a region a place of it can be, in metres. */
+internal const val WIDE_REACH = 150_000
 
 /** A trip is planned for at most this many days at one stop. */
 internal const val MAX_DAYS = 10

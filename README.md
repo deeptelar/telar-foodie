@@ -37,8 +37,9 @@ stateDiagram-v2
     state "specialists" as n6
     state "order" as n7
     state "⏸ review" as n8
-    state "plan" as n9
-    state "tools" as n10
+    state "nothing" as n9
+    state "plan" as n10
+    state "tools" as n11
     [*] --> n0
     n0 --> n0 : a round of questions
     n0 --> n1 : checked
@@ -50,13 +51,15 @@ stateDiagram-v2
     n3 --> n6
     n4 --> n6
     n5 --> n6
-    n6 --> n9
+    n6 --> n10 : candidates
+    n6 --> n9 : none
     n7 --> n8
-    n8 --> n9 : a change
+    n8 --> n10 : a change
     n8 --> [*] : yes
-    n9 --> n10 : tool calls
-    n9 --> n7 : done
-    n10 --> n9
+    n9 --> n7
+    n10 --> n11 : tool calls
+    n10 --> n7 : done
+    n11 --> n10
     classDef interrupt fill:#fff4e5,stroke:#e8590c,stroke-width:2px,stroke-dasharray:4 3
     class n8 interrupt
 ```
@@ -68,6 +71,7 @@ stateDiagram-v2
 | `guide`, `map`, `reviews` | The three sources are asked at the same time. `reviews` is only in the graph when there is a Google key. The map also gives the big sights, since a place a few metres from one lives off the visitors who pass. What a source answered is kept when the step runs again. | Parallel nodes with a `work` and an update, and no reducer; `effect` |
 | `dishes` | A model names what each stop is known for, with what the guide says and the traveller's allergies, diet and season in front of it, and a line of history or custom for each dish. It runs beside the sources and waits only for the guide, which is read once for both; the page shows the dishes one at a time from then on, while the map is still searched and while the agent chooses. | A work node beside the sources, `ask<Menu>` in an `effect`, progress values |
 | `specialists` | Searches the map for the places known for each dish, by the words the model gave with it, such as "francesinha" in a name or a cuisine, and with a Google key the reviews too ("best francesinha in Porto"). The agent reads these places first. | A node that every node of the step before leads to, so it runs once after all of them |
+| `nothing` | When the sources found not a single place to eat, says so in the traveller's language, from code: an agent with nothing to choose from may make places up. A change later asks the agent, which can search again. | A conditional edge that skips the agent |
 | `plan` ⇄ `tools` | An agent chooses a restaurant for each meal. Its tools search the sources again and write the route into the state. | `toolLoop` in a graph of your own, `StateTool`, a token budget |
 | `order` | Sorts the meals and measures the walks between them, the first of a day from where the traveller sleeps. | A plain node |
 | `review` | The run waits here for the traveller. A change goes back to the agent; a yes ends the run. | `interruptBefore`, `resume` with an update, a conditional edge that loops |

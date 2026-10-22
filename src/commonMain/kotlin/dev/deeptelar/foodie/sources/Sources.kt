@@ -20,7 +20,19 @@ import kotlinx.serialization.json.doubleOrNull
 fun interface Geocoder {
     /** Where [place] is, or `null` if no place has that name. */
     suspend fun locate(place: String): Location?
+
+    /** [place] as the map knows it, or `null`. A geocoder that cannot say how wide a place is takes each for a town. */
+    suspend fun find(place: String): Placed? = locate(place)?.let { Placed(it) }
 }
+
+/**
+ * A place the map found: where it is, and whether it is wider than a town, such as an island or a
+ * region. The restaurants of a town are around its point; the point of an island is only its middle.
+ */
+data class Placed(
+    val location: Location,
+    val wide: Boolean = false,
+)
 
 /** A travel guide: what people say about eating in a place, and the restaurants they recommend. */
 fun interface TravelGuide {

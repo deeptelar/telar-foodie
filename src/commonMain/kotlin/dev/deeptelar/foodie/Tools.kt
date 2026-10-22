@@ -185,7 +185,7 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
                 }
             val around = trip.around(stop, lookup.near, sources)
             reportProgress(Activity(trip.language.texts.searchingTheMap(around?.first ?: stop.title, lookup.name.ifBlank { lookup.cuisine })))
-            val found = sources.map.restaurants(stop.name, around?.second ?: stop.location, search, if (around == null) MAP_RADIUS else NEAR_RADIUS)
+            val found = sources.map.restaurants(stop.name, around?.second ?: stop.centre, search, if (around == null) MAP_RADIUS else NEAR_RADIUS)
             trip.found(found, "The map has no such place in ${stop.name}" + (around?.let { " near ${it.first}" } ?: "") + ".", around)
         },
         StateTool<Trip, GuideLookup>("read_guide", "Reads another page of the travel guide. Returns what it says about the food, and adds the restaurants it lists to the candidates of the stop.") { trip, lookup ->
@@ -193,7 +193,7 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
             reportProgress(Activity(trip.language.texts.readingTheGuide(lookup.page)))
             val page = sources.guide.read(lookup.page)
             // The page is read for the stop, so its restaurants are candidates of the stop, as long as they are within reach of it.
-            val near = page.restaurants.map { it.copy(stop = stop.name) }.filter { metresBetween(it.location, stop.location) <= GUIDE_REACH }
+            val near = page.restaurants.map { it.copy(stop = stop.name) }.filter { stop.reaches(it.location, GUIDE_REACH) }
             val outcome = trip.found(near, "The page lists no restaurants near ${stop.name}.")
             outcome.copy(text = page.text.take(GUIDE_TEXT).ifBlank { "The guide has no text about eating in ${lookup.page}." } + "\n\n" + outcome.text)
         },
@@ -202,7 +202,7 @@ private fun searchTools(sources: Sources): List<StateTool<Trip>> =
                 val stop = trip.knownStop(search.stop)
                 val around = trip.around(stop, search.near, sources)
                 reportProgress(Activity(trip.language.texts.searchingReviews(around?.first ?: stop.title, search.query)))
-                val found = reviews.search(stop.name, search.query, around?.second ?: stop.location)
+                val found = reviews.search(stop.name, search.query, around?.second ?: stop.centre)
                 trip.copy(googleSearches = trip.googleSearches + 1).found(found, "Google found nothing for \"${search.query}\".", around)
             }
         },
@@ -348,8 +348,12 @@ private fun stopAdder(sources: Sources): StateTool<Trip> =
             }
         val texts = trip.language.texts
         reportProgress(Activity(texts.findingOnTheMap(new.shown.ifBlank { new.place })))
-        val location = sources.geocoder.locate(new.place) ?: throw IllegalArgumentException("The map does not know \"${new.place}\". Name it as the English Wikipedia does, with its country.")
-        val stop = Stop(new.place.trim(), new.days, 0, location.lat, location.lon, cuisines = new.cuisines.map { it.trim().lowercase() }.filter { it.isNotEmpty() }, shown = new.shown.trim())
+        val found = sources.geocoder.find(new.place) ?: throw IllegalArgumentException("The map does not know \"${new.place}\". Name it as the English Wikipedia does, with its country.")
+        val stop =
+            Stop(
+                new.place.trim(), new.days, 0, found.location.lat, found.location.lon, cuisines = new.cuisines.map { it.trim().lowercase() }.filter { it.isNotEmpty() },
+                shown = new.shown.trim(), wide = found.wide,
+            )
         val problems = mutableListOf<String>()
         suspend fun <T> tried(source: String, read: suspend () -> T): T? =
             try {
@@ -362,8 +366,8 @@ private fun stopAdder(sources: Sources): StateTool<Trip> =
         reportProgress(Activity(texts.readingTheGuide(stop.title)))
         val page = tried("travel guide") { sources.guide.read(stop.name) }
         reportProgress(Activity(texts.lookingOnTheMap(stop.cuisines.firstOrNull() ?: "local", stop.title)))
-        val onMap = tried("street map") { sources.map.restaurants(stop.name, stop.location, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) }.orEmpty()
-        val inGuide = page?.restaurants.orEmpty().map { it.copy(stop = stop.name) }.filter { metresBetween(it.location, stop.location) <= GUIDE_REACH }
+        val onMap = tried("street map") { sources.map.restaurants(stop.name, stop.centre, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) }.orEmpty()
+        val inGuide = page?.restaurants.orEmpty().map { it.copy(stop = stop.name) }.filter { stop.reaches(it.location, GUIDE_REACH) }
         val added = trip.withStop(stop, after).let { if (page == null || page.text.isBlank()) it else it.copy(guideNotes = it.guideNotes + (stop.name to page.text)) }
         val outcome = added.found(inGuide + onMap, "No candidates yet in ${stop.name}. Search the map, the guide or the reviews for it.")
         val placed = outcome.state.stopNamed(stop.name)!!
@@ -506,7 +510,7 @@ private suspend fun Trip.around(stop: Stop, near: String, sources: Sources): Pai
     val sleeping = listOfNotNull(stop.stay?.let { stop.stayName to it }) + stop.stays.map { it.name to it.location }
     sleeping.firstOrNull { it.first.equals(name, ignoreCase = true) }?.let { return it }
     val place =
-        sources.geocoder.locate("$name, ${stop.name}")?.takeIf { metresBetween(it, stop.location) <= STAY_REACH }
+        sources.geocoder.locate("$name, ${stop.name}")?.takeIf { stop.reaches(it, STAY_REACH) }
             ?: throw IllegalArgumentException("The map does not know \"$name\" in ${stop.name}. Name a neighbourhood, a street or a sight there.")
     return name to place
 }

@@ -356,6 +356,10 @@ object Catalan : Texts {
     override fun stayNotOnTheMap(place: String, stop: String) =
         "No he trobat «$place» de $stop al mapa, així que cap àpat no s'ha triat per ser a prop d'on dorms. Demana un canvi amb un carrer o una plaça propers."
 
+    override fun nothingToEat(places: List<String>, withReviews: Boolean) =
+        "No he trobat cap lloc per menjar a ${places.joinToString(" ni ")}, així que encara no hi ha ruta. Torna-ho a provar més tard, quan les fonts responguin" +
+            (if (withReviews) "" else ", o afegeix una clau de Google a Configuració") + ". També pots demanar un canvi, com ara un altre poble proper."
+
     override val staySaidNowhere = "Vols alguns àpats a prop d'on dorms, però no sé on és. Demana un canvi amb un carrer o una plaça propers."
 
     override val sampleRequest = "Dos dies a Lisboa. M'encanten el marisc i els dolços."

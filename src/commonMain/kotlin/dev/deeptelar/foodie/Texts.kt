@@ -351,6 +351,9 @@ interface Texts {
     /** The traveller wants meals near where they sleep, and did not say where that is. */
     val staySaidNowhere: String
 
+    /** The message of a trip without a single place to eat at [places]; [withReviews] when Google was searched too. */
+    fun nothingToEat(places: List<String>, withReviews: Boolean): String
+
     // The sample, a script in place of a model
 
     val sampleRequest: String

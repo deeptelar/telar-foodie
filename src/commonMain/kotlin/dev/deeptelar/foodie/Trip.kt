@@ -155,11 +155,22 @@ data class Stop(
     val stayName: String = "",
     /** Where the traveller sleeps later here, when they change hotels, in the order of the nights. */
     val stays: List<Stay> = emptyList(),
+    /** Whether the place is wider than a town, such as an island or a region, whose point is only its middle. */
+    val wide: Boolean = false,
 ) {
     /** The place as the traveller reads it. */
     val title: String get() = shown.ifBlank { name }
 
     val location: Location get() = Location(lat, lon)
+
+    /**
+     * Where the restaurants of the stop are searched around: its point, or on an island or in a
+     * region, where the traveller first sleeps there. Its middle may be fields between two villages.
+     */
+    val centre: Location get() = if (wide) stay ?: stays.firstOrNull()?.location ?: location else location
+
+    /** Whether [place] belongs to the stop: within [metres] of its point, or anywhere near an island or a region. */
+    fun reaches(place: Location, metres: Int): Boolean = metresBetween(place, location) <= if (wide) WIDE_REACH else metres
 }
 
 /** A place the traveller sleeps at from a night of a stop on, when they change hotels there. */

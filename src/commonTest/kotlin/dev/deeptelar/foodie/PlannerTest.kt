@@ -1,8 +1,10 @@
 package dev.deeptelar.foodie
 
+import dev.deeptelar.foodie.sources.Geocoder
 import dev.deeptelar.foodie.sources.GuidePage
 import dev.deeptelar.foodie.sources.MapSearch
 import dev.deeptelar.foodie.sources.PlaceReviews
+import dev.deeptelar.foodie.sources.Placed
 import dev.deeptelar.foodie.sources.SourceException
 import dev.deeptelar.foodie.sources.Sources
 import dev.deeptelar.foodie.sources.StreetMap
@@ -1258,6 +1260,69 @@ class PlannerTest {
             // Nothing can be measured from where they sleep, so the agent is not asked for a dinner near it.
             val first = model.requests[2].messages.first().text
             assertFalse("Near where they sleep" in first, first)
+        }
+
+    @Test
+    fun `on an island the map is searched around where the traveller sleeps, not around its middle`() =
+        runTest {
+            val menorca = "Menorca, Spain"
+            val middle = Location(39.9493, 4.0500)
+            val mao = Location(39.8885, 4.2658)
+            val geocoder =
+                object : Geocoder {
+                    override suspend fun locate(place: String) = find(place)?.location
+
+                    override suspend fun find(place: String) =
+                        when {
+                            place.startsWith("Menorca") -> Placed(middle, wide = true)
+                            place.startsWith("Maó") -> Placed(mao)
+                            else -> null
+                        }
+                }
+            val searched = mutableListOf<Location>()
+            val map = StreetMap { _, near, _, _ -> listOf(zeDaMouraria.copy(stop = menorca)).also { searched += near } }
+            val model =
+                ScriptedChatModel {
+                    answers(Brief(stops = listOf(BriefStop(menorca, days = 1, stay = "Maó"))))
+                    answers(Menu(emptyList()))
+                    says("Nothing to plan.")
+                }
+
+            val trip = planner(model, Sources(geocoder, guide = { GuidePage() }, map = map)).invoke(interviewed("One day in Menorca"), config()).state
+
+            val stop = trip.stops.single()
+            assertTrue(stop.wide)
+            assertEquals(listOf(mao), searched.distinct())
+            // Without a place to sleep, the middle is all there is.
+            assertEquals(middle, stop.copy(stay = null).centre)
+            // A town is searched around its own point, wherever the traveller sleeps.
+            assertEquals(stop.location, stop.copy(wide = false).centre)
+        }
+
+    @Test
+    fun `without a single candidate the traveller hears why from the code, and a change asks the agent`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    says("I searched again, and found nothing either.")
+                }
+            val planner = planner(model, sources(map = { _, _, _, _ -> emptyList() }, guide = { GuidePage() }))
+            val config = config()
+
+            val trip = planner.invoke(interviewed("One day in Lisbon"), config).state
+
+            assertEquals(emptyList(), trip.route)
+            assertEquals(Language.ENGLISH.texts.nothingToEat(listOf(lisbon), withReviews = false), trip.summary)
+            // The brief and the dishes: the agent was not asked.
+            assertEquals(2, model.requests.size)
+
+            planner.resume(config) { it.copy(messages = it.messages + ChatMessage.User("Try Sintra.")) }
+
+            val asked = model.requests.last().messages
+            assertTrue(asked.first().text.startsWith("Plan the meals of this trip."), asked.first().text)
+            assertEquals("Try Sintra.", asked.last().text)
         }
 
     @Test
