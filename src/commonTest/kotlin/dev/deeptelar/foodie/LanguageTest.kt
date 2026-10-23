@@ -8,6 +8,7 @@ class LanguageTest {
     fun `the browser's tag picks the language, and any other is English`() {
         assertEquals(Language.CATALAN, Language.of("ca-ES"))
         assertEquals(Language.SPANISH, Language.of("es-MX"))
+        assertEquals(Language.GERMAN, Language.of("de-AT"))
         assertEquals(Language.ENGLISH, Language.of("pt-PT"))
     }
 

@@ -643,7 +643,7 @@ class App(
         if (call.name == "set_route") return (call.input["meals"] as? JsonArray).orEmpty().mapNotNull { (it as? JsonObject)?.let { meal -> describe(ToolCall(call.id, "set_meal", meal), trip) } }.flatten()
         fun input(key: String) = (call.input[key] as? JsonPrimitive)?.contentOrNull.orEmpty()
         // The model names a meal in English; the traveller reads it in the page's language.
-        fun meal() = MealTime.of(input("meal"))?.let { texts.meal(it).lowercase() } ?: input("meal")
+        fun meal() = MealTime.of(input("meal"))?.let { texts.mealInSentence(it) } ?: input("meal")
         val line = when (call.name) {
             "set_meal" -> texts.didSetMeal(input("day"), meal(), trip.restaurant(input("restaurant"))?.name ?: input("restaurant"))
             "remove_meal" -> texts.didRemoveMeal(input("day"), meal())
@@ -1469,8 +1469,8 @@ class App(
             texts.diet to profile.diet.ifBlank { texts.eatsEverything },
             profile.season.takeIf { it.isNotBlank() }?.let { texts.whenLabel to it },
             profile.party.takeIf { it.isNotBlank() }?.let { texts.who to it },
-            profile.meals.takeIf { it.isNotEmpty() }?.let { meals -> texts.meals to meals.sorted().joinToString { texts.meal(it).lowercase() } },
-            profile.nearStay.takeIf { it.isNotEmpty() }?.let { meals -> texts.nearStay to meals.sorted().joinToString { texts.meal(it).lowercase() } },
+            profile.meals.takeIf { it.isNotEmpty() }?.let { meals -> texts.meals to meals.sorted().joinToString { texts.mealInSentence(it) } },
+            profile.nearStay.takeIf { it.isNotEmpty() }?.let { meals -> texts.nearStay to meals.sorted().joinToString { texts.mealInSentence(it) } },
             texts.budget to texts.budget(profile.budget) + if (profile.splurge) texts.withASpecialMeal else "",
             profile.taste.takeIf { it.isNotBlank() }?.let { texts.taste to it },
             profile.drinks.takeIf { it.isNotBlank() }?.let { texts.drinks to it },

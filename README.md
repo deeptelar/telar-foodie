@@ -4,7 +4,7 @@
 are going and what you like, and the planner asks what a food planner would: allergies, budget, who
 is coming, how adventurous you are. An agent reads a travel guide, the street map and, if you want,
 reviews, names what each place is known for, and draws a route of meals on a map. You can ask for
-changes until you like it. In English, Spanish or Catalan.
+changes until you like it. In English, Spanish, Catalan or German.
 
 **Try it: <https://deeptelar.github.io/telar-foodie/>.** Add the key of a model under Settings, or
 [plan the sample](https://deeptelar.github.io/telar-foodie/?sample), which needs no key.

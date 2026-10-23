@@ -21,6 +21,7 @@ enum class Language(
     ENGLISH("en", "en-GB", "English", "English"),
     SPANISH("es", "es-ES", "Spanish", "Español"),
     CATALAN("ca", "ca-ES", "Catalan", "Català"),
+    GERMAN("de", "de-DE", "German", "Deutsch"),
     ;
 
     /** The tag to listen for: the browser's own when it is this language, such as `es-MX`, and [speech] otherwise. */

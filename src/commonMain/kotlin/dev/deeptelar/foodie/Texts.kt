@@ -6,7 +6,7 @@ package dev.deeptelar.foodie
  * English. A text with something in it is a function, so that each language can put the words in
  * its own order and count in its own way.
  *
- * Each language is one object: [English], [Spanish] and [Catalan].
+ * Each language is one object: [English], [Spanish], [Catalan] and [German].
  */
 interface Texts {
     // The page around everything
@@ -279,6 +279,9 @@ interface Texts {
 
     fun meal(time: MealTime): String
 
+    /** The meal inside a sentence, such as "Day 1, lunch": lowercase, but for a language that writes its nouns with a capital. */
+    fun mealInSentence(time: MealTime): String = meal(time).lowercase()
+
     fun source(source: Source): String
 
     fun distance(metres: Int): String
@@ -505,6 +508,7 @@ val Language.texts: Texts
             Language.ENGLISH -> English
             Language.SPANISH -> Spanish
             Language.CATALAN -> Catalan
+            Language.GERMAN -> German
         }
 
 /** Joins words as a sentence does: "a", "a and b", "a, b and c", with the language's [and]. */

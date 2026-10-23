@@ -302,7 +302,7 @@ private fun Trip.checked(): Trip {
     val reminded = messages.lastOrNull { it is ChatMessage.User }.let { it is ChatMessage.User && it.text.startsWith(SWAP_REMINDER) }
     if (open.isNotEmpty() && !reminded) return copy(messages = messages + ChatMessage.User(swapReminder(open)))
     val texts = language.texts
-    val meals = { list: List<MealSwap> -> list.map { "${texts.day(it.day)}, ${texts.meal(it.time).lowercase()}" } }
+    val meals = { list: List<MealSwap> -> list.map { "${texts.day(it.day)}, ${texts.mealInSentence(it.time)}" } }
     val offered = swaps.filter { offerFor(it.day, it.time) != null }
     val said =
         when {

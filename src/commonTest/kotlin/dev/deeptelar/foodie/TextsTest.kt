@@ -38,6 +38,7 @@ class TextsTest {
         assertEquals("1,2 km", Catalan.distance(1240))
         assertEquals("1.2 km", English.distance(1240))
         assertEquals("450 m", Spanish.distance(440))
+        assertEquals("2,12 US$", German.money(2.12))
     }
 
     @Test

@@ -15,7 +15,7 @@ internal const val INTERVIEW_SYSTEM =
 internal fun languageRule(trip: Trip): String =
     "Write everything the traveller reads in ${trip.language.english}: questions and their answers, descriptions, reasons and your messages. " +
         "Keep in English only the fixed values of the data that the descriptions give in quotes, such as meals, budgets and cuisine tags, " +
-        "and the names of the stops. Speak to the traveller informally, as the page does and as a friend would: in Spanish and Catalan with tú, never usted."
+        "and the names of the stops. Speak to the traveller informally, as the page does and as a friend would: in Spanish and Catalan with tú, never usted, and in German with du, never Sie."
 
 internal fun interviewPrompt(trip: Trip): String =
     buildString {
