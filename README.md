@@ -207,6 +207,23 @@ once. For a trip of your own, add a key under **Settings**:
 The keys are kept in the `localStorage` of your browser. Anyone who can use your browser can read
 them there, so use keys you can revoke.
 
+### Letting friends try it
+
+**Settings → Share a try-out with friends** makes a link that plans with your model and key, for
+1 to 30 days. The link is locked with a secret dish that you tell your friends apart from it. They
+tap the link on their phone, type the dish, and plan. When the days are over, the page forgets the
+key.
+
+- **The link carries the key encrypted**, after the `#`. A browser sends that part to no server,
+  and the page takes it out of the address as soon as it opens. The key is encrypted with AES-GCM,
+  under a key derived from the dish with PBKDF2 (600,000 rounds), in
+  [`TryOut.kt`](src/jsMain/kotlin/dev/deeptelar/foodie/TryOut.kt).
+- **The dish stops a forwarded link, and no more.** A dish is easy to guess for someone who tries
+  many. What really limits the key is your provider. For example, make a key just for the try-out
+  on [OpenRouter](https://openrouter.ai/settings/keys) with a credit limit, put
+  `https://openrouter.ai/api/v1` and a model in **Settings**, share the link, and delete the key
+  when the try-out ends.
+
 ## Choosing a model
 
 The planner asks a lot of a model: it interviews in the traveller's language, names what a place

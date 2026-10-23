@@ -476,4 +476,26 @@ object English : Texts {
 
     override fun otherOptionsCount(count: Int) = if (count == 1) "1 other option" else "$count other options"
     override val chooseThisOne = "Choose this one"
+
+    override val shareTryOut = "Share a try-out with friends"
+    override val shareTryOutHint =
+        "Makes a link that plans with this model and key, locked with a secret dish. Tell your friends the dish apart from the link, for example out loud. Set a credit limit on the key at its provider, and delete the key there when the try-out ends: until then, anyone with the link and the dish can use it."
+    override val secretDish = "Secret dish"
+    override val secretDishPlaceholder = "For example, pastel de nata"
+    override val tryOutLasts = "The page forgets the key after"
+
+    override fun days(count: Int) = if (count == 1) "1 day" else "$count days"
+    override val makeLink = "Make the link"
+    override val copyLink = "Copy"
+    override val linkCopied = "Copied."
+    override val shareLink = "Share"
+    override val linkMessage = "Try Foodie Route: it plans where to eat on a trip. I'll tell you the secret dish."
+    override val friendShared = "A friend shared Foodie Route with you"
+    override val enterSecretDish = "Enter the secret dish your friend told you, and plan your trips with their model."
+    override val openTryOut = "Open"
+    override val opening = "Opening…"
+    override val wrongDish = "That is not the dish, or the link was cut short. Ask your friend again."
+
+    override fun friendsModelUntil(date: String) = "You plan with your friend's model until $date."
+    override val tryOutEnded = "Your friend's try-out has ended. To plan more, add a key of your own under Settings."
 }

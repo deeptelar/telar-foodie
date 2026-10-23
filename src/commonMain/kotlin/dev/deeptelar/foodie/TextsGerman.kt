@@ -497,4 +497,26 @@ object German : Texts {
 
     override fun otherOptionsCount(count: Int) = if (count == 1) "1 weitere Möglichkeit" else "$count weitere Möglichkeiten"
     override val chooseThisOne = "Diesen wählen"
+
+    override val shareTryOut = "Teile einen Testzugang mit Freunden"
+    override val shareTryOutHint =
+        "Erstellt einen Link, der mit diesem Modell und Schlüssel plant, geschützt mit einem geheimen Gericht. Sag deinen Freunden das Gericht getrennt vom Link, zum Beispiel mündlich. Setze beim Anbieter ein Guthabenlimit für den Schlüssel und lösche ihn dort, wenn der Test vorbei ist: Bis dahin kann ihn jeder mit dem Link und dem Gericht nutzen."
+    override val secretDish = "Geheimes Gericht"
+    override val secretDishPlaceholder = "Zum Beispiel Pastel de Nata"
+    override val tryOutLasts = "Die Seite vergisst den Schlüssel nach"
+
+    override fun days(count: Int) = if (count == 1) "1 Tag" else "$count Tagen"
+    override val makeLink = "Link erstellen"
+    override val copyLink = "Kopieren"
+    override val linkCopied = "Kopiert."
+    override val shareLink = "Teilen"
+    override val linkMessage = "Probier Foodie Route: Es plant, wo du auf einer Reise isst. Das geheime Gericht sage ich dir separat."
+    override val friendShared = "Jemand hat Foodie Route mit dir geteilt"
+    override val enterSecretDish = "Gib das geheime Gericht ein, das man dir gesagt hat, und plane deine Reisen mit diesem Modell."
+    override val openTryOut = "Öffnen"
+    override val opening = "Wird geöffnet…"
+    override val wrongDish = "Das ist nicht das Gericht, oder der Link ist abgeschnitten. Frag noch einmal nach."
+
+    override fun friendsModelUntil(date: String) = "Du planst bis $date mit dem geteilten Modell."
+    override val tryOutEnded = "Der Testzugang ist abgelaufen. Um weiter zu planen, füge in den Einstellungen einen eigenen Schlüssel hinzu."
 }

@@ -30,6 +30,8 @@ data class Settings(
     val traceHeader: String = "",
     /** The language the traveller chose, or `null` for the browser's. */
     val language: Language? = null,
+    /** The key a friend shared with a try-out link, until it ends; `null` when the key is the traveller's own. */
+    val borrowed: Borrowed? = null,
 ) {
     /** The header of [traceHeader], as a name and a value; none when it has no name. */
     val traceHeaders: Map<String, String>
@@ -84,6 +86,34 @@ data class Settings(
     /** The reasoning models of OpenAI that take a lower effort. A `pro` model only thinks hard. */
     private fun thinksLess(model: String): Boolean = REASONING.any { model.startsWith(it) } && "pro" !in model
 
+    /** These settings with the model of [tryOut], which a friend shared. */
+    fun trying(tryOut: TryOut): Settings =
+        when (tryOut.provider) {
+            Provider.CLAUDE -> copy(provider = tryOut.provider, claudeKey = tryOut.key, claudeModel = tryOut.model)
+            Provider.OPENAI -> copy(provider = tryOut.provider, openAiKey = tryOut.key, openAiModel = tryOut.model, openAiUrl = tryOut.url)
+        }.copy(borrowed = Borrowed(tryOut.provider, tryOut.until))
+
+    /** The try-out these settings could share: the model and key of their provider, until [until]. None for a server without a key, such as a local Ollama. */
+    fun tryOut(until: Double): TryOut? =
+        when {
+            provider == Provider.CLAUDE && claudeKey.isNotBlank() -> TryOut(provider, claudeModel, "", claudeKey.trim(), until)
+            provider == Provider.OPENAI && openAiKey.isNotBlank() -> TryOut(provider, openAiModel.trim(), openAiUrl.trim(), openAiKey.trim(), until)
+            else -> null
+        }
+
+    /** These settings with the key of [provider] the traveller's own: one they typed ends a friend's try-out of it. */
+    fun own(provider: Provider): Settings = if (borrowed?.provider == provider) copy(borrowed = null) else this
+
+    /** These settings without the friend's key once its try-out has ended at [now]; the same settings before. */
+    fun ended(now: Double): Settings {
+        val borrowed = borrowed ?: return this
+        if (now < borrowed.until) return this
+        return when (borrowed.provider) {
+            Provider.CLAUDE -> copy(claudeKey = "")
+            Provider.OPENAI -> copy(openAiKey = "")
+        }.copy(borrowed = null)
+    }
+
     fun save() {
         localStorage.setItem(KEY, Json.encodeToString(this))
     }
@@ -112,6 +142,13 @@ data class Settings(
             }
     }
 }
+
+/** A friend's key for the model of [provider], which the page forgets at [until], in milliseconds since 1970. */
+@Serializable
+data class Borrowed(
+    val provider: Provider,
+    val until: Double,
+)
 
 @Serializable
 enum class Provider(val label: String) {

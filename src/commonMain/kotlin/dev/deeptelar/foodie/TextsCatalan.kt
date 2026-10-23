@@ -494,4 +494,26 @@ object Catalan : Texts {
 
     override fun otherOptionsCount(count: Int) = if (count == 1) "1 opció més" else "$count opcions més"
     override val chooseThisOne = "Tria aquest"
+
+    override val shareTryOut = "Comparteix una prova amb els amics"
+    override val shareTryOutHint =
+        "Crea un enllaç que planifica amb aquest model i aquesta clau, protegit amb un plat secret. Digues el plat a part de l'enllaç, per exemple de paraula. Posa un límit de crèdit a la clau al seu proveïdor i esborra-la allà quan acabi la prova: fins aleshores, qualsevol amb l'enllaç i el plat la pot fer servir."
+    override val secretDish = "Plat secret"
+    override val secretDishPlaceholder = "Per exemple, pastel de nata"
+    override val tryOutLasts = "La pàgina oblida la clau després de"
+
+    override fun days(count: Int) = if (count == 1) "1 dia" else "$count dies"
+    override val makeLink = "Crea l'enllaç"
+    override val copyLink = "Copia"
+    override val linkCopied = "Copiat."
+    override val shareLink = "Comparteix"
+    override val linkMessage = "Prova Foodie Route: planifica on menjar en un viatge. El plat secret te'l dic a part."
+    override val friendShared = "T'han compartit Foodie Route"
+    override val enterSecretDish = "Escriu el plat secret que t'han dit i planifica els teus viatges amb el seu model."
+    override val openTryOut = "Obre"
+    override val opening = "Obrint…"
+    override val wrongDish = "Aquest no és el plat, o l'enllaç està tallat. Torna-ho a preguntar."
+
+    override fun friendsModelUntil(date: String) = "Planifiques amb el model que t'han compartit fins al $date."
+    override val tryOutEnded = "La prova que et van compartir s'ha acabat. Per continuar planificant, afegeix una clau pròpia a Configuració."
 }

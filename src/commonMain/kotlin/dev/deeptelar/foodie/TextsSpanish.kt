@@ -494,4 +494,26 @@ object Spanish : Texts {
 
     override fun otherOptionsCount(count: Int) = if (count == 1) "1 opción más" else "$count opciones más"
     override val chooseThisOne = "Elegir este"
+
+    override val shareTryOut = "Comparte una prueba con tus amigos"
+    override val shareTryOutHint =
+        "Crea un enlace que planifica con este modelo y esta clave, protegido con un plato secreto. Diles el plato aparte del enlace, por ejemplo de palabra. Pon un límite de crédito a la clave en su proveedor y bórrala allí cuando acabe la prueba: hasta entonces, cualquiera con el enlace y el plato puede usarla."
+    override val secretDish = "Plato secreto"
+    override val secretDishPlaceholder = "Por ejemplo, pastel de nata"
+    override val tryOutLasts = "La página olvida la clave después de"
+
+    override fun days(count: Int) = if (count == 1) "1 día" else "$count días"
+    override val makeLink = "Crear el enlace"
+    override val copyLink = "Copiar"
+    override val linkCopied = "Copiado."
+    override val shareLink = "Compartir"
+    override val linkMessage = "Prueba Foodie Route: planifica dónde comer en un viaje. El plato secreto te lo digo aparte."
+    override val friendShared = "Te han compartido Foodie Route"
+    override val enterSecretDish = "Escribe el plato secreto que te han dicho y planifica tus viajes con su modelo."
+    override val openTryOut = "Abrir"
+    override val opening = "Abriendo…"
+    override val wrongDish = "Ese no es el plato, o el enlace está cortado. Vuelve a preguntar."
+
+    override fun friendsModelUntil(date: String) = "Planificas con el modelo que te han compartido hasta el $date."
+    override val tryOutEnded = "La prueba que te compartieron ha terminado. Para seguir planificando, añade una clave propia en Ajustes."
 }

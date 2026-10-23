@@ -483,6 +483,33 @@ interface Texts {
 
     fun otherOptionsCount(count: Int): String
     val chooseThisOne: String
+
+    // A try-out that a friend shares: a link with their model, locked with a secret dish
+
+    val shareTryOut: String
+    val shareTryOutHint: String
+    val secretDish: String
+    val secretDishPlaceholder: String
+
+    /** Before the days of a try-out, such as "3 days". */
+    val tryOutLasts: String
+
+    fun days(count: Int): String
+    val makeLink: String
+    val copyLink: String
+    val linkCopied: String
+    val shareLink: String
+
+    /** What the share sheet sends with the link. */
+    val linkMessage: String
+    val friendShared: String
+    val enterSecretDish: String
+    val openTryOut: String
+    val opening: String
+    val wrongDish: String
+
+    fun friendsModelUntil(date: String): String
+    val tryOutEnded: String
 }
 
 /** A step of a how-to, with a [link] to where it is done when there is one. */

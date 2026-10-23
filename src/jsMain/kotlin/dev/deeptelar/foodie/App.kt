@@ -21,6 +21,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import kotlin.js.Date
 import kotlin.js.Promise
+import kotlin.js.dateLocaleOptions
 import kotlinx.browser.document
 import kotlinx.browser.localStorage
 import kotlinx.browser.window
@@ -38,6 +39,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import org.w3c.dom.Element
+import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSelectElement
@@ -159,6 +161,15 @@ class App(
     /** The texts of the page, in its language. */
     private val texts: Texts get() = language.texts
     private var settingsOpen = false
+
+    /** The code of the try-out link the page was opened with, until its secret dish opens it, and the dish typed so far. */
+    private var tryCode: String? = null
+    private var tryDish = ""
+    private var tryOpening = false
+    private var tryFailure = ""
+
+    /** Whether the page just forgot a friend's key, for a word on the start. */
+    private var tryEnded = false
     private var tab = Tab.PLAN
 
     /** Whether the details were just saved, for a word under them. */
@@ -220,6 +231,13 @@ class App(
         window.addEventListener("afterprint", { printing(all = false) })
         // A page that is hidden may be closed: what was traced so far is sent now.
         document.addEventListener("visibilitychange", { if (document.asDynamic().visibilityState == "hidden") tracing?.let { scope.launch { it.second.flush() } } })
+        readTryOut()
+        endTryOut()
+        // A friend may tap another link while the page is open.
+        window.addEventListener("hashchange", {
+            readTryOut()
+            render()
+        })
         render()
         scope.launch {
             val saved =
@@ -235,6 +253,55 @@ class App(
             }
         }
     }
+
+    /** Takes the code of a try-out link out of the address, so that the history and a screenshot do not keep it. */
+    private fun readTryOut() {
+        val code = window.location.hash.removePrefix("#").takeIf { it.startsWith(TryOut.PREFIX) }?.removePrefix(TryOut.PREFIX) ?: return
+        window.history.replaceState(null, "", window.location.pathname + window.location.search)
+        tryCode = code
+        tryFailure = ""
+    }
+
+    /** Forgets a friend's key whose try-out has ended. */
+    private fun endTryOut() {
+        val ended = settings.ended(Date.now())
+        if (ended == settings) return
+        change(ended)
+        tryEnded = true
+    }
+
+    /** Opens the try-out link with the dish the traveller typed: the friend's model plans from then on. */
+    private fun openTryOut(code: String) {
+        tryOpening = true
+        tryFailure = ""
+        render()
+        scope.launch {
+            val tryOut = TryOut.unlock(code, tryDish)
+            tryOpening = false
+            if (tryOut == null) {
+                tryFailure = texts.wrongDish
+            } else {
+                change(settings.trying(tryOut))
+                tryCode = null
+                tryDish = ""
+                tryEnded = false
+                count("try-out-opened")
+            }
+            render()
+        }
+    }
+
+    /** A moment as the page's language writes it, such as "26 Oct, 18:40". */
+    private fun dateTime(millis: Double): String =
+        Date(millis).toLocaleString(
+            language.code,
+            dateLocaleOptions {
+                day = "numeric"
+                month = "short"
+                hour = "2-digit"
+                minute = "2-digit"
+            },
+        )
 
     // The run
 
@@ -696,6 +763,7 @@ class App(
         }
         // What the page is, before a trip: then the trip takes the room.
         if (phase == Phase.START) root.add("p", "tagline", texts.tagline)
+        tryCode?.let { root.tryOutCard(it) }
         if (settingsOpen) root.settingsPanel()
 
         val trip = trip
@@ -763,6 +831,21 @@ class App(
         }
     }
 
+    /** What a try-out link opens with: a field for the secret dish. */
+    private fun HTMLElement.tryOutCard(code: String) {
+        add("section", "card try-out") {
+            add("h2", text = texts.friendShared)
+            add("p", "hint", texts.enterSecretDish)
+            fun open(input: HTMLInputElement) {
+                if (TryOut.secret(tryDish).isEmpty()) input.focus() else if (!tryOpening) openTryOut(code)
+            }
+            val input = field(texts.secretDish, tryDish) { tryDish = it }
+            input.onkeydown = { if (it.key == "Enter") open(input) }
+            add("div", "actions") { button(if (tryOpening) texts.opening else texts.openTryOut, "primary") { open(input) }.disabled = tryOpening }
+            if (tryFailure.isNotEmpty()) add("p", "failure", tryFailure)
+        }
+    }
+
     private fun HTMLElement.credits() {
         add("footer", "credits") {
             add("p") {
@@ -814,6 +897,7 @@ class App(
             upFront()
             add("div", "actions") {
                 button(texts.planMyRoute, "primary") {
+                    endTryOut()
                     when {
                         request.isBlank() -> text.focus()
                         // Without a key there is no model to ask: the settings say where to put one.
@@ -831,7 +915,10 @@ class App(
             if (speechSupported) {
                 add("p", "hint small", texts.speechPrivacy)
             }
-            if (!settings.hasModel) {
+            settings.borrowed?.let { add("p", "hint", texts.friendsModelUntil(dateTime(it.until))) }
+            if (tryEnded) {
+                add("p", "hint", texts.tryOutEnded)
+            } else if (!settings.hasModel) {
                 add("p", "hint", texts.needAKey)
             }
         }
@@ -871,6 +958,7 @@ class App(
             add("h2", text = texts.settings)
             add("p", "hint", texts.keysStayHere)
             add("p", "hint small", texts.visitsCounted)
+            settings.borrowed?.let { add("p", "hint", texts.friendsModelUntil(dateTime(it.until))) }
             add("label", "field") {
                 add("span", "field-label", texts.model)
                 (add("select") as HTMLSelectElement).apply {
@@ -888,7 +976,7 @@ class App(
             }
             when (settings.provider) {
                 Provider.CLAUDE -> {
-                    field(texts.anthropicKey, settings.claudeKey, type = "password", placeholder = "sk-ant-...") { change(settings.copy(claudeKey = it)) }
+                    field(texts.anthropicKey, settings.claudeKey, type = "password", placeholder = "sk-ant-...") { change(settings.copy(claudeKey = it).own(Provider.CLAUDE)) }
                     add("label", "field") {
                         add("span", "field-label", texts.claudeModel)
                         (add("select") as HTMLSelectElement).apply {
@@ -905,7 +993,7 @@ class App(
                 Provider.OPENAI -> {
                     field(texts.apiAddress, settings.openAiUrl, placeholder = "https://api.openai.com/v1") { change(settings.copy(openAiUrl = it)) }
                     field(texts.model, settings.openAiModel, placeholder = "gpt-5") { change(settings.copy(openAiModel = it)) }
-                    field(texts.apiKey, settings.openAiKey, type = "password", placeholder = texts.emptyForLocalServer) { change(settings.copy(openAiKey = it)) }
+                    field(texts.apiKey, settings.openAiKey, type = "password", placeholder = texts.emptyForLocalServer) { change(settings.copy(openAiKey = it).own(Provider.OPENAI)) }
                     // Ollama allows only pages on the same computer; this one comes from another site.
                     add("p", "hint small") {
                         add("span", text = texts.localServerHint + " ")
@@ -913,6 +1001,8 @@ class App(
                     }
                 }
             }
+            // A friend's key is theirs to share, not the traveller's.
+            if (settings.borrowed == null && settings.tryOut(0.0) != null) shareTryOut()
             field(texts.googleKey, settings.googleKey, type = "password", placeholder = "AIza...") { change(settings.copy(googleKey = it)) }
             add("p", "hint", texts.googleBills)
             add("details", "how-to") {
@@ -946,6 +1036,83 @@ class App(
                 button(texts.done, "primary") {
                     settingsOpen = false
                     render()
+                }
+            }
+        }
+    }
+
+    /** A link that plans with the model of these settings, locked with a secret dish, for friends to try the page. */
+    private fun HTMLElement.shareTryOut() {
+        add("details", "how-to") {
+            add("summary", text = texts.shareTryOut)
+            add("p", "hint small", texts.shareTryOutHint)
+            var dish = ""
+            val dishInput = field(texts.secretDish, "", placeholder = texts.secretDishPlaceholder) { dish = it }
+            lateinit var days: HTMLSelectElement
+            add("label", "field") {
+                add("span", "field-label", texts.tryOutLasts)
+                days =
+                    (add("select") as HTMLSelectElement).apply {
+                        TRY_OUT_DAYS.forEach { count ->
+                            add("option", text = texts.days(count)) {
+                                setAttribute("value", count.toString())
+                                if (count == TRY_OUT_DAYS[1]) setAttribute("selected", "selected")
+                            }
+                        }
+                    }
+            }
+            lateinit var made: HTMLElement
+            lateinit var make: HTMLButtonElement
+            add("div", "actions") {
+                make =
+                    button(texts.makeLink, "primary") {
+                        val tryOut = settings.tryOut(Date.now() + days.value.toInt() * DAY_MILLIS)
+                        if (tryOut == null || TryOut.secret(dish).isEmpty()) {
+                            dishInput.focus()
+                        } else {
+                            make.disabled = true
+                            scope.launch {
+                                val link = window.location.origin + window.location.pathname + "#" + TryOut.PREFIX + tryOut.lock(dish)
+                                make.disabled = false
+                                made.clear()
+                                made.linkMade(link)
+                                count("try-out-made")
+                            }
+                        }
+                    }
+            }
+            made = add("div", "try-out-link")
+        }
+    }
+
+    /** The try-out [link], to copy or to hand to the share sheet of a phone. */
+    private fun HTMLElement.linkMade(link: String) {
+        (add("input") as HTMLInputElement).apply {
+            type = "text"
+            readOnly = true
+            value = link
+            setAttribute("aria-label", texts.shareTryOut)
+            onfocus = { select() }
+        }
+        add("div", "actions") {
+            lateinit var copy: HTMLButtonElement
+            copy =
+                button(texts.copyLink, "ghost") {
+                    try {
+                        (window.navigator.asDynamic().clipboard.writeText(link) as Promise<Any?>).then { copy.textContent = texts.linkCopied }.catch { }
+                    } catch (_: Throwable) {
+                        // A browser without the clipboard: the link is in the field above, to copy by hand.
+                    }
+                }
+            val navigator = window.navigator.asDynamic()
+            if (jsTypeOf(navigator.share) == "function") {
+                button(texts.shareLink, "ghost") {
+                    val data: dynamic = js("({})")
+                    data.title = "Foodie Route"
+                    data.text = texts.linkMessage
+                    data.url = link
+                    // A traveller who closes the share sheet rejects the promise: nothing more to do.
+                    (navigator.share(data) as Promise<Any?>).catch { }
                 }
             }
         }
@@ -2122,6 +2289,11 @@ class App(
 
         /** How long a dish is shown while the agent chooses: long enough to read three sentences. */
         const val DISH_MILLIS = 12_000.0
+
+        /** The days a try-out link can last, the second the first offered. */
+        val TRY_OUT_DAYS = listOf(1, 3, 7, 30)
+
+        const val DAY_MILLIS = 24 * 60 * 60 * 1000.0
 
         /** The budgets a profile can have, as a model writes them. */
         val BUDGETS = listOf("low", "medium", "high")
