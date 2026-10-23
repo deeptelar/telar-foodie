@@ -1254,6 +1254,32 @@ class PlannerTest {
         }
 
     @Test
+    fun `a change of one place keeps every other meal on the route`() =
+        runTest {
+            val tasca = Restaurant(stop = lisbon, name = "Tasca do Chico", lat = 38.7120, lon = -9.1301, cuisine = "portuguese", sources = setOf(Source.MAP))
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls(call("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it.")), call("set_meal", MealChoice(1, "dinner", "r2", "caldo verde", "Portuguese.")))
+                    says("Salt cod, then soup.")
+                    calls("remove_meal", MealSlot(1, "dinner"))
+                    calls("offer_choices", MealOffer(1, "lunch", listOf(MealOption("r2", "bifana", "Portuguese."), MealOption("r3", "sardinhas assadas", "A tasca.")), "Locals go there."))
+                    says("Two places to choose from.")
+                }
+            val config = config()
+            val planner = planner(model, sources(map = StreetMap { _, _, _, _ -> listOf(santaRitaOnMap, zeDaMouraria, tasca) }))
+            planner.invoke(interviewed("One day in Lisbon"), config)
+
+            val changed = planner.resume(config) { it.swapped(listOf(MealSwap(1, MealTime.LUNCH, listOf(SwapReason.TOURISTY)))) }.state
+
+            val refused = model.requests[5].messages.filterIsInstance<ChatMessage.ToolResult>().last()
+            assertEquals("The traveller asked to keep every meal they did not change: leave day 1 dinner on the route.", refused.text)
+            assertEquals("r2", changed.route.first { it.time == MealTime.DINNER }.restaurantId)
+            assertEquals(0, model.remaining)
+        }
+
+    @Test
     fun `when the agent still finds no other place for a meal, the traveller hears which one from the code`() =
         runTest {
             val model =
