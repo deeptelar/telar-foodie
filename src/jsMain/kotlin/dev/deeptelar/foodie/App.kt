@@ -1637,7 +1637,7 @@ class App(
     private fun HTMLElement.summary(text: String) {
         add("div", "summary" + if (summaryOpen) " open" else "") {
             val box = this
-            add("p", "summary-text", text)
+            add("p", "summary-text") { words(text) }
             val toggle = button(if (summaryOpen) texts.readLess else texts.readMore, "link summary-toggle") {}
             toggle.setAttribute("aria-expanded", summaryOpen.toString())
             toggle.onclick = {

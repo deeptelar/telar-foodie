@@ -27,6 +27,18 @@ fun Element.add(tag: String, classes: String = "", text: String? = null, build: 
     return element
 }
 
+/** Adds the words of a model to this element with the marks [marked] reads in them, each piece as text. */
+fun Element.words(text: String) {
+    for (run in marked(text)) {
+        when {
+            run.bold && run.italic -> add("strong").add("em", text = run.text)
+            run.bold -> add("strong", text = run.text)
+            run.italic -> add("em", text = run.text)
+            else -> appendChild(document.createTextNode(run.text))
+        }
+    }
+}
+
 fun Element.button(label: String, classes: String = "", onClick: () -> Unit): HTMLButtonElement =
     (add("button", classes, label) as HTMLButtonElement).apply {
         type = "button"
