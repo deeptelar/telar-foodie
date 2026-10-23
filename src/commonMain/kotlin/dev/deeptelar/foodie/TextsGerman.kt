@@ -519,4 +519,11 @@ object German : Texts {
 
     override fun friendsModelUntil(date: String) = "Du planst bis $date mit dem geteilten Modell."
     override val tryOutEnded = "Der Testzugang ist abgelaufen. Um weiter zu planen, füge in den Einstellungen einen eigenen Schlüssel hinzu."
+
+    override val openRouterModels = "Modelle auf OpenRouter, die planen können, mit dem Preis für eine Million Tokens, gelesen / geschrieben"
+    override val loadingModels = "OpenRouters Modelle werden geladen…"
+    override val chooseAModel = "Wähle ein Modell"
+    override val shareGoogleKey = "Den Google-Places-Schlüssel auch teilen"
+    override val shareGoogleKeyHint =
+        "Dann sehen deine Freunde auch Bewertungen, und jede Suche wird dir berechnet. In der Google Cloud Console kannst du das Tageskontingent der Places API (New) senken, damit der Schlüssel nach so vielen Suchen am Tag stoppt."
 }

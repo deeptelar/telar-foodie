@@ -168,6 +168,10 @@ class App(
     private var tryOpening = false
     private var tryFailure = ""
 
+    /** OpenRouter's models that can plan, once loaded: `null` before, and while they load. */
+    private var openRouterModels: List<OpenRouterModel>? = null
+    private var loadingOpenRouter = false
+
     /** Whether the page just forgot a friend's key, for a word on the start. */
     private var tryEnded = false
     private var tab = Tab.PLAN
@@ -992,6 +996,7 @@ class App(
                 }
                 Provider.OPENAI -> {
                     field(texts.apiAddress, settings.openAiUrl, placeholder = "https://api.openai.com/v1") { change(settings.copy(openAiUrl = it)) }
+                    if (OpenRouter.isAt(settings.openAiUrl)) openRouterPicker()
                     field(texts.model, settings.openAiModel, placeholder = "gpt-5") { change(settings.copy(openAiModel = it)) }
                     field(texts.apiKey, settings.openAiKey, type = "password", placeholder = texts.emptyForLocalServer) { change(settings.copy(openAiKey = it).own(Provider.OPENAI)) }
                     // Ollama allows only pages on the same computer; this one comes from another site.
@@ -1003,7 +1008,7 @@ class App(
             }
             // A friend's key is theirs to share, not the traveller's.
             if (settings.borrowed == null && settings.tryOut(0.0) != null) shareTryOut()
-            field(texts.googleKey, settings.googleKey, type = "password", placeholder = "AIza...") { change(settings.copy(googleKey = it)) }
+            field(texts.googleKey, settings.googleKey, type = "password", placeholder = "AIza...") { change(settings.copy(googleKey = it).ownGoogle()) }
             add("p", "hint", texts.googleBills)
             add("details", "how-to") {
                 add("summary", text = texts.howToGetAGoogleKey)
@@ -1047,6 +1052,7 @@ class App(
             add("summary", text = texts.shareTryOut)
             add("p", "hint small", texts.shareTryOutHint)
             var dish = ""
+            var google = false
             val dishInput = field(texts.secretDish, "", placeholder = texts.secretDishPlaceholder) { dish = it }
             lateinit var days: HTMLSelectElement
             add("label", "field") {
@@ -1061,12 +1067,16 @@ class App(
                         }
                     }
             }
+            if (settings.googleKey.isNotBlank()) {
+                check(texts.shareGoogleKey, google) { google = it }
+                add("p", "hint small", texts.shareGoogleKeyHint)
+            }
             lateinit var made: HTMLElement
             lateinit var make: HTMLButtonElement
             add("div", "actions") {
                 make =
                     button(texts.makeLink, "primary") {
-                        val tryOut = settings.tryOut(Date.now() + days.value.toInt() * DAY_MILLIS)
+                        val tryOut = settings.tryOut(Date.now() + days.value.toInt() * DAY_MILLIS, google)
                         if (tryOut == null || TryOut.secret(dish).isEmpty()) {
                             dishInput.focus()
                         } else {
@@ -1084,6 +1094,64 @@ class App(
             made = add("div", "try-out-link")
         }
     }
+
+    /** A list of OpenRouter's models that can plan, with their prices: picking one puts it in the field of the model. */
+    private fun HTMLElement.openRouterPicker() {
+        val models = openRouterModels
+        if (models == null) {
+            add("p", "hint small", texts.loadingModels)
+            if (!loadingOpenRouter) {
+                loadingOpenRouter = true
+                scope.launch {
+                    openRouterModels =
+                        try {
+                            val response = client.get(OpenRouter.MODELS)
+                            if (response.status.isSuccess()) openRouterModels(response.bodyAsText()) else emptyList()
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (_: Throwable) {
+                            // No list: the model is typed, as for any other server.
+                            emptyList()
+                        }
+                    loadingOpenRouter = false
+                    if (settingsOpen) render()
+                }
+            }
+            return
+        }
+        if (models.isEmpty()) return
+        add("label", "field") {
+            add("span", "field-label", texts.openRouterModels)
+            (add("select") as HTMLSelectElement).apply {
+                add("option", text = texts.chooseAModel) { setAttribute("value", "") }
+                fun option(parent: Element, model: OpenRouterModel) =
+                    parent.add("option", text = model.name + (model.price?.takeIf { it.input > 0 || it.output > 0 }?.let { " · ${dollars(it.input)} / ${dollars(it.output)}" } ?: "")) {
+                        setAttribute("value", model.id)
+                        if (model.id == settings.openAiModel.trim()) setAttribute("selected", "selected")
+                    }
+                val recommended = OpenRouter.RECOMMENDED.mapNotNull { id -> models.firstOrNull { it.id == id } }
+                if (recommended.isNotEmpty()) {
+                    add("optgroup") {
+                        setAttribute("label", texts.recommended)
+                        recommended.forEach { option(this, it) }
+                    }
+                }
+                add("optgroup") {
+                    setAttribute("label", "OpenRouter")
+                    models.forEach { option(this, it) }
+                }
+                onchange = {
+                    if (value.isNotEmpty()) {
+                        change(settings.copy(openAiModel = value))
+                        render()
+                    }
+                }
+            }
+        }
+    }
+
+    /** A price in dollars, with as many decimals as it needs to not read as nothing. */
+    private fun dollars(amount: Double): String = "$" + if (amount >= 1 || amount == 0.0) amount.asDynamic().toFixed(2) else amount.asDynamic().toPrecision(2)
 
     /** The try-out [link], to copy or to hand to the share sheet of a phone. */
     private fun HTMLElement.linkMade(link: String) {

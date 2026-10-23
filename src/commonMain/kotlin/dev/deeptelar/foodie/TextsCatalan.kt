@@ -516,4 +516,11 @@ object Catalan : Texts {
 
     override fun friendsModelUntil(date: String) = "Planifiques amb el model que t'han compartit fins al $date."
     override val tryOutEnded = "La prova que et van compartir s'ha acabat. Per continuar planificant, afegeix una clau pròpia a Configuració."
+
+    override val openRouterModels = "Models d'OpenRouter que poden planificar, amb el que costa un milió de tokens, llegits / escrits"
+    override val loadingModels = "Carregant els models d'OpenRouter…"
+    override val chooseAModel = "Tria un model"
+    override val shareGoogleKey = "Comparteix també la clau de Google Places"
+    override val shareGoogleKeyHint =
+        "Així els teus amics també veuen valoracions, i cada cerca te la cobren a tu. A la consola de Google Cloud pots abaixar la quota diària de Places API (New), perquè la clau s'aturi després d'aquestes cerques al dia."
 }

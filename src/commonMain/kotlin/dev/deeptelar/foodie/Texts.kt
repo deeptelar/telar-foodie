@@ -510,6 +510,13 @@ interface Texts {
 
     fun friendsModelUntil(date: String): String
     val tryOutEnded: String
+
+    /** Over OpenRouter's models: the price is of a million tokens, read and written. */
+    val openRouterModels: String
+    val loadingModels: String
+    val chooseAModel: String
+    val shareGoogleKey: String
+    val shareGoogleKeyHint: String
 }
 
 /** A step of a how-to, with a [link] to where it is done when there is one. */

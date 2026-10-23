@@ -19,6 +19,7 @@ import kotlin.js.Promise
  * guess for whoever tries many. What stops a key is the provider's limit on it, and deleting it.
  *
  * @property url the address of a server with the API of OpenAI; empty for Claude.
+ * @property google a key of Google Places, for ratings; empty when the friend shares none.
  * @property until when the page forgets the key, in milliseconds since 1970.
  */
 @Serializable
@@ -28,6 +29,7 @@ data class TryOut(
     val url: String,
     val key: String,
     val until: Double,
+    val google: String = "",
 ) {
     /** Locks this with [dish]: the salt, the IV and the encrypted JSON, in Base64 for an address. */
     suspend fun lock(dish: String): String {

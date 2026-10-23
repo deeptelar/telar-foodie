@@ -34,4 +34,20 @@ class TryOutTest {
         // A key the traveller typed is theirs: no end forgets it.
         assertEquals("sk-or-own", trying.copy(openAiKey = "sk-or-own").own(Provider.OPENAI).ended(now = 2_000.0).openAiKey)
     }
+
+    @Test
+    fun `a friend's Google key comes with the link only when shared, and ends with it`() =
+        runTest {
+            val mine = Settings(provider = Provider.OPENAI, openAiKey = "sk-or-v1-abc", googleKey = "AIza-mine")
+            assertEquals("", mine.tryOut(until = 1_000.0)!!.google)
+            val shared = TryOut.unlock(mine.tryOut(until = 1_000.0, google = true)!!.lock("bifana"), "bifana")!!
+
+            val trying = Settings(googleKey = "AIza-old").trying(shared)
+            assertEquals("AIza-mine", trying.googleKey)
+            assertEquals("", trying.ended(now = 1_000.0).googleKey)
+            // One the friend typed over it is theirs.
+            assertEquals("AIza-own", trying.copy(googleKey = "AIza-own").ownGoogle().ended(now = 1_000.0).googleKey)
+            // Without one shared, the friend's own stays.
+            assertEquals("AIza-old", Settings(googleKey = "AIza-old").trying(tryOut).ended(now = 1_000.0).googleKey)
+        }
 }

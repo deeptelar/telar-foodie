@@ -91,18 +91,26 @@ data class Settings(
         when (tryOut.provider) {
             Provider.CLAUDE -> copy(provider = tryOut.provider, claudeKey = tryOut.key, claudeModel = tryOut.model)
             Provider.OPENAI -> copy(provider = tryOut.provider, openAiKey = tryOut.key, openAiModel = tryOut.model, openAiUrl = tryOut.url)
-        }.copy(borrowed = Borrowed(tryOut.provider, tryOut.until))
+        }.copy(borrowed = Borrowed(tryOut.provider, tryOut.until, google = tryOut.google.isNotBlank())).let { if (tryOut.google.isBlank()) it else it.copy(googleKey = tryOut.google) }
 
-    /** The try-out these settings could share: the model and key of their provider, until [until]. None for a server without a key, such as a local Ollama. */
-    fun tryOut(until: Double): TryOut? =
-        when {
-            provider == Provider.CLAUDE && claudeKey.isNotBlank() -> TryOut(provider, claudeModel, "", claudeKey.trim(), until)
-            provider == Provider.OPENAI && openAiKey.isNotBlank() -> TryOut(provider, openAiModel.trim(), openAiUrl.trim(), openAiKey.trim(), until)
+    /**
+     * The try-out these settings could share: the model and key of their provider, until [until],
+     * and the Google key with [google]. None for a server without a key, such as a local Ollama.
+     */
+    fun tryOut(until: Double, google: Boolean = false): TryOut? {
+        val googleKey = if (google) googleKey.trim() else ""
+        return when {
+            provider == Provider.CLAUDE && claudeKey.isNotBlank() -> TryOut(provider, claudeModel, "", claudeKey.trim(), until, googleKey)
+            provider == Provider.OPENAI && openAiKey.isNotBlank() -> TryOut(provider, openAiModel.trim(), openAiUrl.trim(), openAiKey.trim(), until, googleKey)
             else -> null
         }
+    }
 
     /** These settings with the key of [provider] the traveller's own: one they typed ends a friend's try-out of it. */
     fun own(provider: Provider): Settings = if (borrowed?.provider == provider) copy(borrowed = null) else this
+
+    /** These settings with the Google key the traveller's own, which no end of a try-out forgets. */
+    fun ownGoogle(): Settings = copy(borrowed = borrowed?.copy(google = false))
 
     /** These settings without the friend's key once its try-out has ended at [now]; the same settings before. */
     fun ended(now: Double): Settings {
@@ -111,7 +119,7 @@ data class Settings(
         return when (borrowed.provider) {
             Provider.CLAUDE -> copy(claudeKey = "")
             Provider.OPENAI -> copy(openAiKey = "")
-        }.copy(borrowed = null)
+        }.copy(borrowed = null, googleKey = if (borrowed.google) "" else googleKey)
     }
 
     fun save() {
@@ -143,11 +151,15 @@ data class Settings(
     }
 }
 
-/** A friend's key for the model of [provider], which the page forgets at [until], in milliseconds since 1970. */
+/**
+ * A friend's key for the model of [provider], which the page forgets at [until], in milliseconds
+ * since 1970, with the Google key too when [google].
+ */
 @Serializable
 data class Borrowed(
     val provider: Provider,
     val until: Double,
+    val google: Boolean = false,
 )
 
 @Serializable

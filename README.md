@@ -196,7 +196,9 @@ once. For a trip of your own, add a key under **Settings**:
 
 - **Claude**, with a key of the Anthropic API.
 - **OpenAI, Gemini, Ollama** or another server with the API of OpenAI: its address, a model and a
-  key. A local Ollama is at `http://localhost:11434/v1` and needs no key, but it has to allow the
+  key. With OpenRouter's address, `https://openrouter.ai/api/v1`, **Settings** lists its models
+  that can call tools, with their prices, read live from OpenRouter. A local Ollama is at
+  `http://localhost:11434/v1` and needs no key, but it has to allow the
   site of the page, or the browser stops its answers: start it with
   `OLLAMA_ORIGINS=https://deeptelar.github.io ollama serve`.
 - Optionally a key for **Google Places**, for ratings. **Settings** shows how to get one, step by
@@ -223,6 +225,10 @@ key.
   on [OpenRouter](https://openrouter.ai/settings/keys) with a credit limit, put
   `https://openrouter.ai/api/v1` and a model in **Settings**, share the link, and delete the key
   when the try-out ends.
+- **The Google Places key can go with it**, when you tick it: your friends then get ratings, and
+  their searches are billed to you. Your key works for them because it is restricted to the site
+  of the page, not to you. To cap it, lower the daily quota of Places API (New) in the Google Cloud
+  console.
 
 ## Choosing a model
 

@@ -498,4 +498,11 @@ object English : Texts {
 
     override fun friendsModelUntil(date: String) = "You plan with your friend's model until $date."
     override val tryOutEnded = "Your friend's try-out has ended. To plan more, add a key of your own under Settings."
+
+    override val openRouterModels = "Models on OpenRouter that can plan, with what a million tokens cost, read / written"
+    override val loadingModels = "Loading OpenRouter's models…"
+    override val chooseAModel = "Choose a model"
+    override val shareGoogleKey = "Share the Google Places key too"
+    override val shareGoogleKeyHint =
+        "Your friends then get ratings too, and every search is billed to you. In the Google Cloud console you can lower the daily quota of Places API (New), so that the key stops after that many searches a day."
 }
