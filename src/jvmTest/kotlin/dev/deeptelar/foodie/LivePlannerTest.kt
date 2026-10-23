@@ -1,6 +1,12 @@
 package dev.deeptelar.foodie
 
+import dev.deeptelar.foodie.sources.Nominatim
+import dev.deeptelar.foodie.sources.Overpass
+import dev.deeptelar.foodie.sources.Recorder
+import dev.deeptelar.foodie.sources.Recording
 import dev.deeptelar.foodie.sources.Sources
+import dev.deeptelar.foodie.sources.Wikivoyage
+import dev.deeptelar.foodie.sources.replay
 import dev.deeptelar.telar.GraphConfig
 import dev.deeptelar.telar.GraphEvent
 import dev.deeptelar.telar.MemoryCheckpointer
@@ -11,10 +17,18 @@ import dev.deeptelar.telar.openai.OpenAiChatModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 /**
  * Plans a trip with a real model and the real sources, asks for a change and says yes. It costs
@@ -30,7 +44,9 @@ import kotlin.test.assertTrue
  * model in `FOODIE_MODEL`; `FOODIE_MODEL_URL` is not needed then.
  *
  * `FOODIE_REQUEST` sets the trip, and `FOODIE_LANGUAGE` its language (`ENGLISH`, `SPANISH` or `CATALAN`).
- * What the run does is written to `build/live-planner.txt`.
+ * With `FOODIE_SOURCES` set to a file, the sources answer from what that file kept, and what they
+ * are asked anew is kept in it: models compared on the same file plan from the same places.
+ * What the run does is written to `build/live-planner.txt`, with the time each part took.
  */
 class LivePlannerTest {
     @Test
@@ -51,7 +67,15 @@ class LivePlannerTest {
                         } else {
                             OpenAiChatModel(client = client, apiKey = System.getenv("FOODIE_MODEL_KEY"), model = System.getenv("FOODIE_MODEL"), baseUrl = url)
                         }
-                    val planner = planner(model, Sources.online(client))
+                    val kept = System.getenv("FOODIE_SOURCES")?.let(::File)
+                    // The street map is often busy: a comparison waits for it longer than a traveller would.
+                    val online = Sources(Nominatim(client), Wikivoyage(client), Overpass(client, patience = 60.seconds, rest = Duration.ZERO))
+                    // A question that fails is a note of the trip, as on the page: it must not fail the run with it.
+                    val questions = CoroutineScope(coroutineContext + SupervisorJob(coroutineContext.job))
+                    val recorder = kept?.let { file -> Recorder(replay({ if (file.exists()) Recording.fromJson(file.readText()) else Recording() }, online), questions) }
+                    val planner = planner(model, recorder?.sources ?: online)
+                    val started = TimeSource.Monotonic.markNow()
+                    fun took() = say("Took: ${started.elapsedNow().inWholeSeconds / 60} min ${started.elapsedNow().inWholeSeconds % 60} s")
                     val config = GraphConfig(threadId = "live", checkpointer = MemoryCheckpointer<Trip>(), interruptBefore = setOf(Nodes.REVIEW), maxIterations = 120)
                     val request = System.getenv("FOODIE_REQUEST") ?: "Two days in Lisbon and one in Porto. I love seafood and pastries, and I do not eat pork."
 
@@ -71,19 +95,31 @@ class LivePlannerTest {
                             }
                     }
                     describe(trip, ::say)
+                    took()
+                    recorder?.let { kept!!.writeText(it.recording.plus(kept).toJson() + "\n") }
                     assertTrue(trip.route.isNotEmpty(), "the route is empty")
 
                     val change = "Make the first dinner a place for grilled fish, and keep everything else."
                     say("\nChange: $change")
                     trip = follow(planner.streamResume(config) { it.copy(messages = it.messages + ChatMessage.User(change)) }, ::say)
                     describe(trip, ::say)
+                    took()
+
+                    // A change of place from the page, as a traveller taps it: the first lunch, or else the first meal, is touristy.
+                    val swapped = trip.route.firstOrNull { it.time == MealTime.LUNCH } ?: trip.route.first()
+                    say("\nSwap: day ${swapped.day} ${swapped.time.label}, touristy")
+                    trip = follow(planner.streamResume(config) { it.swapped(listOf(MealSwap(swapped.day, swapped.time, listOf(SwapReason.TOURISTY)))) }, ::say)
+                    describe(trip, ::say)
+                    trip.offerFor(swapped.day, swapped.time)?.let { offer -> say("Offered: ${offer.options.map { trip.restaurant(it.restaurantId)?.name }} · ${offer.recommendation}") }
+                    took()
 
                     val done = follow(planner.streamResume(config) { it.copy(approved = true) }, ::say)
                     assertEquals(true, done.approved)
+                    questions.cancel()
                 }
             }
         } finally {
-            java.io.File("build/live-planner.txt").writeText(log.toString())
+            File("build/live-planner.txt").writeText(log.toString())
         }
     }
 
@@ -128,5 +164,11 @@ class LivePlannerTest {
         say("Summary: ${trip.summary}")
         say("Notes: ${trip.notes}")
         say("Tokens: ${trip.tokens.total}")
+    }
+
+    /** This recording with what [file] kept before: a later run keeps what the earlier ones found. */
+    private fun Recording.plus(file: File): Recording {
+        val before = runCatching { Recording.fromJson(file.readText()) }.getOrElse { Recording() }
+        return Recording(before.places + places, before.guides + guides, before.restaurants + restaurants, before.sights + sights)
     }
 }

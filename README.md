@@ -207,6 +207,44 @@ once. For a trip of your own, add a key under **Settings**:
 The keys are kept in the `localStorage` of your browser. Anyone who can use your browser can read
 them there, so use keys you can revoke.
 
+## Choosing a model
+
+The planner asks a lot of a model: it interviews in the traveller's language, names what a place
+is known for from its own knowledge, and then calls tools until every meal has a place. Small
+models do the tools well enough, since the code checks every call, but they know little about food.
+
+We planned the same trip with each model on 23 October 2026, through Ollama: *"I want to visit
+Palma de Mallorca for 3 days and I want to try their food"*, then a change in words ("make the
+first dinner a place for grilled fish") and a change from the page (day 1 lunch is touristy). The
+street map gave no answer that day, so every model chose from the same 10 places of the travel
+guide.
+
+| Model | Runs on | Time | Food of the place | Following the rules | Verdict |
+|---|---|---|---|---|---|
+| `gemma4:cloud` (31B) | Ollama's cloud, free plan | 4 min | Right: ensaïmada, sobrassada, tumbet, coca, frito, hierbas | Summaries true to the route; one question in Spanish on an English trip; left 7 of 12 meals open when it had few places | **Recommended** |
+| `gemma4:12b` | 8 GB GPU and 32 GB of RAM, we think | – | Named sobrassada and ensaïmada in the interview | Interview in good English | Untested to the end: it ran out of memory on 15 GB of RAM ([help wanted](https://github.com/deeptelar/telar-foodie/issues/5)) |
+| `qwen3:8b` | 8 GB GPU, 16 GB of RAM | 48 min | Weak: Catalan dishes as Mallorcan ones, seafood for breakfast | Interview in Spanish on an English trip; one interview answer it could not read; summaries that list meals not on the route | Works, but not for a trip you care about |
+
+Not tried: `deepseek-v4.1-flash`, `glm-5.3-flash` and `minimax-m3.1-flash` need Ollama's paid plan.
+
+What the code does about it: a small model follows a rule of the prompt only some of the time, so
+the rules that matter are checked in code. A place the traveller left cannot come back, a change
+of one meal cannot take another off the route, an empty answer gets a message from the code, and
+a trip without places says so instead of letting the model invent them.
+
+To compare a model yourself, run [`LivePlannerTest`](src/jvmTest/kotlin/dev/deeptelar/foodie/LivePlannerTest.kt)
+with it. With `FOODIE_SOURCES` set to a file, what the sources answered is kept in it, and the next
+model plans from the same places:
+
+```bash
+FOODIE_SOURCES=palma.json FOODIE_MODEL_URL=http://localhost:11434/v1 FOODIE_MODEL=gemma4:12b FOODIE_MODEL_KEY=ollama \
+FOODIE_REQUEST="I want to visit Palma de Mallorca for 3 days and I want to try their food" \
+./gradlew jvmTest --tests '*LivePlannerTest*' --rerun
+```
+
+The run, with the time each part took, is written to `build/live-planner.txt`. A result for a
+model that is not in the table is welcome as an issue.
+
 ## Where things are
 
 ```
