@@ -203,6 +203,15 @@ internal fun swapPrompt(trip: Trip, swaps: List<MealSwap>): String =
         )
     }
 
+/** How the reminder of [swapReminder] begins: the agent is reminded once in a turn. */
+internal const val SWAP_REMINDER = "These meals that the traveller asked to change have no place yet:"
+
+/** What the agent is told when its turn ends with [open], meals the traveller asked to change, left with no place. */
+internal fun swapReminder(open: List<MealSwap>): String =
+    SWAP_REMINDER + "\n" + open.joinToString("\n") { "- Day ${it.day} ${it.time.label.lowercase()}" } + "\n\n" +
+        "For each meal, offer two or three new places with `offer_choices`, from the candidates or what you search for, the one you recommend first. " +
+        "Do not take the meal off the route. Then tell the traveller in one or two sentences what you offer."
+
 /**
  * The profile for a model, one line for each thing the traveller said. The meals near where they
  * sleep are left out when the map knows no place where they do: nothing could be measured from it.

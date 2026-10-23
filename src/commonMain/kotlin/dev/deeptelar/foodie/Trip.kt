@@ -56,6 +56,8 @@ data class Trip(
     val offers: List<Offer> = emptyList(),
     /** What the traveller chose of the [offers], in words for the agent, until its next turn tells it. */
     val picks: List<String> = emptyList(),
+    /** The meals the traveller asked to change, until the agent's turn that changes them is over. */
+    val swaps: List<MealSwap> = emptyList(),
 ) {
     fun stop(name: String): Stop? = stops.firstOrNull { it.name.equals(name.trim(), ignoreCase = true) }
 

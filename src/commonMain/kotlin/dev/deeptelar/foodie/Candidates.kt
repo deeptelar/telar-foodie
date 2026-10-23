@@ -63,10 +63,10 @@ internal fun Restaurant.isSamePlaceAs(other: Restaurant): Boolean =
 
 /**
  * A name without what differs from source to source: case, accents, punctuation and a leading
- * word such as "Restaurante".
+ * word such as "Restaurante". With [accents], the accents stay.
  */
-internal fun String.simplified(): String {
-    val plain = lowercase().map { ACCENTS[it] ?: it }.joinToString("").replace(Regex("[^a-z0-9 ]"), " ")
+internal fun String.simplified(accents: Boolean = false): String {
+    val plain = lowercase().map { if (accents) it else ACCENTS[it] ?: it }.map { if (it in 'a'..'z' || it in '0'..'9' || it in ACCENTS) it else ' ' }.joinToString("")
     val words = plain.split(' ').filter { it.isNotBlank() }
     return words.dropWhile { it in KIND_WORDS && words.size > 1 }.joinToString(" ")
 }
@@ -87,12 +87,20 @@ private val ACCENTS: Map<Char, Char> =
 /**
  * What [restaurant] is known for: the first dish of its stop whose words are in its name or its
  * cuisine, such as "francesinha" in "Café Santiago · francesinha". `null` for a place that is not
- * known for one thing.
+ * known for one thing. A word with an accent is found only with it: "lluç", hake, is not in
+ * "Can Lluc", a place named after a saint.
  */
 fun Trip.speciality(restaurant: Restaurant): Dish? {
-    val text = " " + "${restaurant.name} ${restaurant.cuisine}".simplified() + " "
+    val words = "${restaurant.name} ${restaurant.cuisine}"
+    val text = " " + words.simplified() + " "
+    val accented = " " + words.simplified(accents = true) + " "
     return dishes.firstOrNull { dish ->
-        dish.stop == restaurant.stop && dish.words.map { it.simplified() }.any { it.length >= MIN_WORD && " $it" in text }
+        dish.stop == restaurant.stop &&
+            dish.words.any { word ->
+                val plain = word.simplified()
+                val marked = word.simplified(accents = true)
+                plain.length >= MIN_WORD && if (marked == plain) " $plain" in text else " $marked" in accented
+            }
     }
 }
 

@@ -354,6 +354,15 @@ interface Texts {
     /** The message of a trip without a single place to eat at [places]; [withReviews] when Google was searched too. */
     fun nothingToEat(places: List<String>, withReviews: Boolean): String
 
+    /** The traveller asked to change the places of [meals], and the agent found no other. */
+    fun noNewPlace(meals: List<String>): String
+
+    /** The message of a change after which the agent offered places for [meals], and said nothing. */
+    fun placesOffered(meals: List<String>): String
+
+    /** The message of a route the agent finished without a word. */
+    val routeReady: String
+
     // The sample, a script in place of a model
 
     val sampleRequest: String

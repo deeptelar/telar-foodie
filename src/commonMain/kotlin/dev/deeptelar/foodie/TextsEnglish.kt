@@ -342,6 +342,15 @@ object English : Texts {
         "I found no place to eat in ${places.joinToString(" or ")}, so there is no route yet. Try again later, when the sources answer" +
             (if (withReviews) "" else ", or add a Google key under Settings") + ". You can also ask for a change, such as another town nearby."
 
+    override fun noNewPlace(meals: List<String>) =
+        (if (meals.size == 1) "I found no other place for this meal: " else "I found no other place for these meals: ") +
+            meals.joinToString("; ") + ". Ask for the change again, or say what you would like there."
+
+    override fun placesOffered(meals: List<String>) =
+        "I offer you a few places for " + meals.joinToString("; ") + ". The first is on the route until you tap the one you want."
+
+    override val routeReady = "Your route is ready. If something does not fit, ask for a change."
+
     override val staySaidNowhere = "You want some meals near where you sleep, but I do not know where that is. Ask for a change with a street or a square close to it."
 
     override val sampleRequest = "Two days in Lisbon. I love seafood and pastries."

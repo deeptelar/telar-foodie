@@ -38,8 +38,9 @@ stateDiagram-v2
     state "order" as n7
     state "⏸ review" as n8
     state "nothing" as n9
-    state "plan" as n10
-    state "tools" as n11
+    state "check" as n10
+    state "plan" as n11
+    state "tools" as n12
     [*] --> n0
     n0 --> n0 : a round of questions
     n0 --> n1 : checked
@@ -51,15 +52,17 @@ stateDiagram-v2
     n3 --> n6
     n4 --> n6
     n5 --> n6
-    n6 --> n10 : candidates
+    n6 --> n11 : candidates
     n6 --> n9 : none
     n7 --> n8
-    n8 --> n10 : a change
+    n8 --> n11 : a change
     n8 --> [*] : yes
     n9 --> n7
-    n10 --> n11 : tool calls
+    n10 --> n11 : a meal left open
     n10 --> n7 : done
-    n11 --> n10
+    n11 --> n12 : tool calls
+    n11 --> n10 : done
+    n12 --> n11
     classDef interrupt fill:#fff4e5,stroke:#e8590c,stroke-width:2px,stroke-dasharray:4 3
     class n8 interrupt
 ```
@@ -73,6 +76,7 @@ stateDiagram-v2
 | `specialists` | Searches the map for the places known for each dish, by the words the model gave with it, such as "francesinha" in a name or a cuisine, and with a Google key the reviews too ("best francesinha in Porto"). The agent reads these places first. | A node that every node of the step before leads to, so it runs once after all of them |
 | `nothing` | When the sources found not a single place to eat, says so in the traveller's language, from code: an agent with nothing to choose from may make places up. A change later asks the agent, which can search again. | A conditional edge that skips the agent |
 | `plan` ⇄ `tools` | An agent chooses a restaurant for each meal. Its tools search the sources again and write the route into the state. | `toolLoop` in a graph of your own, `StateTool`, a token budget |
+| `check` | Checks the agent's turn in code: a meal the traveller asked to change and that still has no place sends the agent back once, and then the traveller hears which meal is open. An answer without words gets one from the code. | A conditional edge that loops back to the agent |
 | `order` | Sorts the meals and measures the walks between them, the first of a day from where the traveller sleeps. | A plain node |
 | `review` | The run waits here for the traveller. A change goes back to the agent; a yes ends the run. | `interruptBefore`, `resume` with an update, a conditional edge that loops |
 

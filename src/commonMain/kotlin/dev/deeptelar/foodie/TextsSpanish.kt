@@ -360,6 +360,15 @@ object Spanish : Texts {
         "No he encontrado ningún sitio para comer en ${places.joinToString(" ni ")}, así que todavía no hay ruta. Vuelve a intentarlo más tarde, cuando respondan las fuentes" +
             (if (withReviews) "" else ", o añade una clave de Google en Ajustes") + ". También puedes pedir un cambio, como otro pueblo cercano."
 
+    override fun noNewPlace(meals: List<String>) =
+        (if (meals.size == 1) "No encontré otro sitio para esta comida: " else "No encontré otro sitio para estas comidas: ") +
+            meals.joinToString("; ") + ". Pide el cambio otra vez, o di qué te apetece ahí."
+
+    override fun placesOffered(meals: List<String>) =
+        "Te propongo unos cuantos sitios para " + meals.joinToString("; ") + ". El primero está en la ruta hasta que toques el que quieras."
+
+    override val routeReady = "Tu ruta está lista. Si algo no te encaja, pide un cambio."
+
     override val staySaidNowhere = "Quieres algunas comidas cerca de donde duermes, pero no sé dónde es. Pide un cambio con una calle o una plaza cercana."
 
     override val sampleRequest = "Dos días en Lisboa. Me encantan el marisco y los dulces."

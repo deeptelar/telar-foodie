@@ -37,6 +37,7 @@ object Nodes {
     const val PLAN = "plan"
     const val NOTHING = "nothing"
     const val TOOLS = "tools"
+    const val CHECK = "check"
     const val ORDER = "order"
     const val REVIEW = "review"
 }
@@ -253,6 +254,10 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                 trip.copy(messages = trip.messages + ChatMessage.User(planPrompt(trip)) + ChatMessage.Assistant(said))
             }
 
+        // A small model may end its turn without a word, or with a meal the traveller wanted changed left with no place:
+        // it is reminded once of the meals, and after that the traveller hears from the code what is open.
+        val check = node(Nodes.CHECK) { trip -> trip.checked() }
+
         val plan =
             toolLoop(
                 model = planModel,
@@ -261,7 +266,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                 append = { trip, new -> trip.copy(messages = trip.messages + new) },
                 firstMessage = ::planPrompt,
                 system = PLAN_SYSTEM,
-                then = order,
+                then = check,
                 modelNode = Nodes.PLAN,
                 toolsNode = Nodes.TOOLS,
                 countTokens = { trip, used -> trip.copy(tokens = trip.tokens + used) },
@@ -279,10 +284,43 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
         conditionalEdge(specialists, targets = setOf(plan, nothing), labels = mapOf(plan to "candidates", nothing to "none")) {
             if (it.restaurants.isEmpty()) nothing else plan
         }
+        conditionalEdge(check, targets = setOf(plan, order), labels = mapOf(plan to "a meal left open", order to "done")) {
+            if (it.messages.lastOrNull() is ChatMessage.User) plan else order
+        }
         nothing then order
         order then review
         conditionalEdge(review, targets = setOf(plan, NodeRef.END), labels = mapOf(plan to "a change", NodeRef.END to "yes")) { if (it.approved) NodeRef.END else plan }
     }.compile()
+
+/**
+ * The trip after a turn of the agent. Meals the traveller asked to change and that have no place
+ * yet are told to the agent once; after that, the traveller hears of them from the code. An answer
+ * without words gets the code's.
+ */
+private fun Trip.checked(): Trip {
+    val open = unswapped
+    val reminded = messages.lastOrNull { it is ChatMessage.User }.let { it is ChatMessage.User && it.text.startsWith(SWAP_REMINDER) }
+    if (open.isNotEmpty() && !reminded) return copy(messages = messages + ChatMessage.User(swapReminder(open)))
+    val texts = language.texts
+    val meals = { list: List<MealSwap> -> list.map { "${texts.day(it.day)}, ${texts.meal(it.time).lowercase()}" } }
+    val offered = swaps.filter { offerFor(it.day, it.time) != null }
+    val said =
+        when {
+            open.isNotEmpty() -> texts.noNewPlace(meals(open))
+            summary.isNotBlank() -> null
+            offered.isNotEmpty() -> texts.placesOffered(meals(offered))
+            else -> texts.routeReady
+        }
+    // The code's words go with the agent's last answer, if it said anything, so that the summary has both.
+    val last = messages.lastOrNull() as? ChatMessage.Assistant
+    val told =
+        when {
+            said == null -> messages
+            last != null && last.toolCalls.isEmpty() -> messages.dropLast(1) + ChatMessage.Assistant(listOf(last.text.trim(), said).filter { it.isNotEmpty() }.joinToString("\n\n"))
+            else -> messages + ChatMessage.Assistant(said)
+        }
+    return copy(messages = told, swaps = emptyList())
+}
 
 /** The trip with a question about where it goes, the one thing the planner cannot go on without. */
 private fun Trip.asking(question: String): Trip = copy(questions = listOf(Question(Topic.WHERE, question)))

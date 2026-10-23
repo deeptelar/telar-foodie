@@ -283,6 +283,9 @@ private val routeEditors: List<StateTool<Trip>> =
         StateTool<Trip, MealSlot>("remove_meal", "Takes a meal off the route.") { trip, slot ->
             val time = mealTime(slot.meal)
             if (trip.route.none { it.day == slot.day && it.time == time }) throw IllegalArgumentException("Day ${slot.day} has no ${time.label.lowercase()} on the route.")
+            if (trip.swapping(slot.day, time)) {
+                throw IllegalArgumentException("The traveller asked for new places for day ${slot.day} ${time.label.lowercase()}, not for no meal: offer two or three with offer_choices.")
+            }
             val after = trip.copy(route = trip.route.filterNot { it.day == slot.day && it.time == time }, offers = trip.offers.filterNot { it.day == slot.day && it.time == time })
             ToolOutcome(after, "Removed. " + after.openMeals())
         },

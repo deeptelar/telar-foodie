@@ -88,7 +88,7 @@ class PlannerTest {
 
             // The sources that exist here and the dishes ran in one step, and the run stopped before the review.
             assertEquals(
-                listOf(setOf(Nodes.INTERVIEW), setOf(Nodes.BRIEF), setOf(Nodes.GUIDE, Nodes.MAP, Nodes.DISHES), setOf(Nodes.SPECIALISTS), setOf(Nodes.PLAN), setOf(Nodes.TOOLS), setOf(Nodes.PLAN), setOf(Nodes.ORDER)),
+                listOf(setOf(Nodes.INTERVIEW), setOf(Nodes.BRIEF), setOf(Nodes.GUIDE, Nodes.MAP, Nodes.DISHES), setOf(Nodes.SPECIALISTS), setOf(Nodes.PLAN), setOf(Nodes.TOOLS), setOf(Nodes.PLAN), setOf(Nodes.CHECK), setOf(Nodes.ORDER)),
                 run.steps.map { it.toSet() },
             )
             val paused = assertIs<GraphResult.Interrupted<Trip>>(run.result)
@@ -245,12 +245,12 @@ class PlannerTest {
                 expectNodes(Nodes.INTERVIEW, Nodes.BRIEF)
                 // The sources run in one step.
                 expectStep(Nodes.GUIDE, Nodes.MAP, Nodes.DISHES)
-                expectNodes(Nodes.SPECIALISTS, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
+                expectNodes(Nodes.SPECIALISTS, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.CHECK, Nodes.ORDER)
                 expectInterruptBefore(Nodes.REVIEW) { trip -> assertEquals(listOf("r2"), trip.route.map { it.restaurantId }) }
 
                 resumeWith { it.copy(messages = it.messages + ChatMessage.User("I do not eat pork.")) }
                 // The graph loops back to the agent, which goes over the route again.
-                expectNodes(Nodes.REVIEW, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
+                expectNodes(Nodes.REVIEW, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.CHECK, Nodes.ORDER)
                 expectInterruptBefore(Nodes.REVIEW) { trip ->
                     assertEquals(listOf("r1"), trip.route.map { it.restaurantId })
                     assertEquals("Changed the lunch.", trip.summary)
@@ -529,11 +529,11 @@ class PlannerTest {
             planner(model, sources()).test(interviewed("One day in Lisbon"), config()) {
                 expectNodes(Nodes.INTERVIEW, Nodes.BRIEF)
                 expectStep(Nodes.GUIDE, Nodes.MAP, Nodes.DISHES)
-                expectNodes(Nodes.SPECIALISTS, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
+                expectNodes(Nodes.SPECIALISTS, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.CHECK, Nodes.ORDER)
                 expectInterruptBefore(Nodes.REVIEW) { trip -> assertEquals(1, trip.days) }
 
                 resumeWith { it.copy(messages = it.messages + ChatMessage.User("We stay one more day.")) }
-                expectNodes(Nodes.REVIEW, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.ORDER)
+                expectNodes(Nodes.REVIEW, Nodes.PLAN, Nodes.TOOLS, Nodes.PLAN, Nodes.CHECK, Nodes.ORDER)
                 expectInterruptBefore(Nodes.REVIEW) { trip ->
                     assertEquals(2, trip.days)
                     assertEquals(listOf(1 to "r1", 2 to "r2"), trip.route.sortedBy { it.day }.map { it.day to it.restaurantId })
@@ -1217,6 +1217,82 @@ class PlannerTest {
             assertEquals(emptyList(), after.picks)
             assertEquals(listOf("r3"), after.route.map { it.restaurantId })
             assertEquals(0, model.remaining)
+        }
+
+    @Test
+    fun `a meal the traveller wants changed is not taken off the route, and an agent that offers nothing is reminded once`() =
+        runTest {
+            val tasca = Restaurant(stop = lisbon, name = "Tasca do Chico", lat = 38.7120, lon = -9.1301, cuisine = "portuguese", sources = setOf(Source.MAP))
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it."))
+                    says("Salt cod for lunch.")
+                    calls("remove_meal", MealSlot(1, "lunch"))
+                    says("")
+                    calls("offer_choices", MealOffer(1, "lunch", listOf(MealOption("r2", "caldo verde", "Portuguese."), MealOption("r3", "sardinhas assadas", "A tasca.")), "Locals go there."))
+                    says("")
+                }
+            val config = config()
+            val planner = planner(model, sources(map = StreetMap { _, _, _, _ -> listOf(santaRitaOnMap, zeDaMouraria, tasca) }))
+            planner.invoke(interviewed("One day in Lisbon"), config)
+
+            val offered = planner.resume(config) { it.swapped(listOf(MealSwap(1, MealTime.LUNCH, listOf(SwapReason.TOURISTY)))) }.state
+
+            val refused = model.requests[5].messages.filterIsInstance<ChatMessage.ToolResult>().last()
+            assertTrue(refused.isError)
+            assertEquals("The traveller asked for new places for day 1 lunch, not for no meal: offer two or three with offer_choices.", refused.text)
+            val reminder = model.requests[6].messages.last()
+            assertIs<ChatMessage.User>(reminder)
+            assertTrue(reminder.text.startsWith("These meals that the traveller asked to change have no place yet:\n- Day 1 lunch\n"), reminder.text)
+            assertEquals(listOf("r2", "r3"), offered.offerFor(1, MealTime.LUNCH)?.options?.map { it.restaurantId })
+            // The agent said nothing: the code says what it offered, and the change is over.
+            assertEquals("I offer you a few places for Day 1, lunch. The first is on the route until you tap the one you want.", offered.summary)
+            assertEquals(emptyList(), offered.swaps)
+            assertEquals(0, model.remaining)
+        }
+
+    @Test
+    fun `when the agent still finds no other place for a meal, the traveller hears which one from the code`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it."))
+                    says("Salt cod for lunch.")
+                    says("Let me think.")
+                    says("Still thinking.")
+                }
+            val config = config()
+            val planner = planner(model, sources())
+            planner.invoke(interviewed("One day in Lisbon"), config)
+
+            val changed = planner.resume(config) { it.swapped(listOf(MealSwap(1, MealTime.LUNCH, listOf(SwapReason.KNOWN)))) }.state
+
+            assertEquals(
+                "Still thinking.\n\nI found no other place for this meal: Day 1, lunch. Ask for the change again, or say what you would like there.",
+                changed.summary,
+            )
+            assertEquals(1, model.requests.last().messages.count { it is ChatMessage.User && it.text.startsWith(SWAP_REMINDER) })
+            assertEquals(0, model.remaining)
+        }
+
+    @Test
+    fun `a route the agent finishes without a word gets the code's`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide knows it."))
+                    says("")
+                }
+
+            val trip = planner(model, sources()).invoke(interviewed("One day in Lisbon"), config()).state
+
+            assertEquals("Your route is ready. If something does not fit, ask for a change.", trip.summary)
         }
 
     @Test

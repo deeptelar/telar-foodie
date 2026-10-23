@@ -458,6 +458,20 @@ class SourcesTest {
     }
 
     @Test
+    fun `a dish with an accent is found in a name only with its accent`() {
+        val stop = Stop("Palma, Spain", 1, 1, 39.5696, 2.6501)
+        val saint = Restaurant(id = "r1", stop = "Palma, Spain", name = "Can Lluc", lat = 39.5751, lon = 2.6364, sources = setOf(Source.REVIEWS))
+        val hake = Restaurant(id = "r2", stop = "Palma, Spain", name = "Es Lluç", lat = 39.5700, lon = 2.6500, sources = setOf(Source.MAP))
+        val paella = Restaurant(id = "r3", stop = "Palma, Spain", name = "Paella Lover", lat = 39.5704, lon = 2.6542, sources = setOf(Source.REVIEWS))
+        val dishes = listOf(Dish("Palma, Spain", "lluç", "Grilled hake.", words = listOf("lluç")), Dish("Palma, Spain", "paella", "Rice.", words = listOf("paella")))
+        val trip = Trip("Palma", stops = listOf(stop), dishes = dishes, restaurants = listOf(saint, hake, paella))
+
+        assertEquals(null, trip.speciality(saint))
+        assertEquals("lluç", trip.speciality(hake)?.name)
+        assertEquals("paella", trip.speciality(paella)?.name)
+    }
+
+    @Test
     fun `names are compared without accents, case and the word for restaurant`() {
         assertEquals("ze da mouraria", "Restaurante Zé da Mouraria".simplified())
         assertEquals("sacramento", "O Sacramento".simplified())

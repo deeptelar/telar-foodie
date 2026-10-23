@@ -360,6 +360,15 @@ object Catalan : Texts {
         "No he trobat cap lloc per menjar a ${places.joinToString(" ni ")}, així que encara no hi ha ruta. Torna-ho a provar més tard, quan les fonts responguin" +
             (if (withReviews) "" else ", o afegeix una clau de Google a Configuració") + ". També pots demanar un canvi, com ara un altre poble proper."
 
+    override fun noNewPlace(meals: List<String>) =
+        (if (meals.size == 1) "No he trobat cap altre lloc per a aquest àpat: " else "No he trobat cap altre lloc per a aquests àpats: ") +
+            meals.joinToString("; ") + ". Torna a demanar el canvi, o digues què et ve de gust."
+
+    override fun placesOffered(meals: List<String>) =
+        "Et proposo uns quants llocs per a " + meals.joinToString("; ") + ". El primer és a la ruta fins que toquis el que vulguis."
+
+    override val routeReady = "La teva ruta és a punt. Si alguna cosa no et fa el pes, demana un canvi."
+
     override val staySaidNowhere = "Vols alguns àpats a prop d'on dorms, però no sé on és. Demana un canvi amb un carrer o una plaça propers."
 
     override val sampleRequest = "Dos dies a Lisboa. M'encanten el marisc i els dolços."

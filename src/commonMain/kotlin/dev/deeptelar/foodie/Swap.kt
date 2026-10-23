@@ -85,9 +85,22 @@ internal fun Trip.withPicksTold(): Trip {
 
 /**
  * The trip with the traveller's [swaps] for the agent, as their next message, and the places they
- * leave among the [Trip.rejected], so that no change brings them back.
+ * leave among the [Trip.rejected], so that no change brings them back. An earlier offer for one of
+ * those meals is over: the agent offers new places.
  */
 fun Trip.swapped(swaps: List<MealSwap>): Trip {
     val leaving = swaps.mapNotNull { swap -> route.firstOrNull { it.day == swap.day && it.time == swap.time }?.restaurantId }
-    return copy(rejected = (rejected + leaving).distinct(), messages = messages + ChatMessage.User(swapPrompt(this, swaps)))
+    return copy(
+        rejected = (rejected + leaving).distinct(),
+        offers = offers.filterNot { offer -> swaps.any { it.day == offer.day && it.time == offer.time } },
+        swaps = swaps,
+        messages = messages + ChatMessage.User(swapPrompt(this, swaps)),
+    )
 }
+
+/** Whether the traveller asked to change the meal of [day] and [time] in this turn of the agent. */
+internal fun Trip.swapping(day: Int, time: MealTime): Boolean = swaps.any { it.day == day && it.time == time }
+
+/** The meals the traveller asked to change that have no new place yet: nothing offered, and no place on the route that they did not leave. */
+internal val Trip.unswapped: List<MealSwap>
+    get() = swaps.filter { swap -> offerFor(swap.day, swap.time) == null && route.none { it.day == swap.day && it.time == swap.time && it.restaurantId !in rejected } }
