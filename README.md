@@ -229,6 +229,9 @@ key.
   their searches are billed to you. Your key works for them because it is restricted to the site
   of the page, not to you. To cap it, lower the daily quota of Places API (New) in the Google Cloud
   console.
+- **Or keep the keys off their phones altogether** with the [proxy](proxy/README.md): a small server
+  on Google Cloud Run holds your keys, and each friend gets a token with its own end and limits,
+  which you can remove at once. `node friends.mjs add Ana --dish tumbet` prints Ana's link.
 
 ## Choosing a model
 

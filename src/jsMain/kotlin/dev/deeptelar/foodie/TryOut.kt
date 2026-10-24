@@ -20,6 +20,7 @@ import kotlin.js.Promise
  *
  * @property url the address of a server with the API of OpenAI; empty for Claude.
  * @property google a key of Google Places, for ratings; empty when the friend shares none.
+ * @property placesUrl where Google Places is asked, such as a proxy that keeps the real key; empty for Google itself.
  * @property until when the page forgets the key, in milliseconds since 1970.
  */
 @Serializable
@@ -30,6 +31,7 @@ data class TryOut(
     val key: String,
     val until: Double,
     val google: String = "",
+    val placesUrl: String = "",
 ) {
     /** Locks this with [dish]: the salt, the IV and the encrypted JSON, in Base64 for an address. */
     suspend fun lock(dish: String): String {

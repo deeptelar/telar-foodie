@@ -314,7 +314,7 @@ class App(
         val model = if (sample) SampleModel() else settings.model(client) ?: SampleModel()
         val planModel = if (sample) model else settings.planModel(client) ?: model
         // The script plans from what the sources answered once: a visitor's try asks none of the free services.
-        val sources = if (model is SampleModel) replay(::sampleRecording, Sources.online(client)) else Sources.online(client, settings.googleKey)
+        val sources = if (model is SampleModel) replay(::sampleRecording, Sources.online(client)) else Sources.online(client, settings.googleKey, settings.placesUrl)
         return planner(model, sources, planModel = planModel)
     }
 

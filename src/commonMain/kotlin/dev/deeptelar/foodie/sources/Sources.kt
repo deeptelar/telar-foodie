@@ -101,13 +101,16 @@ class Sources(
     val reviews: PlaceReviews? = null,
 ) {
     companion object {
-        /** The free services, and Google Places when there is a key. All of them answer a browser directly. */
-        fun online(client: HttpClient, googleKey: String? = null): Sources =
+        /**
+         * The free services, and Google Places when there is a key. All of them answer a browser
+         * directly; Google Places is asked at [placesUrl] when it is a proxy that keeps the real key.
+         */
+        fun online(client: HttpClient, googleKey: String? = null, placesUrl: String = ""): Sources =
             Sources(
                 geocoder = Nominatim(client),
                 guide = Wikivoyage(client),
                 map = Overpass(client),
-                reviews = googleKey?.takeIf { it.isNotBlank() }?.let { GooglePlaces(client, it) },
+                reviews = googleKey?.takeIf { it.isNotBlank() }?.let { key -> if (placesUrl.isBlank()) GooglePlaces(client, key) else GooglePlaces(client, key, placesUrl.trim().trimEnd('/')) },
             )
     }
 }

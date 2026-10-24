@@ -50,4 +50,17 @@ class TryOutTest {
             // Without one shared, the friend's own stays.
             assertEquals("AIza-old", Settings(googleKey = "AIza-old").trying(tryOut).ended(now = 1_000.0).googleKey)
         }
+
+    @Test
+    fun `a link that the proxy's friends command made opens here, and asks Google through the proxy`() =
+        runTest {
+            // Made by proxy/src/link.mjs with the dish "La Bomba de Pastél".
+            val code = "9Q-yAw0CcvouJvW5NmqJYi41hRtRUUD-xzSuUq4NBqRN6Gjiln2FBujI9TGhAG0DCw9OOWfAM6Q5IXPLNw3A5IR-y9A5wlDhlWusj0zg8uUzSEPjdt4VFZ-xQHvSA2__c3ZrFkSkitvYNTT8eAN0yRzb7G7EM7atoJsSVW6b1IhhYox4n_BgAyTlVaEHzQfIN36nWT5prirQqpLC3-Flv-UwyVkmiYURyFlCS4cQSeUy-dCfc_J5gKu1Y35n3xAGVT132oYefVpxxGFygRk"
+            val opened = TryOut.unlock(code, "bomba de pastel")!!
+
+            assertEquals(TryOut(Provider.OPENAI, "google/gemma-4-31b-it", "https://proxy.test/v1", "fr-ana", 1_000.0, "fr-ana", "https://proxy.test"), opened)
+            val trying = Settings().trying(opened)
+            assertEquals("https://proxy.test", trying.placesUrl)
+            assertEquals("", trying.ended(now = 1_000.0).placesUrl)
+        }
 }

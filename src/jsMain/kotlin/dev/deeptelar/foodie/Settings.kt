@@ -24,6 +24,8 @@ data class Settings(
     val openAiModel: String = "gpt-5",
     val openAiUrl: String = OpenAiChatModel.OPENAI_BASE_URL,
     val googleKey: String = "",
+    /** Where Google Places is asked: empty for Google itself, or a proxy that keeps the real key (see proxy/README.md). */
+    val placesUrl: String = "",
     /** Where the traces of the runs go: the `/v1/traces` of an OpenTelemetry collector, or empty for none. */
     val traceUrl: String = "",
     /** A header that every request of traces sends, such as the key of a backend: "Name: value". */
@@ -91,7 +93,7 @@ data class Settings(
         when (tryOut.provider) {
             Provider.CLAUDE -> copy(provider = tryOut.provider, claudeKey = tryOut.key, claudeModel = tryOut.model)
             Provider.OPENAI -> copy(provider = tryOut.provider, openAiKey = tryOut.key, openAiModel = tryOut.model, openAiUrl = tryOut.url)
-        }.copy(borrowed = Borrowed(tryOut.provider, tryOut.until, google = tryOut.google.isNotBlank())).let { if (tryOut.google.isBlank()) it else it.copy(googleKey = tryOut.google) }
+        }.copy(borrowed = Borrowed(tryOut.provider, tryOut.until, google = tryOut.google.isNotBlank())).let { if (tryOut.google.isBlank()) it else it.copy(googleKey = tryOut.google, placesUrl = tryOut.placesUrl) }
 
     /**
      * The try-out these settings could share: the model and key of their provider, until [until],
@@ -100,8 +102,8 @@ data class Settings(
     fun tryOut(until: Double, google: Boolean = false): TryOut? {
         val googleKey = if (google) googleKey.trim() else ""
         return when {
-            provider == Provider.CLAUDE && claudeKey.isNotBlank() -> TryOut(provider, claudeModel, "", claudeKey.trim(), until, googleKey)
-            provider == Provider.OPENAI && openAiKey.isNotBlank() -> TryOut(provider, openAiModel.trim(), openAiUrl.trim(), openAiKey.trim(), until, googleKey)
+            provider == Provider.CLAUDE && claudeKey.isNotBlank() -> TryOut(provider, claudeModel, "", claudeKey.trim(), until, googleKey, placesUrl.takeIf { google }.orEmpty())
+            provider == Provider.OPENAI && openAiKey.isNotBlank() -> TryOut(provider, openAiModel.trim(), openAiUrl.trim(), openAiKey.trim(), until, googleKey, placesUrl.takeIf { google }.orEmpty())
             else -> null
         }
     }
@@ -110,7 +112,7 @@ data class Settings(
     fun own(provider: Provider): Settings = if (borrowed?.provider == provider) copy(borrowed = null) else this
 
     /** These settings with the Google key the traveller's own, which no end of a try-out forgets. */
-    fun ownGoogle(): Settings = copy(borrowed = borrowed?.copy(google = false))
+    fun ownGoogle(): Settings = copy(borrowed = borrowed?.copy(google = false), placesUrl = if (borrowed?.google == true) "" else placesUrl)
 
     /** These settings without the friend's key once its try-out has ended at [now]; the same settings before. */
     fun ended(now: Double): Settings {
@@ -119,7 +121,7 @@ data class Settings(
         return when (borrowed.provider) {
             Provider.CLAUDE -> copy(claudeKey = "")
             Provider.OPENAI -> copy(openAiKey = "")
-        }.copy(borrowed = null, googleKey = if (borrowed.google) "" else googleKey)
+        }.copy(borrowed = null, googleKey = if (borrowed.google) "" else googleKey, placesUrl = if (borrowed.google) "" else placesUrl)
     }
 
     fun save() {

@@ -1,7 +1,8 @@
 name: Page
 
 # Checks the app, on the JVM and in headless Chrome, and publishes the page to GitHub Pages. The
-# page is the whole app: there is no server, and no key is in it. A traveller adds their own.
+# page is the whole app: there is no server, and no key is in it. A traveller adds their own. The
+# optional proxy of the try-outs (proxy/) is checked here too, and deployed by hand to Cloud Run.
 on:
   push:
     branches: [main]
@@ -27,6 +28,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Check and build the page
         run: ./gradlew check jsBrowserDistribution
+      - name: Check the proxy
+        working-directory: proxy
+        run: npm ci && npm test
       - uses: actions/upload-pages-artifact@v5
         if: github.event_name != 'pull_request'
         with:

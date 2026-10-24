@@ -1,0 +1,16 @@
+{
+  "name": "foodie-route-proxy",
+  "private": true,
+  "description": "Keeps the OpenRouter and Google Places keys of Foodie Route on Cloud Run, and lets friends in with tokens of their own.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "9.3.1"
+  }
+}
