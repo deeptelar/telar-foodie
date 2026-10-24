@@ -1208,7 +1208,7 @@ class App(
         panel.add("ul", "steps") {
             steps.forEach { step ->
                 add("li", "step ${step.status.name.lowercase()}") {
-                    add("span", "dot")
+                    if (step.status == Status.RUNNING) plate(step.node) else add("span", "dot")
                     add("div", "step-text") {
                         add("div", "step-title", step.title)
                         val detail = step.activity.ifEmpty { result(step, trip) }
@@ -1243,15 +1243,43 @@ class App(
 
     /** The bar under a route that the planner changes: what it does now, and the button that stops it. */
     private fun fillWorking(panel: HTMLElement) {
-        panel.add("span", "spinner")
+        val running = steps.firstOrNull { it.status == Status.RUNNING }
+        panel.plate(running?.node)
         panel.add("div", "working-text") {
             add("div", "working-title", texts.changingTheRoute)
-            val running = steps.firstOrNull { it.status == Status.RUNNING }
             val doing = feed.lastOrNull() ?: running?.activity?.ifEmpty { null } ?: running?.title
             val took = running?.let { texts.seconds(((Date.now() - it.started) / 1000).toInt()) }
             add("div", "working-detail", listOfNotNull(doing, took).joinToString(" · "))
         }
         panel.button(texts.stopChanging, "ghost") { stopChange() }
+    }
+
+    /**
+     * A plate whose food changes while [node] runs, with what the planner works with in that step:
+     * the ingredients of the trip, the food of its sources, its dishes, and then the route. A run
+     * draws its steps again every second, so the animation keeps time with the clock: a new plate
+     * goes on where the last one was.
+     */
+    private fun HTMLElement.plate(node: String?) {
+        val foods =
+            when (node) {
+                Nodes.INTERVIEW, Nodes.BRIEF -> INGREDIENTS
+                Nodes.GUIDE, Nodes.MAP, Nodes.REVIEWS -> FOOD
+                Nodes.DISHES -> DISHES
+                else -> ROUTE
+            }
+        val now = Date.now()
+        add("span", "plate") {
+            setAttribute("aria-hidden", "true")
+            style.setProperty("animation-duration", "${FOOD_MILLIS}ms")
+            style.setProperty("animation-delay", "-${(now % FOOD_MILLIS).toInt()}ms")
+            add("span", "foods") {
+                style.setProperty("--foods", foods.size.toString())
+                style.setProperty("animation-duration", "${FOOD_MILLIS * foods.size}ms")
+                style.setProperty("animation-delay", "-${(now % (FOOD_MILLIS * foods.size)).toInt()}ms")
+                foods.forEach { add("span", text = it) }
+            }
+        }
     }
 
     /** One of [dishes]: the next one comes after a while, or when the traveller asks for it. */
@@ -2354,6 +2382,15 @@ class App(
 
         /** How long a step may say nothing before the page explains why. */
         const val QUIET_MILLIS = 12_000.0
+
+        /** The food on a running step's plate, by what the step works with. */
+        val INGREDIENTS = listOf("🧄", "🧅", "🌶️", "🫒", "🍋", "🍅", "🥕", "🌿")
+        val FOOD = listOf("🥖", "🧀", "🥐", "🍤", "🐟", "🍇", "🥩", "🍯")
+        val DISHES = listOf("🥘", "🍝", "🥟", "🍲", "🥗", "🍛", "🍜", "🫕")
+        val ROUTE = listOf("🗺️", "📍", "🍽️", "🧭", "🚶", "🍷", "🛵", "☕")
+
+        /** How long each food stays on the plate. */
+        const val FOOD_MILLIS = 400
 
         /** How long a dish is shown while the agent chooses: long enough to read three sentences. */
         const val DISH_MILLIS = 12_000.0

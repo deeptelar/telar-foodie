@@ -221,10 +221,68 @@ button.chip {
     border: 2px solid var(--line);
 }
 
-.step.running .dot {
-    border-color: var(--accent);
-    border-top-color: transparent;
-    animation: spin 0.8s linear infinite;
+/*
+ * A running step shows a plate whose food changes: a column of emoji, one in sight at a time, that
+ * moves up one food per beat while the plate pops. In the list it takes the room of a dot.
+ */
+.plate {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    margin: 2px -4px -4px;
+    overflow: hidden;
+    font-size: 16px;
+    line-height: 20px;
+    text-align: center;
+    animation: plate-pop 400ms ease-out infinite;
+}
+
+.foods {
+    display: block;
+    animation: plate-foods 3200ms steps(var(--foods)) infinite;
+}
+
+.foods > span {
+    display: block;
+    height: 20px;
+}
+
+.working .plate {
+    width: 26px;
+    height: 26px;
+    margin: 0;
+    font-size: 21px;
+    line-height: 26px;
+}
+
+.working .foods > span {
+    height: 26px;
+}
+
+@keyframes plate-pop {
+    0% {
+        transform: scale(0.6);
+        opacity: 0.5;
+    }
+    35% {
+        transform: scale(1.12);
+        opacity: 1;
+    }
+    55%, 100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes plate-foods {
+    to {
+        transform: translateY(-100%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .plate, .foods {
+        animation: none;
+    }
 }
 
 .step.done .dot {
@@ -337,12 +395,6 @@ button.chip {
     border-radius: 10px;
     font-size: 14px;
     white-space: pre-wrap;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
 }
 
 .question {
@@ -1274,16 +1326,6 @@ body:has(.bottom-bar) main, body:has(.working) main {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.spinner {
-    flex: none;
-    width: 18px;
-    height: 18px;
-    border: 3px solid var(--line);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.9s linear infinite;
 }
 
 article.meal.changing {
