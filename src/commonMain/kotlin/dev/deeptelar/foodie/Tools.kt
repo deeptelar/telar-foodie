@@ -576,7 +576,8 @@ internal fun Trip.repeatedDishes(meals: List<Meal>): String {
 /**
  * What to tell the model when one of [meals] is a lunch or a dinner of a dish people eat at
  * breakfast or as a snack, such as a sfogliatella for dinner; empty when none is. It is not a
- * mistake at a place that makes a meal of it, as a stall of street food does.
+ * mistake at a place that makes a meal of it, as a stall of street food does, nor for a traveller
+ * who wishes for it: the model is given the wishes to judge.
  */
 internal fun Trip.lightMeals(meals: List<Meal>): String =
     meals.filter { it.time == MealTime.LUNCH || it.time == MealTime.DINNER }.mapNotNull { meal ->
@@ -588,7 +589,8 @@ internal fun Trip.lightMeals(meals: List<Meal>): String =
                 else -> return@mapNotNull null
             }
         "\nDay ${meal.day} ${meal.time.label.lowercase()} orders ${dish.name}, which people there eat $eaten, not as a ${meal.time.label.lowercase()}. " +
-            "Unless the place makes a meal of it, as a stall of street food does, order a dish people eat at ${meal.time.label.lowercase()}."
+            "Unless the place makes a meal of it, as a stall of street food does, order a dish people eat at ${meal.time.label.lowercase()}." +
+            profile.wishes.trim().let { if (it.isEmpty()) "" else " The traveller's wishes are \"$it\": if this dish is one of them, as street food for a traveller who wishes for it, keep it, and send the route again." }
     }.joinToString("")
 
 /**

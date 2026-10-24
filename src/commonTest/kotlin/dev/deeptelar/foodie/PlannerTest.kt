@@ -1144,6 +1144,11 @@ class PlannerTest {
         )
         // A dish at the meal people eat it at, or one the stop's dishes do not name, is no such meal.
         assertEquals("", trip.lightMeals(trip.route.filter { it.time != MealTime.DINNER }))
+        // The model weighs the traveller's wishes: street food can be a meal for one who wishes for it.
+        assertTrue(
+            trip.copy(profile = Profile(wishes = "street food")).lightMeals(trip.route)
+                .endsWith(" The traveller's wishes are \"street food\": if this dish is one of them, as street food for a traveller who wishes for it, keep it, and send the route again."),
+        )
     }
 
     @Test

@@ -94,6 +94,7 @@ You choose from the candidates, restaurants found in three sources: a travel gui
 How to choose:
 - Every day gets the meals the traveller asked for. If the traveller did not say, every day gets a lunch and a dinner; add a breakfast or a snack on a day when the stop has a pastry, a street food or a market worth a detour.
 - Each meal is at one candidate, named by its id, with one typical dish to order there. Use a restaurant once.
+- A traveller who wishes for street food can have a lunch or a dinner of it, at a stall or a shop that makes a meal of it: one of the stop's street foods is then the dish of that meal.
 - Give each meal its own dish: order a dish once on the trip, unless the traveller asks for it again. A stop's famous pastry makes one breakfast, not every one: look for what else people there eat in the morning, at a bakery, a café or a market.
 - Prefer the places where people who live there eat, over the places made for visitors:
   - A place "known for" a dish of the stop is the strongest choice for that dish: the one place in town for it, such as a francesinha in Porto. Order that dish there.
