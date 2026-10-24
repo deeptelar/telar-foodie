@@ -141,4 +141,19 @@ class InterviewTest {
         assertEquals("Which meals? In Naples breakfast is a coffee and a sfogliatella.", next.single().text)
         assertEquals(listOf("Esmorzar", "Dinar", "Berenar", "Sopar"), next.single().options)
     }
+
+    @Test
+    fun `the budget the traveller tapped is the budget, whatever the model read in the request`() {
+        val trip = Trip("Un fin de semana en Nápoles con poco presupuesto", Language.SPANISH, answers = listOf(Answer(Topic.BUDGET, "¿Cuánto quieres gastar por comida?", "Precio medio")))
+
+        assertEquals("medium", trip.read(Reading(Profile(budget = "low"))).profile.budget)
+        // One special dinner is a step of the scale too.
+        val special = trip.copy(answers = listOf(Answer(Topic.BUDGET, "¿Cuánto quieres gastar por comida?", "Precio medio y una cena especial")))
+        assertEquals(Profile(budget = "medium", splurge = true), special.read(Reading(Profile(budget = "low"))).profile)
+        // Words of the traveller's own with it, or a correction after it, are the model's to read.
+        val worded = trip.copy(answers = listOf(Answer(Topic.BUDGET, "¿Cuánto quieres gastar por comida?", "Precio medio, pero barato a mediodía")))
+        assertEquals("low", worded.read(Reading(Profile(budget = "low"))).profile.budget)
+        val corrected = trip.corrected("Mejor lo menos posible")
+        assertEquals("low", corrected.read(Reading(Profile(budget = "low"))).profile.budget)
+    }
 }

@@ -192,13 +192,32 @@ internal val Trip.profileIsCurrent: Boolean get() = interview.read == answers.si
  */
 internal fun Trip.read(reading: Reading): Trip {
     val covered = interview.covered + reading.answered.filter { it !in ALWAYS_ASKED }
-    val read = copy(profile = reading.profile, interview = interview.copy(covered = covered, read = answers.size))
+    val read = copy(profile = tappedBudget(reading.profile), interview = interview.copy(covered = covered, read = answers.size))
     if (interview.stage == InterviewStage.DONE) return read
     val next = if (interview.rounds < MAX_ROUNDS && !interview.enough) nextQuestions(covered, reading.questions, language.texts) else emptyList()
     return if (next.isEmpty()) {
         read.copy(interview = read.interview.copy(stage = InterviewStage.CHECKING))
     } else {
         read.copy(questions = next, interview = read.interview.copy(covered = covered + next.map { it.topic }, rounds = interview.rounds + 1))
+    }
+}
+
+/**
+ * [profile] with the budget the traveller tapped, when the last answer about it is one of the
+ * answers to tap, in any language: they are the steps of a scale, and a model that reads them can
+ * take "on a small budget" in the request over "Mid-range" in the answer. A correction in the
+ * traveller's own words after that answer is the model's to read.
+ */
+internal fun Trip.tappedBudget(profile: Profile): Profile {
+    val last = answers.indexOfLast { it.topic == Topic.BUDGET && it.text.isNotBlank() }
+    if (last < 0 || answers.drop(last + 1).any { it.topic == null }) return profile
+    val step = Language.entries.map { it.texts.question(Topic.BUDGET).options.indexOf(answers[last].text.trim()) }.firstOrNull { it >= 0 }
+    return when (step) {
+        0 -> profile.copy(budget = "low", splurge = false)
+        1 -> profile.copy(budget = "medium", splurge = false)
+        2 -> profile.copy(budget = "medium", splurge = true)
+        3 -> profile.copy(budget = "high", splurge = false)
+        else -> profile
     }
 }
 
