@@ -9,6 +9,10 @@ changes until you like it. In English, Spanish, Catalan or German.
 **Try it: <https://deeptelar.github.io/telar-foodie/>.** Add the key of a model under Settings, or
 [plan the sample](https://deeptelar.github.io/telar-foodie/?sample), which needs no key.
 
+<p align="center">
+  <img src="docs/foodie-route.gif" width="320" alt="The sample on a phone: a few questions tapped, the planner's steps, then a route of meals in Lisbon on a map, day by day">
+</p>
+
 The whole app is one web page. There is no server behind it: the workflow runs in your browser, the
 plan is saved in your browser, and the key of your model goes from your browser straight to its
 provider. You can also speak instead of typing: the browser turns your voice into text with its own
