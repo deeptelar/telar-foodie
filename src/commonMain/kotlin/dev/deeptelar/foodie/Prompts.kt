@@ -76,7 +76,9 @@ internal fun dishesPrompt(trip: Trip): String =
         profile.taste.takeIf { it.isNotBlank() }?.let { appendLine("\nHow adventurous the traveller is: $it.") }
         profile.season.takeIf { it.isNotBlank() }?.let { appendLine("The trip is in $it: name what is in season then, and say in the description of a dish that is made or caught only in another season.") }
         profile.drinks.takeIf { it.isNotBlank() }?.let { appendLine("What the traveller drinks: $it.") }
-        profile.wishes.takeIf { it.isNotBlank() }?.let { appendLine("The traveller's wishes: $it.") }
+        profile.wishes.takeIf { it.isNotBlank() }?.let {
+            appendLine("The traveller's wishes: $it. Name two or three dishes for each wish first: for a kind of food, such as street food, seafood or sweets, the ones of that kind people there eat.")
+        }
         trip.guideNotes.forEach { (stop, text) ->
             appendLine("\nWhat the travel guide says about eating in $stop:")
             appendLine(text)

@@ -1005,6 +1005,7 @@ class PlannerTest {
                     splurge = true,
                     taste = "anything the locals eat",
                     season = "June",
+                    wishes = "street food",
                 )
             val model =
                 ScriptedChatModel {
@@ -1019,6 +1020,8 @@ class PlannerTest {
             val dishes = model.requests[1].messages.first().text
             assertTrue("Leave out what the traveller cannot eat:\n- shellfish, even traces" in dishes, dishes)
             assertTrue("The trip is in June" in dishes, dishes)
+            // A wish gets dishes of its own, as street food for a traveller who asked for it.
+            assertTrue("The traveller's wishes: street food. Name two or three dishes for each wish first" in dishes, dishes)
             val plan = model.requests[2].messages.first().text
             assertTrue("- Allergies: shellfish, even traces" in plan, plan)
             assertTrue("- Budget: high, with one special meal" in plan, plan)
