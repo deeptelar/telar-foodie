@@ -133,8 +133,10 @@ Around the graph:
 - **The traveller can sleep in more than one place.** Each stop has its hotels by night, and the
   meals the traveller wants near where they sleep are checked against the place of that night.
 - **The tools check what the agent puts on the route.** A restaurant used twice, a meal far from
-  the hotel when the traveller wants it near, or a dish already ordered on another day comes back
-  to the agent in the tool's result, to fix before it answers.
+  the hotel when the traveller wants it near, a dish already ordered on another day, a snack for
+  dinner, or a meal the traveller did not ask for comes back to the agent in the tool's result, to
+  fix before it answers. A route sent at once with its message waits until the agent has read
+  them: it fixes the meals, or sends them again as they are.
 - **The route is made for a phone.** It shows one day at a time under a strip of days that stays
   at the top, the map and the cards point at each other, and a card opens for its details. A
   change runs with the route on the screen, and a cancelled one puts back the checkpoint saved

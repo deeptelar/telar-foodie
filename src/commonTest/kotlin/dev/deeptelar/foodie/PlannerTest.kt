@@ -141,6 +141,36 @@ class PlannerTest {
         }
 
     @Test
+    fun `a route sent with its message waits until the model has heard what the tools say about it, and goes when sent again`() =
+        runTest {
+            val tarts = RoutePlan(
+                listOf(MealChoice(1, "lunch", "r2", "caldo verde", "The map lists it as Portuguese."), MealChoice(1, "dinner", "r1", "pastel de nata", "A famous tart.")),
+                message = "A day of tarts.",
+            )
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(Menu(listOf(Dish(lisbon, "pastel de nata", "A custard tart.", "breakfast"))))
+                    calls(call("set_route", tarts))
+                    calls(call("set_route", tarts))
+                }
+
+            val result = planner(model, sources()).invoke(interviewed("One day in Lisbon"), config())
+
+            val warned = model.requests[3].messages.last() as ChatMessage.ToolResult
+            assertEquals(
+                "On the route: 2 of 2 meals. Every day has its lunch and dinner.\nDay 1 dinner orders pastel de nata, which people there eat at breakfast, not as a dinner. " +
+                    "Unless the place makes a meal of it, as a stall of street food does, order a dish people eat at dinner. " +
+                    "Your message is not shown yet: change these meals, or send them again as they are if they are right for the traveller.",
+                warned.text,
+            )
+            assertEquals(4, model.requests.size)
+            assertEquals(listOf(Nodes.REVIEW), assertIs<GraphResult.Interrupted<Trip>>(result).nextNodes)
+            assertEquals("A day of tarts.", result.state.summary)
+            assertTrue((result.state.messages.last() as ChatMessage.ToolResult).text.endsWith("The route is done, and the traveller reads your message."))
+        }
+
+    @Test
     fun `a route with a mistake keeps its good meals and the model is asked again`() =
         runTest {
             val model =
@@ -1111,6 +1141,16 @@ class PlannerTest {
         )
         // A dish at the meal people eat it at, or one the stop's dishes do not name, is no such meal.
         assertEquals("", trip.lightMeals(trip.route.filter { it.time != MealTime.DINNER }))
+    }
+
+    @Test
+    fun `a meal at a time of the day the traveller did not ask for is pointed out to the agent`() {
+        val route = listOf(Meal(1, MealTime.LUNCH, "r1", "bacalhau à brás", ""), Meal(2, MealTime.BREAKFAST, "r2", "pastel de nata", ""))
+        val trip = Trip("Two days in Lisbon", profile = Profile(meals = listOf(MealTime.LUNCH, MealTime.DINNER)), route = route)
+
+        assertEquals("\nDay 2 breakfast: the traveller asked for lunch and dinner only. Take it off with remove_meal, unless the traveller asked for it.", trip.extraMeals(route))
+        // A traveller who did not say which meals may get a breakfast worth a detour.
+        assertEquals("", trip.copy(profile = Profile()).extraMeals(route))
     }
 
     @Test

@@ -239,12 +239,15 @@ private val routeEditors: List<StateTool<Trip>> =
                     if (problems.isNotEmpty()) append("\nNot on the route:\n" + problems.joinToString("\n"))
                     if (twice.isNotEmpty()) append("\nMore than once on the route: ${twice.joinToString()}. Use a restaurant once.")
                     append(" " + after.openMeals())
-                    val set = after.route.filter { meal -> plan.meals.any { it.day == meal.day && MealTime.of(it.meal) == meal.time } }
-                    append(after.farFromStay(set))
-                    append(after.repeatedDishes(set))
-                    append(after.lightMeals(set))
+                    append(after.warnings(after.planned(plan)))
                     if (plan.message.isNotBlank()) {
-                        append(if (after.finishedBy(plan)) " The route is done, and the traveller reads your message." else " Your message is not shown yet: fix this, then send the message again.")
+                        append(
+                            when {
+                                after.finishedBy(plan) -> " The route is done, and the traveller reads your message."
+                                after.completedBy(plan) -> " Your message is not shown yet: change these meals, or send them again as they are if they are right for the traveller."
+                                else -> " Your message is not shown yet: fix this, then send the message again."
+                            },
+                        )
                     }
                 }
             ToolOutcome(after, text)
@@ -258,7 +261,7 @@ private val routeEditors: List<StateTool<Trip>> =
                 "Day ${choice.day}, ${mealTime(choice.meal).label.lowercase()}: ${restaurant.name}." +
                     (if (twice) " It is on the route more than once now." else "") +
                     " " + after.openMeals() +
-                    after.route.filter { it.day == choice.day && it.time == mealTime(choice.meal) }.let { after.farFromStay(it) + after.repeatedDishes(it) + after.lightMeals(it) },
+                    after.warnings(after.route.filter { it.day == choice.day && it.time == mealTime(choice.meal) }),
             )
         },
         StateTool<Trip, MealOffer>(
@@ -424,12 +427,32 @@ private fun Trip.withMeal(choice: MealChoice): Trip {
     return copy(route = route.filterNot { it.day == meal.day && it.time == meal.time } + meal, offers = offers.filterNot { it.day == meal.day && it.time == meal.time })
 }
 
-/** Whether [plan] finished the route: it has a message, each of its meals is on the route, no meal is open and no restaurant is there twice. */
-private fun Trip.finishedBy(plan: RoutePlan): Boolean =
+/**
+ * Whether [plan] finished the route: it is [completedBy] it, and the model has heard each warning
+ * about its meals in this turn and kept them. A route sent at once with its message would else be
+ * shown before the model could read what the tools said about it.
+ */
+private fun Trip.finishedBy(plan: RoutePlan): Boolean {
+    val told = toldThisTurn()
+    return completedBy(plan) && warnings(planned(plan)).lines().filter { it.isNotBlank() }.all { it in told }
+}
+
+/** Whether [plan] completed the route: it has a message, each of its meals is on the route, no meal is open and no restaurant is there twice. */
+private fun Trip.completedBy(plan: RoutePlan): Boolean =
     plan.message.isNotBlank() &&
         plan.meals.all { choice -> route.any { it.day == choice.day && it.time == MealTime.of(choice.meal) && it.restaurantId == choice.restaurant.trim() } } &&
         (1..days).all { day -> dailyMeals.all { time -> route.any { it.day == day && it.time == time } } } &&
         route.groupBy { it.restaurantId }.values.none { it.size > 1 }
+
+/** The meals of the route at the days and times of [plan]. */
+private fun Trip.planned(plan: RoutePlan): List<Meal> = route.filter { meal -> plan.meals.any { it.day == meal.day && MealTime.of(it.meal) == meal.time } }
+
+/** What the tools told the model since the traveller's last message, before the answer that runs now. */
+private fun Trip.toldThisTurn(): String {
+    val answer = messages.indexOfLast { it is ChatMessage.Assistant }
+    return messages.take(maxOf(answer, 0)).drop(messages.indexOfLast { it is ChatMessage.User } + 1)
+        .filterIsInstance<ChatMessage.ToolResult>().joinToString("\n") { it.text }
+}
 
 /**
  * The route plan of the agent's last answer, when that answer finished the route and all of its
@@ -519,6 +542,9 @@ private suspend fun Trip.around(stop: Stop, near: String, sources: Sources): Pai
     return name to place
 }
 
+/** What the model is told about [meals] that may be wrong for the traveller, one line each; empty when nothing is. */
+internal fun Trip.warnings(meals: List<Meal>): String = farFromStay(meals) + repeatedDishes(meals) + lightMeals(meals) + extraMeals(meals)
+
 /** What the model is told about [meals] that the traveller wants near where they sleep, and that are not. Empty when all are. */
 internal fun Trip.farFromStay(meals: List<Meal>): String =
     meals.filter { it.time in profile.nearStay }.mapNotNull { meal ->
@@ -564,6 +590,19 @@ internal fun Trip.lightMeals(meals: List<Meal>): String =
         "\nDay ${meal.day} ${meal.time.label.lowercase()} orders ${dish.name}, which people there eat $eaten, not as a ${meal.time.label.lowercase()}. " +
             "Unless the place makes a meal of it, as a stall of street food does, order a dish people eat at ${meal.time.label.lowercase()}."
     }.joinToString("")
+
+/**
+ * What to tell the model when one of [meals] is at a time of the day the traveller did not ask
+ * for, such as a breakfast when they asked for lunch and dinner; empty when none is. A traveller
+ * who did not say may get a breakfast or a snack worth a detour.
+ */
+internal fun Trip.extraMeals(meals: List<Meal>): String {
+    if (profile.meals.isEmpty()) return ""
+    return meals.filter { it.time !in dailyMeals }.joinToString("") { meal ->
+        "\nDay ${meal.day} ${meal.time.label.lowercase()}: the traveller asked for ${dailyMeals.joinToString(" and ") { it.label.lowercase() }} only. " +
+            "Take it off with remove_meal, unless the traveller asked for it."
+    }
+}
 
 /** The stop's dish [meal] orders, the longest one its words name, such as "ensaïmada amb xocolata" in "an ensaïmada amb xocolata, warm". */
 private fun Trip.dishOf(meal: Meal): Dish? {
