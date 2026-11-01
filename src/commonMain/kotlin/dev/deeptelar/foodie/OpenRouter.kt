@@ -16,8 +16,8 @@ object OpenRouter {
     /** Its list of models, which needs no key and which a page may read. */
     const val MODELS = "$ADDRESS/models"
 
-    /** The models the README rates best for the planner, at the top of the list when OpenRouter has them. */
-    val RECOMMENDED = listOf("google/gemma-4-31b-it")
+    /** The best model with open weights in the README's comparison, at the top of the list when OpenRouter has it. */
+    val RECOMMENDED = listOf("mistralai/mistral-large-4-0")
 
     /** Whether [address] is OpenRouter's. */
     fun isAt(address: String): Boolean = "openrouter.ai" in address

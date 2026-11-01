@@ -245,7 +245,28 @@ The planner asks a lot of a model: it interviews in the traveller's language, na
 is known for from its own knowledge, and then calls tools until every meal has a place. Small
 models do the tools well enough, since the code checks every call, but they know little about food.
 
-We planned the same trip with each model on 23 October 2026, through Ollama: *"I want to visit
+**Claude Sonnet 5.5 works great. Mistral Large 4 is the best model with open weights we tried**,
+though it is slower, and Claude Haiku 5.5 is the cheapest that did the job. `gemma4:cloud` (31B)
+works, but not for a trip you care about, and we do not recommend a smaller model.
+
+We planned two trips with each model on 1 November 2026, through OpenRouter, except Sonnet, through
+Anthropic: Palma, as below, and *"I want to visit Naples for 3 days and I want to try their street
+food"*. Each run plans a route, changes a dinner and swaps a lunch. Every model searched the same
+download of the street map, and we read the routes ourselves; nobody checked that each place serves
+its dish. These are 2 to 4 runs of each model: a first look, not a ranking.
+
+| Model | Open weights | Runs finished | Time of a run | Cost of a run | What we saw |
+|---|---|---|---|---|---|
+| `claude-sonnet-5-5` | No | 2 of 2 | 1.5 min | not measured | The most honest about what its sources do not say; street food at the centre of Naples |
+| `mistralai/mistral-large-4-0` | Yes | 4 of 4 | 6.5 to 9 min | $0.15 to $0.27 | All 12 meals every time, and the most street food in Naples; sometimes states a guess as a fact |
+| `z-ai/glm-5.3` | Yes | 3 of 4 | 3.5 to 11 min | $0.10 to $0.27 | Good on Mallorcan food; one run stopped when OpenRouter gave no answer for 5 minutes |
+| `meta/muse-spark-open` | Yes | 2 of 2 | 2 min | $0.10 to $0.12 | Fast, but dishes at unlikely places; its license asks you to show "Built with Muse Spark Open" |
+| `anthropic/claude-haiku-5.5` | No | 4 of 4 | 1.5 min | $0.02 to $0.03 | Solid classics, and honest about thin sources; one run filled 9 of 12 meals and did not say so |
+| `typesafe/jev-router` | No | 4 of 4 | 2 to 8 min | about $0.10 to $0.15 | A router: it picks a model for each request, so results can change. Strong street food in Naples, though plainer in Palma |
+
+Costs are approximate, and a run that failed still cost about $0.11.
+
+An older comparison, from 23 October 2026, through Ollama: *"I want to visit
 Palma de Mallorca for 3 days and I want to try their food"*, then a change in words ("make the
 first dinner a place for grilled fish") and a change from the page (day 1 lunch is touristy). The
 street map gave no answer that day, so every model chose from the same 10 places of the travel
@@ -253,9 +274,9 @@ guide.
 
 | Model | Runs on | Time | Food of the place | Following the rules | Verdict |
 |---|---|---|---|---|---|
-| `gemma4:cloud` (31B) | Ollama's cloud, free plan | 4 min | Right: ensaïmada, sobrassada, tumbet, coca, frito, hierbas | Summaries true to the route; one question in Spanish on an English trip; left 7 of 12 meals open when it had few places | **Recommended** |
-| `gemma4:12b` | 8 GB GPU and 32 GB of RAM, we think | – | Named sobrassada and ensaïmada in the interview | Interview in good English | Untested to the end: it ran out of memory on 15 GB of RAM ([help wanted](https://github.com/deeptelar/telar-foodie/issues/5)) |
-| `qwen3:8b` | 8 GB GPU, 16 GB of RAM | 48 min | Weak: Catalan dishes as Mallorcan ones, seafood for breakfast | Interview in Spanish on an English trip; one interview answer it could not read; summaries that list meals not on the route | Works, but not for a trip you care about |
+| `gemma4:cloud` (31B) | Ollama's cloud, free plan | 4 min | Right: ensaïmada, sobrassada, tumbet, coca, frito, hierbas | Summaries true to the route; one question in Spanish on an English trip; left 7 of 12 meals open when it had few places | Works, but not for a trip you care about |
+| `gemma4:12b` | 8 GB GPU and 32 GB of RAM, we think | – | Named sobrassada and ensaïmada in the interview | Interview in good English | Not recommended. Untested to the end: it ran out of memory on 15 GB of RAM |
+| `qwen3:8b` | 8 GB GPU, 16 GB of RAM | 48 min | Weak: Catalan dishes as Mallorcan ones, seafood for breakfast | Interview in Spanish on an English trip; one interview answer it could not read; summaries that list meals not on the route | Not recommended |
 
 Not tried: `deepseek-v4.1-flash`, `glm-5.3-flash` and `minimax-m3.1-flash` need Ollama's paid plan.
 
@@ -264,18 +285,27 @@ the rules that matter are checked in code. A place the traveller left cannot com
 of one meal cannot take another off the route, an empty answer gets a message from the code, and
 a trip without places says so instead of letting the model invent them.
 
+Someone looking for one kind of food gets the same care. A word in a name proves nothing: a place
+counts when the street map or the guide says it serves that food. A model that puts another place
+on the route is told to take it off, and when it does not, the traveller hears from the code that no
+source confirms it. So when a city has no such kitchen, as with Canarian food in Barcelona in our
+tests, the answer can be no route and an honest explanation.
+
 To compare a model yourself, run [`LivePlannerTest`](src/jvmTest/kotlin/dev/deeptelar/foodie/LivePlannerTest.kt)
 with it. With `FOODIE_SOURCES` set to a file, what the sources answered is kept in it, and the next
-model plans from the same places:
+model plans from the same places. The servers of the street map are often busy, and models search
+it in different words: with `FOODIE_MAP` set to a download of a city, as
+[`DownloadedMap`](src/jvmTest/kotlin/dev/deeptelar/foodie/DownloadedMap.kt) describes, every search
+answers from that file.
 
 ```bash
-FOODIE_SOURCES=palma.json FOODIE_MODEL_URL=http://localhost:11434/v1 FOODIE_MODEL=gemma4:12b FOODIE_MODEL_KEY=ollama \
+FOODIE_SOURCES=palma.json FOODIE_MODEL_URL=http://localhost:11434/v1 FOODIE_MODEL=gemma4:cloud FOODIE_MODEL_KEY=ollama \
 FOODIE_REQUEST="I want to visit Palma de Mallorca for 3 days and I want to try their food" \
 ./gradlew jvmTest --tests '*LivePlannerTest*' --rerun
 ```
 
 The run, with the time each part took, is written to `build/live-planner.txt`. A result for a
-model that is not in the table is welcome as an issue.
+model that is not in the table is welcome as an issue, above all one with open weights.
 
 ## Where things are
 
