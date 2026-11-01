@@ -107,6 +107,18 @@ fun Trip.speciality(restaurant: Restaurant): Dish? {
 /** A word shorter than this matches too much: "pao" is in many names. */
 private const val MIN_WORD = 4
 
+/** Whether [text] has one of the words for the food the traveller is looking for. */
+private fun Trip.namesWhatIsSought(text: String): Boolean {
+    val words = " " + text.simplified() + " "
+    return profile.seeking.map { it.simplified() }.any { it.length >= MIN_WORD && " $it" in words }
+}
+
+/** Whether a source says that [restaurant] serves the food the traveller is looking for, in its cuisine or in the guide's words. */
+fun Trip.serves(restaurant: Restaurant): Boolean = namesWhatIsSought("${restaurant.cuisine} ${restaurant.note}")
+
+/** Whether only the name of [restaurant] speaks of the food the traveller is looking for: a bar can be called Canarias and pour beer. */
+fun Trip.onlyNamedFor(restaurant: Restaurant): Boolean = !serves(restaurant) && namesWhatIsSought(restaurant.name)
+
 /** The nearest big sight to [restaurant] within [SIGHT_METRES], and how far it is. */
 fun Trip.nextToASight(restaurant: Restaurant): Pair<Sight, Int>? =
     sights.asSequence()
@@ -123,14 +135,15 @@ fun Trip.nextToASight(restaurant: Restaurant): Pair<Sight, Int>? =
 internal const val SIGHT_METRES = 60
 
 /**
- * How much speaks for [restaurant] before anyone has read about it. Being known for a dish of the
- * stop counts most, then a good rating that many people gave, then the stop's own cuisine and each
+ * How much speaks for [restaurant] before anyone has read about it. A source that says it serves
+ * the food the traveller is looking for counts most, then being known for a dish of the stop, then a good rating that many people gave, then the stop's own cuisine and each
  * source that knows the place. Being in the travel guide is no more than being on the map: the
  * guide writes for visitors. A place next to a big sight counts less.
  */
 fun Trip.evidence(restaurant: Restaurant): Double {
     var points = restaurant.sources.size.toDouble()
     if (speciality(restaurant) != null) points += 2.5
+    if (serves(restaurant)) points += 3.0
     val stars = restaurant.rating
     if (stars != null && (restaurant.ratings ?: 0) >= MIN_RATINGS) points += (stars - 3.5).coerceIn(0.0, 1.5) * 2
     val cuisines = stop(restaurant.stop)?.cuisines.orEmpty()
@@ -160,6 +173,8 @@ fun Trip.line(restaurant: Restaurant): String =
             if (kind.isNotBlank() && kind != "restaurant") append(" · ").append(kind.replace('_', ' '))
             if (cuisine.isNotBlank()) append(" · ").append(cuisine)
             speciality(restaurant)?.let { append(" · known for: ").append(it.name) }
+            if (serves(restaurant)) append(" · a source says it serves what the traveller is looking for")
+            if (onlyNamedFor(restaurant)) append(" · only its name speaks for what the traveller is looking for")
             append(" · found in: ").append(sources.joinToString(", ") { it.label })
             rating?.let { append(" · ").append(it).append(" stars") }
             ratings?.let { append(" (").append(it).append(" ratings)") }

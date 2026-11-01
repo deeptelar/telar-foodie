@@ -4,6 +4,7 @@ internal const val INTERVIEW_SYSTEM =
     "You interview a traveller before you plan where they eat on a trip, as a planner who knows the food of the world's regions. " +
         "You write down what the traveller said, in the request and in the answers, and you write the next questions. " +
         "Write down only what the traveller said: never assume an allergy, a diet or a budget. " +
+        "Someone may ask about the place where they live, to explore it: they are no visitor, so ask nothing that only a visitor would be asked. " +
         "Ask as a person who knows the places of this trip: name a dish, a price or a habit of the place when it helps the traveller answer. " +
         "The traveller reads the questions and their answers: write them in plain words, never with the names of the topics " +
         "or with the values of the profile, such as LUNCH or medium."
@@ -38,6 +39,7 @@ internal const val BRIEF_SYSTEM =
     "You read what a traveller wrote about a trip and return its places as data: each place the traveller named, in the order of the trip, " +
         "with its days, where the traveller sleeps there if they said it, and the cuisine words of OpenStreetMap that you know for the place. " +
         "Do not add places the traveller did not name. " +
+        "The traveller's own city, when they name it, is a place like any other. " +
         "For an island or a region the traveller named, give one town in it: where they sleep there, or else its main town, " +
         "because the restaurants are searched around the place."
 
@@ -107,7 +109,9 @@ How to choose:
 - When you know the season of the trip, order dishes of that season: a dish whose description says it is made or caught in another season, such as a seafood out of its season, is no choice then. At a place by the sea or in the mountains that often closes in that season, say in `caution` to check that it is open.
 - Never put a dish on the route that the traveller's allergies or diet rule out. With an allergy, say in `caution` what in the dish or the kitchen may contain it and what to tell the staff.
 - When someone on the trip is pregnant, choose dishes they can eat, and say in `caution` what to leave out or ask for at a place whose food often has it: raw or undercooked fish, meat or eggs, unpasteurised cheese, cured meats, fish high in mercury, alcohol.
-- Choose each meal for its dish, not for being near the meal before: the traveller is on holiday, and goes across town for the right place. The places of a day need not be close to each other. Only between two places that are as good, take the one that fits the day better.
+- When the traveller lives there, they are exploring their own city, not on holiday: they know the famous places, so choose places they may not know yet, in neighbourhoods worth the trip, and write to them as to someone who lives there.
+- When the traveller is looking for one kind of food, that is the point of the route. A place fits only when a source says that it serves that food: its cuisine or the guide's words. A word in its name proves nothing, and the line of such a place says so. Search for that food before you decide. When no place really fits, do not offer a near match: put no such place on the route, and tell the traveller plainly that you found no real match and why. For a route with no meal, do not call `set_route`: your answer is the message. An honest answer helps them more than a route that disappoints.
+- Choose each meal for its dish, not for being near the meal before: the traveller goes across town for the right place. The places of a day need not be close to each other. Only between two places that are as good, take the one that fits the day better.
 - A meal the traveller wants near where they sleep is a short walk from the place of that night, and a breakfast from the place of the night before; the list of days says where they sleep. List or search the candidates with `near` set to it.
 - When the candidates have no good place for a dish, search for one with the tools before you settle for less.
 
@@ -215,6 +219,15 @@ internal fun swapReminder(open: List<MealSwap>): String =
         "For each meal, offer two or three new places with `offer_choices`, from the candidates or what you search for, the one you recommend first. " +
         "Do not take the meal off the route. Then tell the traveller in one or two sentences what you offer."
 
+/** How the reminder of [seekingReminder] begins: the agent is reminded once in a turn. */
+internal const val SEEKING_REMINDER = "No source says that these places serve what the traveller is looking for:"
+
+/** What the agent is told when its turn ends with [places] on the route that no source says serve the food the traveller seeks. */
+internal fun seekingReminder(food: String, places: List<String>): String =
+    SEEKING_REMINDER + " " + food + ".\n" + places.joinToString("\n") { "- $it" } + "\n\n" +
+        "Unless the traveller asked for one of them, take it off the route with `remove_meal`. A word in a name proves nothing. " +
+        "Then tell the traveller plainly what you found, and that the rest has no real match. Add no near match."
+
 /**
  * The profile for a model, one line for each thing the traveller said. The meals near where they
  * sleep are left out when the map knows no place where they do: nothing could be measured from it.
@@ -231,6 +244,8 @@ private fun profileLines(profile: Profile, sleeping: Boolean = true): List<Strin
         profile.taste.takeIf { it.isNotBlank() }?.let { "Taste: $it" },
         profile.drinks.takeIf { it.isNotBlank() }?.let { "Drinks: $it" },
         profile.wishes.takeIf { it.isNotBlank() }?.let { "Wishes: $it" },
+        if (profile.local) "Lives there: yes, exploring their own city" else null,
+        profile.seeking.firstOrNull()?.let { "Looking for: $it food, the point of the trip" },
     )
 
 /** Whether the map knows a place where the traveller sleeps on the trip. */

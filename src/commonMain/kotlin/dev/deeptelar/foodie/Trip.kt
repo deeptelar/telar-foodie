@@ -109,7 +109,7 @@ data class BriefStop(
             "For an island or a region, the name the traveller gave with the town, for example \"Menorca (Maó)\". Empty if it is the same.",
     )
     val shown: String = "",
-    @Description("How many days the traveller eats there. 1 if the request does not say.")
+    @Description("How many days the traveller eats there: 2 for a weekend, 1 for a day or an evening. 1 if the request does not say.")
     val days: Int = 1,
     @Description(
         "The values OpenStreetMap uses in its `cuisine` tag for the traditional food of this place, in lower case, " +

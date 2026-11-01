@@ -1738,6 +1738,7 @@ class App(
             profile.taste.takeIf { it.isNotBlank() }?.let { texts.taste to it },
             profile.drinks.takeIf { it.isNotBlank() }?.let { texts.drinks to it },
             profile.wishes.takeIf { it.isNotBlank() }?.let { texts.wishes to it },
+            if (profile.local) texts.home to texts.youLiveHere else null,
         )
 
     private fun HTMLElement.route(trip: Trip) {

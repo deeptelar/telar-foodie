@@ -1267,6 +1267,103 @@ class PlannerTest {
             assertEquals(0, model.remaining)
         }
 
+    private val seekingCanarian = Profile(seeking = listOf("canarian", "canario"))
+    private val barCanario = Restaurant(stop = lisbon, name = "Bar Canario", lat = 38.7120, lon = -9.1301, sources = setOf(Source.MAP))
+    private val guachinche = Restaurant(stop = lisbon, name = "Guachinche", lat = 38.7130, lon = -9.1311, cuisine = "canarian", sources = setOf(Source.MAP))
+    private val nothingInTheGuide = TravelGuide { GuidePage("", emptyList()) }
+
+    @Test
+    fun `a place counts for the food the traveller seeks by what a source says, not by its name`() {
+        val trip = Trip("Canarian food", profile = seekingCanarian)
+
+        assertTrue(trip.onlyNamedFor(barCanario) && !trip.serves(barCanario))
+        assertTrue(trip.serves(guachinche) && !trip.onlyNamedFor(guachinche))
+        assertTrue(trip.serves(barCanario.copy(note = "Papas arrugadas, as a Canarian kitchen makes them.")))
+        assertTrue("only its name speaks" in trip.line(barCanario.copy(id = "r1")))
+        assertTrue("a source says it serves" in trip.line(guachinche.copy(id = "r2")))
+        assertTrue(trip.evidence(guachinche) > trip.evidence(barCanario))
+    }
+
+    @Test
+    fun `the map is searched for the food the traveller seeks`() =
+        runTest {
+            val searches = mutableListOf<MapSearch>()
+            val model = ScriptedChatModel { answers(brief); answers(menu); says("No real match.") }
+            val map = StreetMap { _, _, search, _ -> searches += search; listOf(barCanario) }
+
+            planner(model, sources(map = map, guide = nothingInTheGuide)).invoke(interviewed("Canarian food in Lisbon", seekingCanarian), config())
+
+            assertEquals(listOf("canarian", "canario", "portuguese"), (searches.first() as MapSearch.Cuisine).words)
+        }
+
+    @Test
+    fun `a route with no meal is a fair answer when nothing fits the food the traveller seeks`() =
+        runTest {
+            val model = ScriptedChatModel { answers(brief); answers(menu); says("There is no real Canarian kitchen here: only a bar with the word in its name.") }
+
+            val trip = planner(model, sources(map = StreetMap { _, _, _, _ -> listOf(barCanario) }, guide = nothingInTheGuide)).invoke(interviewed("Canarian food in Lisbon", seekingCanarian), config()).state
+
+            assertEquals(emptyList(), trip.route)
+            assertEquals("There is no real Canarian kitchen here: only a bar with the word in its name.", trip.summary)
+        }
+
+    @Test
+    fun `an agent that puts a place on the route for its name alone is reminded, and takes it off`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "papas arrugadas", "Canario is in its name."))
+                    says("A Canarian lunch.")
+                    calls("remove_meal", MealSlot(1, "lunch"))
+                    says("I found no real match: the name was all that spoke for it.")
+                }
+
+            val trip = planner(model, sources(map = StreetMap { _, _, _, _ -> listOf(barCanario) }, guide = nothingInTheGuide)).invoke(interviewed("Canarian food in Lisbon", seekingCanarian), config()).state
+
+            val reminder = model.requests[4].messages.last()
+            assertIs<ChatMessage.User>(reminder)
+            assertTrue(reminder.text.startsWith("$SEEKING_REMINDER canarian.\n- Bar Canario\n"), reminder.text)
+            assertEquals(emptyList(), trip.route)
+            assertEquals("I found no real match: the name was all that spoke for it.", trip.summary)
+        }
+
+    @Test
+    fun `an agent that keeps such a place after the reminder leaves it to the code to warn the traveller`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "papas arrugadas", "Canario is in its name."))
+                    says("A Canarian lunch.")
+                    says("Enjoy your Canarian lunch.")
+                }
+
+            val trip = planner(model, sources(map = StreetMap { _, _, _, _ -> listOf(barCanario) }, guide = nothingInTheGuide)).invoke(interviewed("Canarian food in Lisbon", seekingCanarian), config()).state
+
+            assertEquals(1, trip.route.size)
+            assertEquals("Enjoy your Canarian lunch.\n\nNo source confirms that these places serve canarian food: Bar Canario. Check before you go.", trip.summary)
+        }
+
+    @Test
+    fun `a place that a source vouches for needs no reminder`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "papas arrugadas", "The map says Canarian."))
+                    says("A Canarian lunch.")
+                }
+
+            val trip = planner(model, sources(map = StreetMap { _, _, _, _ -> listOf(guachinche) }, guide = nothingInTheGuide)).invoke(interviewed("Canarian food in Lisbon", seekingCanarian), config()).state
+
+            assertEquals(1, trip.route.size)
+            assertEquals("A Canarian lunch.", trip.summary)
+        }
+
     @Test
     fun `a meal the traveller wants changed is not taken off the route, and an agent that offers nothing is reminded once`() =
         runTest {

@@ -40,6 +40,22 @@ class InterviewTest {
     }
 
     @Test
+    fun `someone who explores their own city is asked how much time they have, and not where they stay`() {
+        val read = Trip("Exploring Barcelona, where I live").read(Reading(Profile(local = true), questions = listOf(Question(Topic.WHERE, "How many days will you stay?"))))
+
+        assertEquals(English.howMuchTime, read.questions.first())
+        assertTrue(Topic.STAY in read.interview.covered)
+        assertTrue(Topic.STAY !in Trip("Barcelona").read(Reading(Profile())).interview.covered)
+    }
+
+    @Test
+    fun `a weekend at home that the request names is not asked about`() {
+        val read = Trip("A route for this weekend in Barcelona, where I live").read(Reading(Profile(local = true), answered = listOf(Topic.WHERE)))
+
+        assertEquals(listOf(Topic.ALLERGIES, Topic.PREGNANCY, Topic.DIET), read.questions.map { it.topic })
+    }
+
+    @Test
     fun `answers make the profile out of date until the model read them`() {
         val asked = Trip("Naples").read(Reading(Profile()))
         assertTrue(asked.profileIsCurrent)

@@ -156,7 +156,7 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                 work = { trip ->
                     gather(trip, trip.language.texts.theMap) { stop ->
                         reportProgress(Activity(trip.language.texts.lookingOnTheMap(stop.cuisines.firstOrNull() ?: "local", stop.title)))
-                        val found = effect("map ${stop.name}") { sources.map.restaurants(stop.name, stop.centre, MapSearch.Cuisine(stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) }
+                        val found = effect("map ${stop.name}") { sources.map.restaurants(stop.name, stop.centre, MapSearch.Cuisine(trip.profile.seeking + stop.cuisines.ifEmpty { LOCAL_CUISINES }), MAP_RADIUS) }
                         // The sights are a help, not a need: without them, or when they are slow, the restaurants are still candidates.
                         val sights =
                             try {
@@ -301,6 +301,10 @@ private fun Trip.checked(): Trip {
     val open = unswapped
     val reminded = messages.lastOrNull { it is ChatMessage.User }.let { it is ChatMessage.User && it.text.startsWith(SWAP_REMINDER) }
     if (open.isNotEmpty() && !reminded) return copy(messages = messages + ChatMessage.User(swapReminder(open)))
+    val food = profile.seeking.firstOrNull()
+    val doubtful = route.mapNotNull { restaurant(it.restaurantId) }.filterNot { serves(it) }.map { it.name }.distinct().takeIf { food != null }.orEmpty()
+    val told = messages.lastOrNull { it is ChatMessage.User }.let { it is ChatMessage.User && it.text.startsWith(SEEKING_REMINDER) }
+    if (doubtful.isNotEmpty() && !told) return copy(messages = messages + ChatMessage.User(seekingReminder(food.orEmpty(), doubtful)))
     val texts = language.texts
     val meals = { list: List<MealSwap> -> list.map { "${texts.day(it.day)}, ${texts.mealInSentence(it.time)}" } }
     val offered = swaps.filter { offerFor(it.day, it.time) != null }
@@ -311,15 +315,17 @@ private fun Trip.checked(): Trip {
             offered.isNotEmpty() -> texts.placesOffered(meals(offered))
             else -> texts.routeReady
         }
+    // A model that keeps those places after the reminder keeps them, but the traveller hears from the code that no source vouches for them.
+    val warned = listOfNotNull(said, doubtful.takeIf { it.isNotEmpty() }?.let { texts.notConfirmed(food.orEmpty(), it) }).joinToString("\n\n")
     // The code's words go with the agent's last answer, if it said anything, so that the summary has both.
     val last = messages.lastOrNull() as? ChatMessage.Assistant
-    val told =
+    val written =
         when {
-            said == null -> messages
-            last != null && last.toolCalls.isEmpty() -> messages.dropLast(1) + ChatMessage.Assistant(listOf(last.text.trim(), said).filter { it.isNotEmpty() }.joinToString("\n\n"))
-            else -> messages + ChatMessage.Assistant(said)
+            warned.isEmpty() -> messages
+            last != null && last.toolCalls.isEmpty() -> messages.dropLast(1) + ChatMessage.Assistant(listOf(last.text.trim(), warned).filter { it.isNotEmpty() }.joinToString("\n\n"))
+            else -> messages + ChatMessage.Assistant(listOfNotNull(finishingPlan?.message?.trim()?.takeIf { said == null && it.isNotEmpty() }, warned).joinToString("\n\n"))
         }
-    return copy(messages = told, swaps = emptyList())
+    return copy(messages = written, swaps = emptyList())
 }
 
 /** The trip with a question about where it goes, the one thing the planner cannot go on without. */

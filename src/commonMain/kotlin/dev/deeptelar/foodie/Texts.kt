@@ -366,6 +366,16 @@ interface Texts {
     /** The message of a route the agent finished without a word. */
     val routeReady: String
 
+    /** What the traveller is told when [places] stay on the route, and no source says that they serve [food]. */
+    fun notConfirmed(food: String, places: List<String>): String
+
+    /** The question about time for someone who lives in the place of the trip. */
+    val howMuchTime: Question
+
+    /** The label of the profile for someone who lives in the place of the trip, and its value. */
+    val home: String
+    val youLiveHere: String
+
     // The sample, a script in place of a model
 
     val sampleRequest: String

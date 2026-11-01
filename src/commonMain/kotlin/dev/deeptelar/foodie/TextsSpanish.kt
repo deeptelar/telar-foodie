@@ -369,6 +369,14 @@ object Spanish : Texts {
 
     override val routeReady = "Tu ruta está lista. Si algo no te encaja, pide un cambio."
 
+    override fun notConfirmed(food: String, places: List<String>) = "Ninguna fuente confirma que estos sitios sirvan comida \"$food\": ${places.joinedWith("y")}. Compruébalo antes de ir."
+
+    override val howMuchTime = Question(Topic.WHERE, "¿Cuánto tiempo tienes para explorar?", listOf("Una tarde", "Un día", "Un fin de semana", "Unos días"))
+
+    override val home = "Casa"
+
+    override val youLiveHere = "Vives aquí"
+
     override val staySaidNowhere = "Quieres algunas comidas cerca de donde duermes, pero no sé dónde es. Pide un cambio con una calle o una plaza cercana."
 
     override val sampleRequest = "Dos días en Lisboa. Me encantan el marisco y los dulces."

@@ -369,6 +369,14 @@ object Catalan : Texts {
 
     override val routeReady = "La teva ruta és a punt. Si alguna cosa no et fa el pes, demana un canvi."
 
+    override fun notConfirmed(food: String, places: List<String>) = "Cap font confirma que aquests llocs serveixin menjar \"$food\": ${places.joinedWith("i")}. Comprova-ho abans d'anar-hi."
+
+    override val howMuchTime = Question(Topic.WHERE, "Quant de temps tens per explorar?", listOf("Una tarda", "Un dia", "Un cap de setmana", "Uns quants dies"))
+
+    override val home = "Casa"
+
+    override val youLiveHere = "Vius aquí"
+
     override val staySaidNowhere = "Vols alguns àpats a prop d'on dorms, però no sé on és. Demana un canvi amb un carrer o una plaça propers."
 
     override val sampleRequest = "Dos dies a Lisboa. M'encanten el marisc i els dolços."

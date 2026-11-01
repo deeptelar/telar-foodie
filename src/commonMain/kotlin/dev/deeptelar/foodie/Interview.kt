@@ -93,6 +93,14 @@ data class Profile(
             "Not the places, the days or where the traveller stays: the planner has those already. Empty if nothing else was said.",
     )
     val wishes: String = "",
+    @Description("Whether the traveller lives in the place of the trip and is exploring it, for example \"my city\" or \"where I live\". False if not said.")
+    val local: Boolean = false,
+    @Description(
+        "Only when one kind of food is the point of the trip, for example \"authentic Canarian restaurants\": its OpenStreetMap cuisine value first, " +
+            "then the words for it in the languages of the place, in lower case, for example [\"canarian\", \"canario\", \"canaria\"]. " +
+            "Empty when the traveller wants the food of the place, or wishes for street food or markets among other things.",
+    )
+    val seeking: List<String> = emptyList(),
 )
 
 @Serializable
@@ -164,9 +172,12 @@ internal const val MAX_ROUNDS = 4
 /**
  * The questions of the next round: the first topics in [Topic] order that are not [covered], each
  * in the words the model [wrote] for it, or in its plain words of [texts] when the model wrote none.
+ * With [local], the traveller lives there, and is asked how much time they have.
  */
-internal fun nextQuestions(covered: Set<Topic>, wrote: List<Question>, texts: Texts): List<Question> =
+internal fun nextQuestions(covered: Set<Topic>, wrote: List<Question>, texts: Texts, local: Boolean = false): List<Question> =
     Topic.entries.filter { it !in covered }.take(PER_ROUND).map { topic ->
+        // Someone at home has an evening or a weekend: "how many days do you stay" is a question for a visitor.
+        if (local && topic == Topic.WHERE) return@map texts.howMuchTime
         val plain = texts.question(topic)
         val written = wrote.firstOrNull { it.topic == topic && it.text.isNotBlank() }?.tidied() ?: return@map plain
         // A model writes the answers of these as the values of the profile, such as LUNCH or low: they keep the plain ones.
@@ -188,13 +199,14 @@ internal val Trip.profileIsCurrent: Boolean get() = interview.read == answers.si
  * The trip after the model read the traveller's words into [reading]: the profile is the new one,
  * what the words answer is covered, and the next round of questions is open, if a topic is left.
  * Allergies and pregnancy are asked about even when the request mentions them: a planner makes sure of them.
- * With no topic left, the interview waits for the traveller to check the profile.
+ * A traveller who lives there is not asked where they stay. With no topic left, the interview waits for the traveller to check the profile.
  */
 internal fun Trip.read(reading: Reading): Trip {
-    val covered = interview.covered + reading.answered.filter { it !in ALWAYS_ASKED }
+    // Someone who lives there sleeps at home: where they stay is no question.
+    val covered = interview.covered + reading.answered.filter { it !in ALWAYS_ASKED } + listOfNotNull(Topic.STAY.takeIf { reading.profile.local })
     val read = copy(profile = tappedBudget(reading.profile), interview = interview.copy(covered = covered, read = answers.size))
     if (interview.stage == InterviewStage.DONE) return read
-    val next = if (interview.rounds < MAX_ROUNDS && !interview.enough) nextQuestions(covered, reading.questions, language.texts) else emptyList()
+    val next = if (interview.rounds < MAX_ROUNDS && !interview.enough) nextQuestions(covered, reading.questions, language.texts, reading.profile.local) else emptyList()
     return if (next.isEmpty()) {
         read.copy(interview = read.interview.copy(stage = InterviewStage.CHECKING))
     } else {
