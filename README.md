@@ -247,7 +247,8 @@ models do the tools well enough, since the code checks every call, but they know
 
 **Claude Sonnet 5.5 works great. Mistral Large 4 is the best model with open weights we tried**,
 though it is slower, and Claude Haiku 5.5 is the cheapest that did the job. `gemma4:cloud` (31B)
-works, but not for a trip you care about, and we do not recommend a smaller model.
+works, and through OpenRouter (`google/gemma-4-31b-it`) now gives complete routes for about 2 cents,
+but not for a trip you care about, and we do not recommend a smaller model.
 
 We planned two trips with each model on 1 November 2026, through OpenRouter, except Sonnet, through
 Anthropic: Palma, as below, and *"I want to visit Naples for 3 days and I want to try their street
@@ -261,8 +262,9 @@ its dish. These are 2 to 4 runs of each model: a first look, not a ranking.
 | `mistralai/mistral-large-4-0` | Yes | 4 of 4 | 6.5 to 9 min | $0.15 to $0.27 | All 12 meals every time, and the most street food in Naples; sometimes states a guess as a fact |
 | `z-ai/glm-5.3` | Yes | 3 of 4 | 3.5 to 11 min | $0.10 to $0.27 | Good on Mallorcan food; one run stopped when OpenRouter gave no answer for 5 minutes |
 | `meta/muse-spark-open` | Yes | 2 of 2 | 2 min | $0.10 to $0.12 | Fast, but dishes at unlikely places; its license asks you to show "Built with Muse Spark Open" |
-| `anthropic/claude-haiku-5.5` | No | 4 of 4 | 1.5 min | $0.02 to $0.03 | Solid classics, and honest about thin sources; one run filled 9 of 12 meals and did not say so |
+| `anthropic/claude-haiku-5.5` | No | 4 of 4 | 1.5 min | $0.02 to $0.03 | Solid classics, and honest about thin sources; one run filled 9 of 12 meals, before the code took the meals as tapped |
 | `typesafe/jev-router` | No | 4 of 4 | 2 to 8 min | about $0.10 to $0.15 | A router: it picks a model for each request, so results can change. Strong street food in Naples, though plainer in Palma |
+| `google/gemma-4-31b-it` | Yes | 4 of 4 | 2 to 7 min | $0.01 to $0.03 | All 12 meals and no dish twice, with the code's help; but it rewords a refused dish into "seafood" or "fish", and knows little about Mallorcan food |
 
 Costs are approximate, and a run that failed still cost about $0.11.
 
@@ -290,6 +292,11 @@ counts when the street map or the guide says it serves that food. A model that p
 on the route is told to take it off, and when it does not, the traveller hears from the code that no
 source confirms it. So when a city has no such kitchen, as with Canarian food in Barcelona in our
 tests, the answer can be no route and an honest explanation.
+
+The meals a traveller taps are taken as they are, since a model that read them sometimes came back
+with none. A dish that names nothing, such as "local dishes", is refused, and so is a dish already
+on the route, unless the traveller asked for it. Code can make a route complete, but not knowledgeable:
+Gemma answers a refusal with new words, not better food.
 
 To compare a model yourself, run [`LivePlannerTest`](src/jvmTest/kotlin/dev/deeptelar/foodie/LivePlannerTest.kt)
 with it. With `FOODIE_SOURCES` set to a file, what the sources answered is kept in it, and the next
