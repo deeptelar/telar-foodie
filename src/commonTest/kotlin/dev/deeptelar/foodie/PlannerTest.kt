@@ -1267,6 +1267,92 @@ class PlannerTest {
             assertEquals(0, model.remaining)
         }
 
+    private fun twoMealsOf(first: String, second: String, message: String = "A good day.") =
+        RoutePlan(listOf(MealChoice(1, "lunch", "r1", first, "The map knows it."), MealChoice(1, "dinner", "r2", second, "The map knows it.")), message)
+
+    private val twoPlaces = StreetMap { _, _, _, _ -> listOf(santaRitaOnMap, zeDaMouraria) }
+    private val noGuide = TravelGuide { GuidePage("", emptyList()) }
+
+    @Test
+    fun `a dish that names nothing is refused, and the stop's dishes are offered`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_route", twoMealsOf("Local dishes", "Pastry"))
+                    calls("set_route", twoMealsOf("bacalhau à brás", "caldo verde"))
+                }
+
+            val trip = planner(model, sources(map = twoPlaces, guide = noGuide)).invoke(interviewed("One day in Lisbon"), config()).state
+
+            val refused = model.requests[3].messages.filterIsInstance<ChatMessage.ToolResult>().last().text
+            assertTrue("\"Local dishes\" names no dish. Name one typical dish to order at Santa Rita, such as one of: bacalhau à brás." in refused, refused)
+            assertEquals(listOf("bacalhau à brás", "caldo verde"), trip.route.map { it.dish })
+            assertEquals("A good day.", trip.summary)
+        }
+
+    @Test
+    fun `words that fit any table name no dish, and a real dish is left alone`() {
+        listOf("Pastry", "Local dishes", "Homemade local dish", "Mediterranean dishes", "Sweet roll", "Tapas", "dish of the day", "Plato del día", "Hausgemachtes Gericht").forEach {
+            assertTrue(namesNoDish(it), it)
+        }
+        listOf("Ensaimada", "Grilled fish of the day", "tapas of sobrassada", "pizza margherita", "pa amb oli", "Spanish tortilla", "").forEach {
+            assertFalse(namesNoDish(it), it)
+        }
+    }
+
+    @Test
+    fun `a dish already on the route is refused, however often the model sends it`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_route", twoMealsOf("bacalhau à brás", "Bacalhau à Brás with olives"))
+                    calls("set_route", twoMealsOf("bacalhau à brás", "bacalhau à brás"))
+                    calls("set_route", twoMealsOf("bacalhau à brás", "caldo verde"))
+                }
+
+            val trip = planner(model, sources(map = twoPlaces, guide = noGuide)).invoke(interviewed("One day in Lisbon"), config()).state
+
+            val refused = model.requests[3].messages.filterIsInstance<ChatMessage.ToolResult>().last().text
+            assertTrue("is already on the route, on day 1 lunch" in refused, refused)
+            assertEquals(listOf("bacalhau à brás", "caldo verde"), trip.route.map { it.dish })
+        }
+
+    @Test
+    fun `a dish the traveller asked for may come twice, after the warning`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_route", twoMealsOf("bacalhau à brás", "bacalhau à brás"))
+                    calls("set_route", twoMealsOf("bacalhau à brás", "bacalhau à brás"))
+                }
+
+            val trip = planner(model, sources(map = twoPlaces, guide = noGuide)).invoke(interviewed("One day in Lisbon, with bacalhau à brás at every meal"), config()).state
+
+            assertEquals(listOf("bacalhau à brás", "bacalhau à brás"), trip.route.map { it.dish })
+        }
+
+    @Test
+    fun `a route sent again with its dishes swapped is no repeat`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_route", twoMealsOf("bacalhau à brás", "caldo verde", ""))
+                    calls("set_route", twoMealsOf("caldo verde", "bacalhau à brás"))
+                }
+
+            val trip = planner(model, sources(map = twoPlaces, guide = noGuide)).invoke(interviewed("One day in Lisbon"), config()).state
+
+            assertEquals(listOf("caldo verde", "bacalhau à brás"), trip.route.map { it.dish })
+        }
+
     private val seekingCanarian = Profile(seeking = listOf("canarian", "canario"))
     private val barCanario = Restaurant(stop = lisbon, name = "Bar Canario", lat = 38.7120, lon = -9.1301, sources = setOf(Source.MAP))
     private val guachinche = Restaurant(stop = lisbon, name = "Guachinche", lat = 38.7130, lon = -9.1311, cuisine = "canarian", sources = setOf(Source.MAP))

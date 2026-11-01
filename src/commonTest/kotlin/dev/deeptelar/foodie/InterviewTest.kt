@@ -40,6 +40,25 @@ class InterviewTest {
     }
 
     @Test
+    fun `the meals the traveller tapped stay when the model reads none, in any language`() {
+        val meals = Answer(Topic.MEALS, "Which meals?", "Breakfast, Lunch, Snack, Dinner")
+        val spanish = Answer(Topic.MEALS, "¿Qué comidas?", "Cena, Desayuno")
+
+        assertEquals(MealTime.entries.toList(), Trip("Palma", answers = listOf(meals)).read(Reading(Profile())).profile.meals)
+        assertEquals(listOf(MealTime.BREAKFAST, MealTime.DINNER), Trip("Palma", answers = listOf(spanish)).read(Reading(Profile())).profile.meals)
+    }
+
+    @Test
+    fun `meals in the traveller's own words, or corrected later, stay the model's to read`() {
+        val own = Answer(Topic.MEALS, "Which meals?", "Lunch, and a late supper")
+        val corrected = listOf(Answer(Topic.MEALS, "Which meals?", "Lunch"), Answer(null, "Is there anything to correct?", "Dinner as well"))
+        val read = Profile(meals = listOf(MealTime.DINNER))
+
+        assertEquals(read.meals, Trip("Palma", answers = listOf(own)).read(Reading(read)).profile.meals)
+        assertEquals(read.meals, Trip("Palma", answers = corrected).read(Reading(read)).profile.meals)
+    }
+
+    @Test
     fun `someone who explores their own city is asked how much time they have, and not where they stay`() {
         val read = Trip("Exploring Barcelona, where I live").read(Reading(Profile(local = true), questions = listOf(Question(Topic.WHERE, "How many days will you stay?"))))
 

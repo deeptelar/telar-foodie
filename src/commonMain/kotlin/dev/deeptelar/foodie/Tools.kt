@@ -77,7 +77,7 @@ data class MealChoice(
     val meal: String,
     @Description("The id of a candidate, for example \"r12\".")
     val restaurant: String,
-    @Description("The typical dish to order there.")
+    @Description("The typical dish to order there, by its name, such as \"tumbet\". \"Local dishes\" or \"pastry\" name no dish.")
     val dish: String,
     @Description("One sentence on what speaks for this place, from what the sources say.")
     val why: String,
@@ -111,7 +111,7 @@ data class MealSlot(
 data class MealOption(
     @Description("The id of a candidate, for example \"r12\".")
     val restaurant: String,
-    @Description("The typical dish to order there.")
+    @Description("The typical dish to order there, by its name, such as \"tumbet\". \"Local dishes\" or \"pastry\" name no dish.")
     val dish: String,
     @Description("One sentence on what speaks for this place, from what the sources say.")
     val why: String,
@@ -224,9 +224,10 @@ private val routeEditors: List<StateTool<Trip>> =
             if (plan.meals.isEmpty()) throw IllegalArgumentException("Give the meals to put on the route.")
             var after = trip
             val problems =
-                plan.meals.mapNotNull { choice ->
+                plan.meals.mapIndexedNotNull { index, choice ->
                     try {
-                        after = after.withMeal(choice)
+                        // A meal this plan replaces further on no longer orders its dish.
+                        after = after.withMeal(choice, leaving = plan.meals.drop(index + 1).mapNotNull { later -> MealTime.of(later.meal)?.let { later.day to it } }.toSet())
                         null
                     } catch (e: IllegalArgumentException) {
                         "- Day ${choice.day} ${choice.meal}: ${e.message}"
@@ -412,17 +413,27 @@ private fun Trip.stopNamed(name: String): Stop? {
 }
 
 /**
- * The trip with [choice] on its route, in the place of the meal of its day and time.
+ * The trip with [choice] on its route, in the place of the meal of its day and time. The meals at
+ * the days and times of [leaving] are about to be replaced: their dishes do not count as repeated.
  *
- * @throws IllegalArgumentException with what is wrong, for the model, when the day, the meal or the restaurant is not one of the trip.
+ * @throws IllegalArgumentException with what is wrong, for the model: the day, the meal or the
+ *   restaurant is not one of the trip, its dish names no dish, or another meal already orders it.
  */
-private fun Trip.withMeal(choice: MealChoice): Trip {
+private fun Trip.withMeal(choice: MealChoice, leaving: Set<Pair<Int, MealTime>> = emptySet()): Trip {
     val time = mealTime(choice.meal)
     val stop = stopOn(choice.day) ?: throw IllegalArgumentException("The trip has $days days. There is no day ${choice.day}. To make a stay longer, call set_days first.")
     val restaurant = restaurant(choice.restaurant) ?: throw IllegalArgumentException("There is no candidate with the id \"${choice.restaurant}\". Use an id from the list.")
     if (restaurant.stop != stop.name) throw IllegalArgumentException("${restaurant.name} is in ${restaurant.stop}, but day ${choice.day} is in ${stop.name}.")
     if (restaurant.id in rejected) throw IllegalArgumentException("The traveller asked to change ${restaurant.name}: choose another place.")
     val meal = Meal(choice.day, time, restaurant.id, choice.dish.trim(), choice.why.trim(), choice.caution.trim())
+    if (namesNoDish(meal.dish)) {
+        val known = dishes.filter { it.stop == stop.name }.joinToString { it.name }
+        throw IllegalArgumentException("\"${meal.dish}\" names no dish. Name one typical dish to order at ${restaurant.name}" + (if (known.isEmpty()) "." else ", such as one of: $known."))
+    }
+    val same = route.firstOrNull { (it.day != meal.day || it.time != meal.time) && (it.day to it.time) !in leaving && it.dish.isNotBlank() && dishName(it) == dishName(meal) }
+    if (same != null && !travellerAskedFor(dishName(meal))) {
+        throw IllegalArgumentException("${meal.dish} is already on the route, on day ${same.day} ${same.time.label.lowercase()}. Order another dish at this meal, or at a place that is known for another.")
+    }
     // An offer for the meal is over once another place is put there.
     return copy(route = route.filterNot { it.day == meal.day && it.time == meal.time } + meal, offers = offers.filterNot { it.day == meal.day && it.time == meal.time })
 }
@@ -565,8 +576,7 @@ internal fun Trip.farFromStay(meals: List<Meal>): String =
  * "ensaïmada amb xocolata" in "an ensaïmada amb xocolata, warm", or else its own words.
  */
 internal fun Trip.repeatedDishes(meals: List<Meal>): String {
-    fun dish(meal: Meal): String = dishOf(meal)?.name?.lowercase()?.trim() ?: meal.dish.lowercase().trim()
-    return route.filter { it.dish.isNotBlank() }.groupBy(::dish).filterValues { it.size > 1 }.filterValues { same -> same.any { meal -> meals.any { it.day == meal.day && it.time == meal.time } } }
+    return route.filter { it.dish.isNotBlank() }.groupBy { dishName(it) }.filterValues { it.size > 1 }.filterValues { same -> same.any { meal -> meals.any { it.day == meal.day && it.time == meal.time } } }
         .map { (dish, same) ->
             "\nThe same dish more than once: $dish on " + same.sortedWith(compareBy({ it.day }, { it.time })).joinToString { "day ${it.day} ${it.time.label.lowercase()}" } +
                 ". Give each meal its own dish unless the traveller asked for this one again: a stop has more to eat at that time of the day than its best-known dish."
@@ -605,6 +615,36 @@ internal fun Trip.extraMeals(meals: List<Meal>): String {
             "Take it off with remove_meal, unless the traveller asked for it."
     }
 }
+
+/** The dish [meal] orders, to compare it with others: the stop's dish it names, or else its own words. */
+private fun Trip.dishName(meal: Meal): String = dishOf(meal)?.name?.lowercase()?.trim() ?: meal.dish.lowercase().trim()
+
+/** Whether the traveller's own words name [dish]. The first message of the agent is the code's: it lists the dishes of the stop. */
+private fun Trip.travellerAskedFor(dish: String): Boolean {
+    val later = messages.filterIsInstance<ChatMessage.User>().drop(1).map { it.text }
+    return (listOf(request, profile.wishes) + answers.map { it.text } + later).any { dish in it.lowercase() }
+}
+
+/**
+ * Whether [dish] names nothing a traveller could order, such as "local dishes", "pastry" or "dish
+ * of the day": all its words are of the kind that fits any table.
+ */
+internal fun namesNoDish(dish: String): Boolean {
+    val words = dish.simplified().split(' ').filter { it.isNotEmpty() }
+    return words.isNotEmpty() && words.all { it in FITS_ANY_TABLE }
+}
+
+/** The words of a dish that say nothing about it, without accents, in the languages of the page. */
+private val FITS_ANY_TABLE: Set<String> =
+    (
+        "a an the of and with some local traditional typical regional homemade home made classic fresh simple house daily special specials day " +
+            "dish dishes food foods cuisine cooking meal meals plate plates menu breakfast lunch dinner snack snacks sweet sweets roll rolls pastry pastries tapas " +
+            "mediterranean spanish italian catalan mallorcan neapolitan portuguese french greek german " +
+            "de del dels la las los el les un una y i al " +
+            "plato platos plat plats comida comidas cocina cuina menjar menu tipico tipica tipic tipics tradicional tradicionales casero casera casola casolana dulce dulces dolc dolcos pastel pasteles pastisseria bolleria dia " +
+            "mediterraneo mediterranea espanol espanola italiano italiana mediterrani mediterrania espanyol " +
+            "der die das des und mit gericht gerichte kuche essen speise speisen lokal lokale lokales traditionell traditionelle traditionelles hausgemacht hausgemachtes tagesgericht gebacken geback suss mediterran mediterrane spanisch italienisch tages"
+    ).split(' ').toSet()
 
 /** The stop's dish [meal] orders, the longest one its words name, such as "ensaïmada amb xocolata" in "an ensaïmada amb xocolata, warm". */
 private fun Trip.dishOf(meal: Meal): Dish? {

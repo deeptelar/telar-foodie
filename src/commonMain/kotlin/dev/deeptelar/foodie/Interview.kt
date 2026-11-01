@@ -204,7 +204,7 @@ internal val Trip.profileIsCurrent: Boolean get() = interview.read == answers.si
 internal fun Trip.read(reading: Reading): Trip {
     // Someone who lives there sleeps at home: where they stay is no question.
     val covered = interview.covered + reading.answered.filter { it !in ALWAYS_ASKED } + listOfNotNull(Topic.STAY.takeIf { reading.profile.local })
-    val read = copy(profile = tappedBudget(reading.profile), interview = interview.copy(covered = covered, read = answers.size))
+    val read = copy(profile = tappedMeals(tappedBudget(reading.profile)), interview = interview.copy(covered = covered, read = answers.size))
     if (interview.stage == InterviewStage.DONE) return read
     val next = if (interview.rounds < MAX_ROUNDS && !interview.enough) nextQuestions(covered, reading.questions, language.texts, reading.profile.local) else emptyList()
     return if (next.isEmpty()) {
@@ -231,6 +231,20 @@ internal fun Trip.tappedBudget(profile: Profile): Profile {
         3 -> profile.copy(budget = "high", splurge = false)
         else -> profile
     }
+}
+
+/**
+ * [profile] with the meals the traveller tapped, when each part of the last answer about them is
+ * one of the answers to tap, in any language: a model that reads them can come back with no meals
+ * at all, and the route then has a lunch and a dinner. Words of the traveller's own in that answer,
+ * or a correction after it, are the model's to read.
+ */
+internal fun Trip.tappedMeals(profile: Profile): Profile {
+    val last = answers.indexOfLast { it.topic == Topic.MEALS && it.text.isNotBlank() }
+    if (last < 0 || answers.drop(last + 1).any { it.topic == null }) return profile
+    val tapped = answers[last].text.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    val meals = tapped.map { word -> Language.entries.map { it.texts.question(Topic.MEALS).options.indexOf(word) }.firstOrNull { it >= 0 } ?: return profile }
+    return profile.copy(meals = meals.map { MealTime.entries[it] }.distinct().sorted())
 }
 
 /** The trip with the traveller's [answers] to the open questions. The planner reads them next. */
