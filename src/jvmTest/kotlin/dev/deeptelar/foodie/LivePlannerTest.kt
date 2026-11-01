@@ -46,6 +46,7 @@ import kotlin.time.TimeSource
  * `FOODIE_REQUEST` sets the trip, and `FOODIE_LANGUAGE` its language (`ENGLISH`, `SPANISH` or `CATALAN`).
  * With `FOODIE_SOURCES` set to a file, the sources answer from what that file kept, and what they
  * are asked anew is kept in it: models compared on the same file plan from the same places.
+ * With `FOODIE_MAP` set to a download of the street map (see [DownloadedMap]), every model searches the same places, whether or not the servers answer.
  * What the run does is written to `build/live-planner.txt`, with the time each part took.
  */
 class LivePlannerTest {
@@ -60,7 +61,8 @@ class LivePlannerTest {
         }
         try {
             runBlocking {
-                HttpClient(CIO).use { client ->
+                // The engine's own limit of 15 s would cut short the patience given to the street map below, and a slow model.
+                HttpClient(CIO) { engine { requestTimeout = 0 } }.use { client ->
                     val model =
                         if (claude) {
                             AnthropicChatModel(client = client, apiKey = System.getenv("FOODIE_MODEL_KEY"), model = System.getenv("FOODIE_MODEL"))
@@ -69,7 +71,8 @@ class LivePlannerTest {
                         }
                     val kept = System.getenv("FOODIE_SOURCES")?.let(::File)
                     // The street map is often busy: a comparison waits for it longer than a traveller would.
-                    val online = Sources(Nominatim(client), Wikivoyage(client), Overpass(client, patience = 60.seconds, rest = Duration.ZERO))
+                    val map = System.getenv("FOODIE_MAP")?.let { DownloadedMap(File(it)) } ?: Overpass(client, patience = 60.seconds, rest = Duration.ZERO)
+                    val online = Sources(Nominatim(client), Wikivoyage(client), map)
                     // A question that fails is a note of the trip, as on the page: it must not fail the run with it.
                     val questions = CoroutineScope(coroutineContext + SupervisorJob(coroutineContext.job))
                     val recorder = kept?.let { file -> Recorder(replay({ if (file.exists()) Recording.fromJson(file.readText()) else Recording() }, online), questions) }
