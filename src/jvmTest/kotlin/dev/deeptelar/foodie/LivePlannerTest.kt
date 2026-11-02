@@ -13,6 +13,7 @@ import dev.deeptelar.telar.MemoryCheckpointer
 import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.pendingToolCalls
 import dev.deeptelar.telar.anthropic.AnthropicChatModel
+import dev.deeptelar.telar.anthropic.PromptCache
 import dev.deeptelar.telar.openai.OpenAiChatModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -76,7 +77,9 @@ class LivePlannerTest {
                     // A question that fails is a note of the trip, as on the page: it must not fail the run with it.
                     val questions = CoroutineScope(coroutineContext + SupervisorJob(coroutineContext.job))
                     val recorder = kept?.let { file -> Recorder(replay({ if (file.exists()) Recording.fromJson(file.readText()) else Recording() }, online), questions) }
-                    val planner = planner(model, recorder?.sources ?: online)
+                    // As on the page: Claude keeps what it read only for the rounds of the agent.
+                    val planModel = if (claude) AnthropicChatModel(client = client, apiKey = System.getenv("FOODIE_MODEL_KEY"), model = System.getenv("FOODIE_MODEL"), cache = PromptCache.FIVE_MINUTES) else model
+                    val planner = planner(model, recorder?.sources ?: online, planModel = planModel)
                     val started = TimeSource.Monotonic.markNow()
                     fun took() = say("Took: ${started.elapsedNow().inWholeSeconds / 60} min ${started.elapsedNow().inWholeSeconds % 60} s")
                     val config = GraphConfig(threadId = "live", checkpointer = MemoryCheckpointer<Trip>(), interruptBefore = setOf(Nodes.REVIEW), maxIterations = 120)
@@ -166,7 +169,7 @@ class LivePlannerTest {
         }
         say("Summary: ${trip.summary}")
         say("Notes: ${trip.notes}")
-        say("Tokens: ${trip.tokens.total}")
+        say("Tokens: ${trip.tokens.total}, ${trip.tokens.cacheReadTokens} of them reused and ${trip.tokens.cacheWriteTokens} kept")
     }
 
     /** This recording with what [file] kept before: a later run keeps what the earlier ones found. */

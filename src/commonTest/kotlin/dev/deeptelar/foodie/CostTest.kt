@@ -20,6 +20,28 @@ class CostTest {
     }
 
     @Test
+    fun `tokens that Claude reused or kept cost their own prices`() {
+        val tokens = TokenUsage(inputTokens = 100_000, outputTokens = 1_000, cacheReadTokens = 80_000, cacheWriteTokens = 15_000)
+
+        // 5,000 at $4 a million, 80,000 at $0.20, 15,000 at $5, and 1,000 written at $20.
+        assertEquals(0.131, tokens.costWith("claude-opus-5-5")!!, 0.000001)
+    }
+
+    @Test
+    fun `tokens that OpenAI reused cost its price for them`() {
+        // 2,000 at $1.25 a million and 8,000 at $0.125.
+        assertEquals(0.0035, TokenUsage(inputTokens = 10_000, cacheReadTokens = 8_000).costWith("gpt-5")!!, 0.000001)
+    }
+
+    @Test
+    fun `a model without a price for what it reused counts it as read`() {
+        val price = Price(1.0, 2.0)
+
+        assertEquals(1.0, price.cacheRead)
+        assertEquals(1.0, price.cacheWrite)
+    }
+
+    @Test
     fun `a model without a known price has only the cost of its searches`() {
         val cost = Trip("", tokens = TokenUsage(1000, 100), googleSearches = 2).cost("gemini-flash-latest")
 

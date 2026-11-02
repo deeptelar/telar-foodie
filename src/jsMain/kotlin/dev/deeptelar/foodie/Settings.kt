@@ -2,6 +2,7 @@ package dev.deeptelar.foodie
 
 import dev.deeptelar.telar.agent.ChatModel
 import dev.deeptelar.telar.anthropic.AnthropicChatModel
+import dev.deeptelar.telar.anthropic.PromptCache
 import dev.deeptelar.telar.openai.OpenAiChatModel
 import io.ktor.client.HttpClient
 import kotlinx.browser.localStorage
@@ -62,25 +63,34 @@ data class Settings(
     fun model(client: HttpClient): ChatModel? =
         when {
             !hasModel -> null
-            provider == Provider.CLAUDE ->
-                AnthropicChatModel(
-                    client = client,
-                    apiKey = claudeKey.trim(),
-                    model = claudeModel,
-                    // A browser may only call the API with this header. That is acceptable here because
-                    // the key is the traveller's own; never ship a page with a key of yours in it.
-                    headers = mapOf("anthropic-dangerous-direct-browser-access" to "true"),
-                )
+            provider == Provider.CLAUDE -> claude(client)
             else -> openAi(client)
         }
 
     /**
-     * The model that chooses the restaurants. That takes many rounds with long requests, and
-     * picking from a list of candidates needs little thought: a reasoning model of OpenAI thinks
+     * The model that chooses the restaurants. That takes many rounds with long requests, and each
+     * sends the conversation again: Claude keeps what it read for the next round, and OpenAI does
+     * that by itself. The other models ask single questions, for which keeping costs more than it saves.
+     * Picking from a list of candidates needs little thought: a reasoning model of OpenAI thinks
      * less there than it does by default, which saves most of the wait.
      */
     fun planModel(client: HttpClient): ChatModel? =
-        if (hasModel && provider == Provider.OPENAI && thinksLess(openAiModel.trim())) openAi(client, buildJsonObject { put("reasoning_effort", "low") }) else model(client)
+        when {
+            hasModel && provider == Provider.CLAUDE -> claude(client, PromptCache.FIVE_MINUTES)
+            hasModel && provider == Provider.OPENAI && thinksLess(openAiModel.trim()) -> openAi(client, buildJsonObject { put("reasoning_effort", "low") })
+            else -> model(client)
+        }
+
+    private fun claude(client: HttpClient, cache: PromptCache? = null): AnthropicChatModel =
+        AnthropicChatModel(
+            client = client,
+            apiKey = claudeKey.trim(),
+            model = claudeModel,
+            // A browser may only call the API with this header. That is acceptable here because
+            // the key is the traveller's own; never ship a page with a key of yours in it.
+            headers = mapOf("anthropic-dangerous-direct-browser-access" to "true"),
+            cache = cache,
+        )
 
     private fun openAi(client: HttpClient, parameters: JsonObject = JsonObject(emptyMap())): OpenAiChatModel =
         OpenAiChatModel(client = client, apiKey = openAiKey.trim().ifEmpty { null }, model = openAiModel.trim(), parameters = parameters, baseUrl = openAiUrl.trim().trimEnd('/'))

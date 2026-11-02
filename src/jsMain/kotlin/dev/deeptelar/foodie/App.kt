@@ -1802,7 +1802,7 @@ class App(
         add("details", "known") {
             add("summary", text = cost.total?.let { texts.costAbout(texts.money(it)) } ?: texts.whatItCost)
             add("ul") {
-                if (trip.tokens.total > 0) add("li", text = texts.modelCost(model, trip.tokens.inputTokens, trip.tokens.outputTokens, cost.model?.let(texts::money)))
+                if (trip.tokens.total > 0) add("li", text = texts.modelCost(model, trip.tokens.inputTokens, trip.tokens.cacheReadTokens, trip.tokens.outputTokens, cost.model?.let(texts::money)))
                 if (trip.googleSearches > 0) add("li", text = texts.googleCost(trip.googleSearches, texts.money(cost.google)))
             }
             add("p", "hint small", texts.atListPrices)

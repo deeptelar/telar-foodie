@@ -257,7 +257,7 @@ interface Texts {
     fun costAbout(amount: String): String
 
     /** What the model's tokens cost; [amount] is `null` for a model without a known price. */
-    fun modelCost(model: String, read: Int, written: Int, amount: String?): String
+    fun modelCost(model: String, read: Int, reused: Int, written: Int, amount: String?): String
 
     fun googleCost(searches: Int, amount: String): String
 

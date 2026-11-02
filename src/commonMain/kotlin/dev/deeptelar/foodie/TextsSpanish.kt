@@ -264,7 +264,7 @@ object Spanish : Texts {
 
     override fun costAbout(amount: String) = "Este plan ha costado unos $amount"
 
-    override fun modelCost(model: String, read: Int, written: Int, amount: String?) = "$model: $read tokens leídos y $written escritos" + (amount?.let { " · $it" } ?: "")
+    override fun modelCost(model: String, read: Int, reused: Int, written: Int, amount: String?) = "$model: $read tokens leídos" + (if (reused > 0) " ($reused reutilizados)" else "") + " y $written escritos" + (amount?.let { " · $it" } ?: "")
 
     override fun googleCost(searches: Int, amount: String) = "Google Places: $searches " + (if (searches == 1) "búsqueda" else "búsquedas") + " · $amount"
 

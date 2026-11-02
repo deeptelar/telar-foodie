@@ -8,14 +8,20 @@ import kotlin.math.roundToLong
  * of Google Places. It is what an app that pays for its travellers' plans would pay, and the
  * traveller with their own keys sees what their keys were billed.
  *
- * The prices are those of 2026-10-18. Telar counts the tokens read from a prompt cache with the
- * rest of the input, so for a provider that caches the estimate is the most it could be.
+ * The prices are those of 2026-11-02. Tokens that a provider reused or kept for later have prices of
+ * their own: the agent's model keeps what it read, and OpenAI does that by itself.
  */
 
-/** What a million tokens of a model cost, read and written, in US dollars. */
+/**
+ * What a million tokens of a model cost, read and written, in US dollars. [cacheRead] is the price of
+ * a token the provider reused, and [cacheWrite] of one it kept for later: both cost as much as any
+ * other token read when the provider has no such prices.
+ */
 data class Price(
     val input: Double,
     val output: Double,
+    val cacheRead: Double = input,
+    val cacheWrite: Double = input,
 )
 
 /**
@@ -24,15 +30,16 @@ data class Price(
  */
 val MODEL_PRICES: Map<String, Price> =
     mapOf(
-        "claude-opus-5-5" to Price(4.0, 20.0),
-        "claude-sonnet-5-5" to Price(2.0, 10.0),
+        // What Claude keeps costs its price for five minutes, the time the agent's model asks for.
+        "claude-opus-5-5" to Price(4.0, 20.0, cacheRead = 0.20, cacheWrite = 5.0),
+        "claude-sonnet-5-5" to Price(2.0, 10.0, cacheRead = 0.10, cacheWrite = 2.5),
         // Up to 100,000 tokens a request, which every request of a plan stays under.
-        "claude-haiku-5-5" to Price(0.10, 0.50),
-        "gpt-5" to Price(1.25, 10.0),
-        "gpt-5-mini" to Price(0.25, 2.0),
-        "gpt-5.5" to Price(5.0, 30.0),
-        "gpt-5.4" to Price(2.5, 15.0),
-        "gpt-5.4-mini" to Price(0.75, 4.5),
+        "claude-haiku-5-5" to Price(0.10, 0.50, cacheRead = 0.01, cacheWrite = 0.125),
+        "gpt-5" to Price(1.25, 10.0, cacheRead = 0.125),
+        "gpt-5-mini" to Price(0.25, 2.0, cacheRead = 0.025),
+        "gpt-5.5" to Price(5.0, 30.0, cacheRead = 0.50),
+        "gpt-5.4" to Price(2.5, 15.0, cacheRead = 0.25),
+        "gpt-5.4-mini" to Price(0.75, 4.5, cacheRead = 0.075),
     )
 
 /**
@@ -55,7 +62,11 @@ data class Cost(
 
 /** What [tokens] of the model [modelName] cost, or `null` when its price is not known. */
 fun TokenUsage.costWith(modelName: String): Double? =
-    MODEL_PRICES[modelName.trim()]?.let { price -> (inputTokens * price.input + outputTokens * price.output) / 1_000_000 }
+    MODEL_PRICES[modelName.trim()]?.let { price ->
+        // `inputTokens` holds every token read, those reused and kept among them.
+        val fullPrice = inputTokens - cacheReadTokens - cacheWriteTokens
+        (fullPrice * price.input + cacheReadTokens * price.cacheRead + cacheWriteTokens * price.cacheWrite + outputTokens * price.output) / 1_000_000
+    }
 
 /** What this trip cost so far, when the model [modelName] planned it. */
 fun Trip.cost(modelName: String): Cost = Cost(tokens.costWith(modelName), googleSearches * GOOGLE_SEARCH_PRICE)

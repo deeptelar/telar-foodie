@@ -151,7 +151,10 @@ Around the graph:
 - **A plan says what it cost.** The trip counts its tokens and its searches of Google Places in
   its state, and the end of the route prices them at the providers' list prices
   ([`Cost.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Cost.kt)): what an app that paid for its
-  travellers' plans would pay. Seven days with two changes cost about $2.12 with Claude Opus 5.5.
+  travellers' plans would pay. Seven days with two changes cost about $2.12 with Claude Opus 5.5,
+  measured before the agent kept what it read. Each round of the agent sends the whole conversation
+  again, so with Claude it asks for `PromptCache.FIVE_MINUTES`, and `TokenUsage` says what was reused,
+  at its own price. Single questions do not, since keeping costs more than it saves there.
 - **The runs can be traced.** With the address of an OpenTelemetry collector in **Settings**, the
   `OtlpObserver` of `telar-otel` sends each run as a trace from the browser: a span for each step,
   with how long it took and what failed, and nothing of the trip.

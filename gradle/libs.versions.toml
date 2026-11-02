@@ -1,9 +1,9 @@
 [versions]
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 coroutines = "1.11.0"
-serialization = "1.11.0"
+serialization = "1.12.0"
 ktor = "3.6.0"
-telar = "0.1.0-alpha12"
+telar = "0.1.0-alpha16"
 
 [libraries]
 telar-core = { module = "dev.deeptelar:telar-core", version.ref = "telar" }
