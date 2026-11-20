@@ -29,6 +29,18 @@ interface Texts {
     /** Above the questions of the start page that the traveller can answer before the interview. */
     val upFrontTitle: String
     val upFrontHint: String
+
+    /** Under the start page's questions, while nothing is remembered: what the page will keep, and where. */
+    val willRemember: String
+
+    /** Under the start page's questions, when their answers come from what is remembered. */
+    val fromYourLastTrip: String
+
+    /** The button that forgets what is remembered of the traveller. */
+    val forgetIt: String
+
+    /** The title of what is remembered, in the settings. */
+    val whatIRemember: String
     val requestPlaceholder: String
     val examples: List<String>
     val planMyRoute: String

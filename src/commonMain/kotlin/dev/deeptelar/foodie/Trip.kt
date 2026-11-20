@@ -24,6 +24,11 @@ data class Trip(
     val interview: Interview = Interview(),
     /** What the planner knows about the traveller, read from the request and the answers. */
     val profile: Profile = Profile(),
+    /**
+     * Whether the planner remembers for the next trips what the traveller confirms about how they eat
+     * ([Remembered]). The sample's trip and a plan opened from a file do not: they may be somebody else's.
+     */
+    val remembers: Boolean = false,
     /** The request as the model understood it. */
     val brief: Brief? = null,
     /** The places of the itinerary in the order they are visited, with where they are. */

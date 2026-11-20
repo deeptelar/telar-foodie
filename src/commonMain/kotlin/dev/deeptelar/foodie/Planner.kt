@@ -16,6 +16,7 @@ import dev.deeptelar.telar.agent.ChatRequest
 import dev.deeptelar.telar.agent.ask
 import dev.deeptelar.telar.agent.toolLoop
 import dev.deeptelar.telar.interrupt
+import dev.deeptelar.telar.store
 import dev.deeptelar.telar.reportProgress
 import dev.deeptelar.telar.serialization.effect
 import kotlinx.coroutines.async
@@ -84,6 +85,10 @@ data class Named(
  *   `GraphConfig.interruptBefore`. With `approved` the run ends; with a new message from the
  *   traveller in `messages` the agent goes over the route again.
  *
+ * When the trip [remembers][Trip.remembers], `interview` and `review` keep what the confirmed profile
+ * says about how the traveller eats ([Remembered]) in the store of the run, which
+ * `GraphConfig.store` gives.
+ *
  * @param tokenBudget the agent stops asking the model once it has used this many tokens for the
  *   route, or for one change of it.
  * @param planModel the model of the agent that chooses the restaurants, for example [model] set to
@@ -99,8 +104,8 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
                 // The run waits here while questions are open, and while the traveller checks the profile.
                 // `resume` adds the answers, or the traveller's yes, and the node goes on from here.
                 if (trip.questions.isNotEmpty() || trip.interview.stage == InterviewStage.CHECKING) interrupt(trip)
-                // A yes to the profile: nothing new to read.
-                if (trip.profileIsCurrent) return@node trip
+                // A yes to the profile: nothing new to read, and what it says about how the traveller eats is kept for the next trips.
+                if (trip.profileIsCurrent) return@node trip.alsoRemembered()
 
                 val texts = trip.language.texts
                 reportProgress(Activity(if (trip.answers.isEmpty()) texts.readingYourRequest else texts.readingYourAnswers))
@@ -244,7 +249,8 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
         // The place where the run waits for the traveller. It runs when the traveller answered, and a
         // change starts a new turn of the agent, with a budget of its own.
         // What the traveller chose of the places the agent offered goes before their words.
-        val review = node(Nodes.REVIEW) { trip -> trip.copy(turnStart = trip.tokens.total).withPicksTold() }
+        // A change of the profile on the route is remembered too.
+        val review = node(Nodes.REVIEW) { trip -> trip.alsoRemembered().copy(turnStart = trip.tokens.total).withPicksTold() }
 
         // Without a single candidate the agent has nothing to choose from, and a small model writes in places of its own:
         // the traveller hears from the code why there is no route. The prompt goes first, so that a change asks the agent with it.
@@ -291,6 +297,15 @@ fun planner(model: ChatModel, sources: Sources, tokenBudget: Int = 300_000, plan
         order then review
         conditionalEdge(review, targets = setOf(plan, NodeRef.END), labels = mapOf(plan to "a change", NodeRef.END to "yes")) { if (it.approved) NodeRef.END else plan }
     }.compile()
+
+/**
+ * This trip, after keeping what its confirmed profile says about how the traveller eats in the
+ * store of the run, when the trip [remembers][Trip.remembers]: the run needs a store then.
+ */
+private suspend fun Trip.alsoRemembered(): Trip {
+    if (remembers && interview.stage == InterviewStage.DONE) store().remember(remembered())
+    return this
+}
 
 /**
  * The trip after a turn of the agent. Meals the traveller asked to change and that have no place

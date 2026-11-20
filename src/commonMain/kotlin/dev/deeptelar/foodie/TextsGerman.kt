@@ -18,6 +18,10 @@ object German : Texts {
             "Was fehlt, frage ich dich."
     override val upFrontTitle = "Sag es mir jetzt, dann frage ich nicht danach"
     override val upFrontHint = "Alles ist freiwillig: Was du überspringst, frage ich später, wenn die Reise es braucht."
+    override val willRemember = "Was du mir über Allergien, Ernährung und Geschmack sagst, bleibt in diesem Browser, damit du es nächstes Mal nicht wiederholen musst."
+    override val fromYourLastTrip = "Von deiner letzten Reise übernommen: Ändere, was nicht mehr stimmt."
+    override val forgetIt = "Vergessen"
+    override val whatIRemember = "Was ich darüber weiß, wie du isst (nur in diesem Browser)"
     override val requestPlaceholder = "3 Tage in Lissabon und 2 in Porto. Kein Schweinefleisch, und ich liebe Süßes."
     override val examples =
         listOf(

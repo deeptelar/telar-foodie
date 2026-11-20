@@ -154,10 +154,11 @@ val UP_FRONT: List<Topic> = listOf(Topic.ALLERGIES, Topic.PREGNANCY, Topic.DIET,
 /**
  * A new trip for [request], with what the traveller answered on the start page: those topics are
  * covered, so the interview asks only about the others. A skipped question is asked as usual.
+ * With [remembers], what the traveller confirms about how they eat is remembered for their next trips.
  */
-fun newTrip(request: String, language: Language, answers: List<Answer> = emptyList()): Trip {
+fun newTrip(request: String, language: Language, answers: List<Answer> = emptyList(), remembers: Boolean = false): Trip {
     val given = answers.filter { it.topic != null && it.text.isNotBlank() }
-    return Trip(request, language, answers = given, interview = Interview(covered = given.mapNotNull { it.topic }.toSet()))
+    return Trip(request, language, answers = given, interview = Interview(covered = given.mapNotNull { it.topic }.toSet()), remembers = remembers)
 }
 
 /** The topics that are asked about even when the request mentions them: a planner makes sure of what is a matter of health. */

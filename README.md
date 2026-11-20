@@ -126,6 +126,14 @@ Around the graph:
 - **The profile is the traveller's.** It has a tab of its own, apart from the conversation: every
   field can be changed or erased while the planner waits, and on a planned route a change goes to
   the agent. It is kept only in the browser, with the trip.
+- **The next trip remembers how the traveller eats.** When the traveller confirms the profile, the
+  planner keeps their allergies, diet and taste in a `Store` of Telar, which the page gives the run
+  with `GraphConfig(store = LocalStorageStore(...).within("traveller"))`
+  ([`Remembered.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Remembered.kt)). The code writes
+  it, not the model, so an allergy is never left out. The next trip takes none of it for granted:
+  the start page shows it as the answers of its questions, to change or to forget, and **Settings**
+  lists it. A pregnancy, the dates, the budget and the meals belong to one trip and are not kept;
+  neither is anything of the sample or of a plan opened from a file, which may be somebody else's.
 - **A planned route can change place by place.** "Change this place" on a meal asks why, with
   answers to tap (the dish, another kind of food, closer to somewhere, the price, touristy), and
   sends the changes of several meals to the agent as one message
@@ -157,7 +165,8 @@ Around the graph:
   at its own price. Single questions do not, since keeping costs more than it saves there.
 - **The runs can be traced.** With the address of an OpenTelemetry collector in **Settings**, the
   `OtlpObserver` of `telar-otel` sends each run as a trace from the browser: a span for each step,
-  with how long it took and what failed, and nothing of the trip.
+  for each call to a model with the tokens it used, and for each tool call, with how long it took
+  and what failed, and nothing of the trip.
 - **A source that fails does not fail the trip.** The street map's public servers are busy now and
   then. The trip is then planned with what the other sources found, and says what is missing.
 - **The tests need no key and no network.** [`PlannerTest`](src/commonTest/kotlin/dev/deeptelar/foodie/PlannerTest.kt)

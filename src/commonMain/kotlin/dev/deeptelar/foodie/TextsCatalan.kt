@@ -18,6 +18,10 @@ object Catalan : Texts {
             "Et pregunto el que falti."
     override val upFrontTitle = "Digues-m'ho ara i no t'ho preguntaré"
     override val upFrontHint = "Tot és opcional: el que et saltis, t'ho preguntaré després si el viatge ho necessita."
+    override val willRemember = "El que em diguis d'al·lèrgies, dieta i gustos es queda en aquest navegador, perquè la propera vegada no ho hagis de repetir."
+    override val fromYourLastTrip = "Omplert amb el teu últim viatge: canvia el que ja no sigui així."
+    override val forgetIt = "Oblida-ho"
+    override val whatIRemember = "El que recordo de com menges (només en aquest navegador)"
     override val requestPlaceholder = "3 dies a Lisboa i 2 a Porto. Res de porc, i m'encanten els dolços."
     override val examples =
         listOf(

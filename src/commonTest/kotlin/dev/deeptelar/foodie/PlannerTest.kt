@@ -13,6 +13,7 @@ import dev.deeptelar.telar.GraphConfig
 import dev.deeptelar.telar.GraphEvent
 import dev.deeptelar.telar.GraphResult
 import dev.deeptelar.telar.MemoryCheckpointer
+import dev.deeptelar.telar.MemoryStore
 import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.TokenUsage
 import dev.deeptelar.telar.test.ScriptedChatModel
@@ -964,6 +965,54 @@ class PlannerTest {
             val told = model.requests[4].messages.last { it is ChatMessage.User }.text
             assertTrue("I changed what you know about me" in told)
             assertTrue("Meals of every day: breakfast, dinner" in told)
+        }
+
+    @Test
+    fun `a trip that remembers keeps how the traveller eats once they confirm the profile`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(Reading(Profile(diet = "no pork", pregnant = true), answered = Topic.entries))
+                    answers(Reading(Profile(diet = "no pork", pregnant = true), answered = Topic.entries))
+                    answers(brief)
+                    answers(menu)
+                    says("Planned.")
+                }
+            val store = MemoryStore()
+            val planner = planner(model, sources())
+            val config = config().copy(store = store)
+
+            planner.invoke(Trip("One day in Lisbon", remembers = true), config)
+            planner.resume(config) { it.answered(listOf(Answer(Topic.ALLERGIES, "Any allergy?", "None"))) }
+            // The profile the traveller has not confirmed yet is not remembered.
+            assertTrue(store.remembered().isEmpty)
+            planner.resume(config) { it.confirmed() }
+
+            // "None" is a traveller with no allergy; the pregnancy belongs to this trip only, and nothing was said about taste.
+            assertEquals(Remembered(allergies = emptyList(), diet = "no pork"), store.remembered())
+        }
+
+    @Test
+    fun `a profile changed on a planned route is remembered as changed`() =
+        runTest {
+            val model =
+                ScriptedChatModel {
+                    answers(brief)
+                    answers(menu)
+                    calls("set_meal", MealChoice(1, "dinner", "r2", "caldo verde", "The map lists it as Portuguese."))
+                    says("Planned.")
+                    calls("set_meal", MealChoice(1, "lunch", "r1", "bacalhau à brás", "The guide calls it authentic."))
+                    says("Changed for fish.")
+                }
+            val store = MemoryStore()
+            val planner = planner(model, sources())
+            val config = config().copy(store = store)
+
+            planner.invoke(interviewed("One day in Lisbon", Profile(diet = "vegetarian")).copy(remembers = true), config)
+            assertEquals("vegetarian", store.remembered().diet)
+            planner.resume(config) { it.replannedFor(Profile(diet = "piscivegetarian")) }
+
+            assertEquals("piscivegetarian", store.remembered().diet)
         }
 
     @Test

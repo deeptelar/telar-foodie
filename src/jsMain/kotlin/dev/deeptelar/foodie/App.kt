@@ -13,6 +13,8 @@ import dev.deeptelar.telar.agent.ChatMessage
 import dev.deeptelar.telar.agent.ToolCall
 import dev.deeptelar.telar.agent.pendingToolCalls
 import dev.deeptelar.telar.checkpoint.browser.LocalStorageCheckpointer
+import dev.deeptelar.telar.checkpoint.browser.LocalStorageStore
+import dev.deeptelar.telar.within
 import dev.deeptelar.telar.otel.OtlpObserver
 import dev.deeptelar.telar.serialization.KotlinxStateSerializer
 import io.ktor.client.HttpClient
@@ -112,6 +114,12 @@ class App(
     private val scope = MainScope()
     private val client = HttpClient()
     private val checkpointer = LocalStorageCheckpointer(KotlinxStateSerializer<Trip>(), keyPrefix = "foodie.run.")
+
+    /** What the planner remembers of the traveller from one trip to the next, in this browser only. */
+    private val memory = LocalStorageStore(keyPrefix = "foodie.memory.").within("traveller")
+
+    /** What [memory] holds, as the page read it last. */
+    private var remembered = Remembered()
     private val config: GraphConfig<Trip>
         get() =
             GraphConfig(
@@ -122,6 +130,7 @@ class App(
                 // Every round of the agent is two steps, and a trip of several days takes many rounds.
                 maxIterations = 120,
                 observers = listOfNotNull(tracer()),
+                store = memory,
             )
 
     /** The observer that sends the runs as traces, with the settings it was made for, and the coroutines that send them. */
@@ -243,6 +252,7 @@ class App(
             render()
         })
         render()
+        recall()
         scope.launch {
             val saved =
                 try {
@@ -328,7 +338,8 @@ class App(
     private fun start(request: String, sample: Boolean, answers: List<Answer> = emptyList()) {
         this.sample = sample
         this.request = request
-        val trip = newTrip(request, language, answers)
+        // The sample's trip is no traveller's: nothing of it is remembered.
+        val trip = newTrip(request, language, answers, remembers = !scripted)
         this.trip = trip
         firstDay()
         tab = Tab.PLAN
@@ -568,6 +579,40 @@ class App(
             request = ""
             sample = false
             phase = Phase.START
+            render()
+            recall()
+        }
+    }
+
+    /** Reads what the planner remembers of the traveller, for the start page. */
+    private fun recall() {
+        scope.launch {
+            remembered =
+                try {
+                    memory.remembered()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Throwable) {
+                    // The browser blocks its storage, or an older page wrote it: nothing is remembered.
+                    Remembered()
+                }
+            render()
+        }
+    }
+
+    /** Forgets what the planner remembers of the traveller, and takes the answers it gave off the start page. */
+    private fun forget() {
+        val given = remembered.prefilled(texts).map { it.question.text }
+        scope.launch {
+            try {
+                memory.forgetTraveller()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Throwable) {
+                // The browser blocks its storage: then nothing was kept either.
+            }
+            remembered = Remembered()
+            drafts = drafts - given.toSet()
             render()
         }
     }
@@ -937,10 +982,22 @@ class App(
      * does not ask them again. All of them can be skipped.
      */
     private fun HTMLElement.upFront() {
+        // What the planner remembers fills in the answers, until the traveller changes them: an answer they cleared stays clear.
+        remembered.prefilled(texts).filter { it.question.text !in drafts }.forEach {
+            drafts = drafts + (it.question.text to Draft(picked = it.picked, own = it.own))
+        }
         add("details", "up-front") {
             setAttribute("open", "")
             add("summary", text = texts.upFrontTitle)
             add("p", "hint small", texts.upFrontHint)
+            if (remembered.isEmpty) {
+                add("p", "hint small", texts.willRemember)
+            } else {
+                add("p", "hint small remembered") {
+                    add("span", text = texts.fromYourLastTrip + " ")
+                    button(texts.forgetIt, "link") { forget() }
+                }
+            }
             UP_FRONT.map { texts.question(it) }.forEach { question ->
                 add("div", "up-front-question") {
                     add("p", "field-label", question.text)
@@ -1028,6 +1085,15 @@ class App(
                     link(texts.googlePrices, GoogleConsole.PRICES)
                     add("span", text = " · ")
                     link(texts.googleGuide, GoogleConsole.GUIDE)
+                }
+            }
+            if (!remembered.isEmpty) {
+                add("div", "remembered") {
+                    add("span", "field-label", texts.whatIRemember)
+                    add("ul") {
+                        remembered.prefilled(texts).forEach { add("li", text = texts.topic(it.question.topic).replaceFirstChar(Char::uppercase) + ": " + (it.picked + listOf(it.own).filter(String::isNotBlank)).joinToString(if (it.question.topic == Topic.ALLERGIES) "; " else ", ")) }
+                    }
+                    button(texts.forgetIt, "ghost") { forget() }
                 }
             }
             // For whoever runs the page: the traces show how long each step took, and which failed.

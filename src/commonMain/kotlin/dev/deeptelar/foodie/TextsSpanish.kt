@@ -18,6 +18,10 @@ object Spanish : Texts {
             "Te pregunto lo que falte."
     override val upFrontTitle = "Dímelo ahora y no te lo preguntaré"
     override val upFrontHint = "Todo es opcional: lo que te saltes, te lo pregunto después si el viaje lo necesita."
+    override val willRemember = "Lo que me digas de alergias, dieta y gustos se queda en este navegador, para que la próxima vez no tengas que repetirlo."
+    override val fromYourLastTrip = "Rellenado con tu último viaje: cambia lo que ya no sea así."
+    override val forgetIt = "Olvidarlo"
+    override val whatIRemember = "Lo que recuerdo de cómo comes (solo en este navegador)"
     override val requestPlaceholder = "3 días en Lisboa y 2 en Oporto. Nada de cerdo, y me encantan los dulces."
     override val examples =
         listOf(
