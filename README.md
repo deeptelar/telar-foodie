@@ -157,7 +157,8 @@ Around the graph:
   at its own price. Single questions do not, since keeping costs more than it saves there.
 - **The runs can be traced.** With the address of an OpenTelemetry collector in **Settings**, the
   `OtlpObserver` of `telar-otel` sends each run as a trace from the browser: a span for each step,
-  with how long it took and what failed, and nothing of the trip.
+  for each call to a model with the tokens it used, and for each tool call, with how long it took
+  and what failed, and nothing of the trip.
 - **A source that fails does not fail the trip.** The street map's public servers are busy now and
   then. The trip is then planned with what the other sources found, and says what is missing.
 - **The tests need no key and no network.** [`PlannerTest`](src/commonTest/kotlin/dev/deeptelar/foodie/PlannerTest.kt)
