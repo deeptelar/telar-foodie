@@ -21,6 +21,16 @@ class SavedPlanTest {
         )
 
     @Test
+    fun `a plan opened from a file does not remember how its traveller eats`() {
+        val checkpoint = Checkpoint(trip.copy(remembers = true), listOf(Nodes.REVIEW), step = 9, interruptedBefore = true)
+
+        val opened = planFromFile(checkpoint.toFile(model = "claude-sonnet-5-5", saved = "2026-10-17T18:00:00.000Z"))
+
+        // A friend's plan, opened to change it, would otherwise put the friend's allergies on this page's start.
+        assertFalse(opened.state.remembers)
+    }
+
+    @Test
     fun `a plan in a file is the checkpoint it was saved from, with the trip readable in it`() {
         val checkpoint = Checkpoint(trip, listOf(Nodes.REVIEW), step = 9, interruptedBefore = true, effects = mapOf("dishes 1" to "{}"))
 

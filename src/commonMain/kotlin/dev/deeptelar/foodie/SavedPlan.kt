@@ -50,7 +50,8 @@ class NotAPlanException(
 ) : IllegalArgumentException(if (newer) "The plan was saved by a newer version of the page." else "The file is no plan of ${SavedPlan.APP}.", cause)
 
 /**
- * The checkpoint in the text of a file.
+ * The checkpoint in the text of a file. What the trip says about how the traveller eats is not
+ * remembered: a file may be somebody else's plan.
  *
  * @throws NotAPlanException when the text is no plan, or one of a newer page.
  */
@@ -63,7 +64,8 @@ fun planFromFile(text: String): Checkpoint<Trip> {
         }
     if (plan.app != SavedPlan.APP) throw NotAPlanException()
     if (plan.format > SavedPlan.FORMAT) throw NotAPlanException(newer = true)
-    return plan.checkpoint
+    val checkpoint = plan.checkpoint
+    return checkpoint.copy(state = checkpoint.state.copy(remembers = false))
 }
 
 /** The name of a file for [trip]: its places and the day it was saved. */

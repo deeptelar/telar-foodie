@@ -126,6 +126,14 @@ Around the graph:
 - **The profile is the traveller's.** It has a tab of its own, apart from the conversation: every
   field can be changed or erased while the planner waits, and on a planned route a change goes to
   the agent. It is kept only in the browser, with the trip.
+- **The next trip remembers how the traveller eats.** When the traveller confirms the profile, the
+  planner keeps their allergies, diet and taste in a `Store` of Telar, which the page gives the run
+  with `GraphConfig(store = LocalStorageStore(...).within("traveller"))`
+  ([`Remembered.kt`](src/commonMain/kotlin/dev/deeptelar/foodie/Remembered.kt)). The code writes
+  it, not the model, so an allergy is never left out. The next trip takes none of it for granted:
+  the start page shows it as the answers of its questions, to change or to forget, and **Settings**
+  lists it. A pregnancy, the dates, the budget and the meals belong to one trip and are not kept;
+  neither is anything of the sample or of a plan opened from a file, which may be somebody else's.
 - **A planned route can change place by place.** "Change this place" on a meal asks why, with
   answers to tap (the dish, another kind of food, closer to somewhere, the price, touristy), and
   sends the changes of several meals to the agent as one message

@@ -18,6 +18,10 @@ object English : Texts {
             "I ask about whatever is missing."
     override val upFrontTitle = "Tell me now, and I won't ask"
     override val upFrontHint = "All optional: what you skip, I ask later if the trip needs it."
+    override val willRemember = "What you tell me about allergies, diet and taste stays in this browser, so that next time you need not say it again."
+    override val fromYourLastTrip = "Filled in from your last trip: change anything that is no longer right."
+    override val forgetIt = "Forget it"
+    override val whatIRemember = "What I remember about how you eat (only in this browser)"
     override val requestPlaceholder = "3 days in Lisbon and 2 in Porto. No pork, and I love pastries."
     override val examples =
         listOf(
